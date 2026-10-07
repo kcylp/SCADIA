@@ -1,0 +1,216 @@
+<div class="container">
+    <div class="filter" *ngIf="deviceSelected" style="color:var(--formInputColor)">
+        <button mat-icon-button title="{{'device.map-title' | translate}}" (click)="onGoBack()" style="margin-right:10px;margin-left:-10px;">
+            <mat-icon aria-label="{{'device.map-show' | translate}}">arrow_back</mat-icon>
+        </button>
+        <div class="my-form-field" style="padding-right: 10px;">
+            <span>{{'device.list-device' | translate}}</span>
+            <mat-select [(value)]="deviceSelected" style="width: 300px" (selectionChange)="onDeviceChange($event.source)">
+                <mat-option *ngFor="let device of devicesValue()" [value]="device">
+                    {{ device.name }}
+                </mat-option>
+            </mat-select>
+        </div>
+        <div class="my-form-field" style="padding-right: 10px;">
+            <span>{{'device.list-filter' | translate}}</span>
+            <input (keyup)="applyFilter($event.target.value)" style="width: 450px" type="text">
+        </div>
+        <div class="my-form-field" style="padding-right: 10px;">
+            <span>{{'device.list-channel' | translate}}</span>
+            <mat-select [value]="channelFilter" style="width: 200px" (selectionChange)="onChannelFilterChange($event.value)">
+                <mat-option *ngFor="let ch of channelFilterOptions()" [value]="ch.id">
+                    <ng-container *ngIf="ch.name === '__all__'">{{'device.channels-filter-all' | translate}}</ng-container>
+                    <ng-container *ngIf="ch.name === '__default__'">{{'device.channels-filter-default' | translate}}</ng-container>
+                    <ng-container *ngIf="ch.name !== '__all__' && ch.name !== '__default__'">{{ ch.name }}</ng-container>
+                </mat-option>
+            </mat-select>
+        </div>
+        <button *ngIf="!readonly && isDeviceToEdit" mat-icon-button (click)="openChannelManager()" matTooltip="{{'device.channels-manage' | translate}}" style="align-self:center;">
+            <mat-icon>account_tree</mat-icon>
+        </button>
+    </div>
+    <div class="table-container">
+        <div class="table-scroll">
+            <mat-table #table [dataSource]="dataSource" matSort>
+                <!-- Checkbox Column -->
+                <ng-container matColumnDef="select">
+                    <mat-header-cell *matHeaderCellDef [ngClass]="'selectidthClass'">
+                        <button *ngIf="!readonly && isDeviceToEdit" mat-icon-button (click)="onAddTag()" class="remove" matTooltip="{{'device.list-add' | translate}}">
+                            <mat-icon>add</mat-icon>
+                        </button>
+                    </mat-header-cell>
+                    <mat-cell *matCellDef="let element" [ngClass]="'selectidthClass'">
+                        <button mat-icon-button (click)="onEditRow(element)" class="remove" matTooltip="{{'device.list-edit' | translate}}"
+                            *ngIf="!readonly && isToEdit(deviceSelected.type, element)">
+                            <mat-icon>edit</mat-icon>
+                        </button>
+                    </mat-cell>
+                </ng-container>
+
+                <!-- Name Column -->
+                <ng-container matColumnDef="name">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header> {{'device.list-name' | translate}} </mat-header-cell>
+                    <mat-cell *matCellDef="let element"> {{getTagLabel(element)}} </mat-cell>
+                </ng-container>
+
+                <!-- Channel Column -->
+                <ng-container matColumnDef="channel">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header> {{'device.list-channel' | translate}} </mat-header-cell>
+                    <mat-cell *matCellDef="let element"> {{getChannelName(element)}} </mat-cell>
+                </ng-container>
+
+                <!-- Address Column -->
+                <ng-container matColumnDef="address">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header> {{'device.list-address' | translate}} </mat-header-cell>
+                    <mat-cell *matCellDef="let element"> {{getAddress(element)}} </mat-cell>
+                </ng-container>
+
+                <!-- Device Column -->
+                <ng-container matColumnDef="device">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header> {{'device.list-device' | translate}} </mat-header-cell>
+                    <mat-cell *matCellDef="let element"> {{deviceSelected.name}} </mat-cell>
+                </ng-container>
+
+                <!-- Device Column -->
+                <ng-container matColumnDef="type">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header> {{'device.list-type' | translate}} </mat-header-cell>
+                    <mat-cell *matCellDef="let element"> {{element.type}} </mat-cell>
+                </ng-container>
+
+                <!-- Min Column -->
+                <ng-container matColumnDef="min">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header> {{'device.list-min' | translate}} </mat-header-cell>
+                    <mat-cell *matCellDef="let element"> {{element.min}} </mat-cell>
+                </ng-container>
+
+                <!-- Max Column -->
+                <ng-container matColumnDef="max">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header> {{'device.list-max' | translate}} </mat-header-cell>
+                    <mat-cell *matCellDef="let element"> {{element.max}} </mat-cell>
+                </ng-container>
+
+                <!-- Value Column -->
+                <ng-container matColumnDef="value">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header> {{'device.list-value' | translate}} </mat-header-cell>
+                    <mat-cell *matCellDef="let element" matTooltip="{{element.value}}"> {{element.value}} </mat-cell>
+                </ng-container>
+
+                <!-- Timestamp Column -->
+                <ng-container matColumnDef="timestamp">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header> {{'device.list-timestamp' | translate}} </mat-header-cell>
+                    <mat-cell *matCellDef="let element"> {{element.timestamp | date : 'dd-MM-yyyy HH:mm:ss' }} </mat-cell>
+                </ng-container>
+                <ng-container matColumnDef="description">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header> {{'device.list-description' | translate}} </mat-header-cell>
+                    <mat-cell *matCellDef="let element" matTooltip="{{element.description}}">{{ element.description }}</mat-cell>
+                </ng-container>
+
+                <!-- UNS Column -->
+                <ng-container matColumnDef="uns">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header> </mat-header-cell>
+                    <mat-cell *matCellDef="let element">
+                        <mat-icon *ngIf="element.unsPath" [matTooltip]="element.unsPath" matTooltipPosition="left">account_tree</mat-icon>
+                    </mat-cell>
+                </ng-container>
+
+                <!-- Logger Column -->
+                <ng-container matColumnDef="logger">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header> </mat-header-cell>
+                    <mat-cell *matCellDef="let element">
+                        <div *ngIf="element.daq">
+                            <ng-container *ngIf="element.daq.restored">
+                                <mat-icon>settings_backup_restore</mat-icon>
+                            </ng-container>
+                            <ng-container *ngIf="element.daq.enabled">
+                                <mat-icon>storage</mat-icon>
+                                <span *ngIf="element.daq.interval" style="display: inline-block;vertical-align: super;">
+                                    {{element.daq.interval}} s
+                                </span>
+                            </ng-container>
+                        </div>
+                    </mat-cell>
+                </ng-container>
+
+                <!-- Warning Column -->
+                <ng-container matColumnDef="warning">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header></mat-header-cell>
+                    <mat-cell *matCellDef="let element" [matTooltip]="element.error ? element.error : null" matTooltipPosition="left">
+                        <button mat-icon-button *ngIf="element.error" class="warning">
+                            <mat-icon>warning_amber</mat-icon>
+                        </button>
+                    </mat-cell>
+                </ng-container>
+
+                <!-- Button edit options row -->
+                <ng-container matColumnDef="options">
+                    <mat-header-cell *matHeaderCellDef></mat-header-cell>
+                    <mat-cell *matCellDef="let element">
+                        <button mat-icon-button [matMenuTriggerFor]="options">
+                            <mat-icon>more_vert</mat-icon>
+                        </button>
+                        <mat-menu #options="matMenu" xPosition="before">
+                            <button *ngIf="!readonly && isWithOptions" mat-menu-item class="context-menu" (click)="onEditOptions(element)">
+                                {{'device.list-options' | translate}}
+                            </button>
+                            <button mat-menu-item class="context-menu" (click)="onCopyTagToClipboard(element)">
+                                {{'device.list-clipboard' | translate}}
+                            </button>
+                        </mat-menu>
+                    </mat-cell>
+                </ng-container>
+
+                <!-- Button remove Column -->
+                <ng-container matColumnDef="remove">
+                    <mat-header-cell *matHeaderCellDef>
+                        <button *ngIf="!readonly" mat-icon-button (click)="onRemoveAll()" class="remove" matTooltip="{{'device.list-remove-all' | translate}}">
+                            <mat-icon>clear</mat-icon>
+                        </button>
+                    </mat-header-cell>
+                    <mat-cell *matCellDef="let element">
+                        <button *ngIf="!readonly" mat-icon-button (click)="$event.stopPropagation();onRemoveRow(element)" class="remove"
+                            matTooltip="{{'device.list-remove' | translate}}">
+                            <mat-icon>clear</mat-icon>
+                        </button>
+                    </mat-cell>
+                </ng-container>
+
+                <!-- Direction Column -->
+                <ng-container matColumnDef="direction">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header> {{'device.list-direction' | translate}} </mat-header-cell>
+                    <mat-cell *matCellDef="let element" matTooltip="{{element.direction}}"> {{element.direction}} </mat-cell>
+                </ng-container>
+
+                <mat-header-row *matHeaderRowDef="displayedColumns" [ngStyle]="{'min-width.px': tableWidth}" sticky></mat-header-row>
+                <mat-row *matRowDef="let row; columns: displayedColumns;" class="my-mat-row" [ngStyle]="{'min-width.px': tableWidth}"></mat-row>
+            </mat-table>
+        </div>
+        <mat-paginator [pageSizeOptions]="[10, 25, 100]" [pageSize]="25" class="paginator"></mat-paginator>
+    </div>
+</div>
+
+<!-- Channel manager (device -> channel -> tag, B4).
+     Removing a channel never deletes its tags: they move back to the default channel. -->
+<ng-template #channelDialog>
+    <h2 mat-dialog-title>{{'device.channels-title' | translate}}</h2>
+    <mat-dialog-content style="min-width: 440px;">
+        <div *ngFor="let ch of getDeclaredChannels()" style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <input #chName [value]="ch.name" (change)="renameChannel(ch, chName.value)" style="flex:1 1 auto;min-width:0;padding:6px 8px;" type="text">
+            <button mat-icon-button (click)="removeChannel(ch)" matTooltip="{{'device.channels-remove' | translate}}">
+                <mat-icon>delete</mat-icon>
+            </button>
+        </div>
+        <div *ngIf="!getDeclaredChannels().length" style="color:#888;font-size:13px;margin-bottom:8px;">{{'device.channels-empty' | translate}}</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:12px;">
+            <input [(ngModel)]="newChannelName" placeholder="{{'device.channels-name' | translate}}" style="flex:1 1 auto;min-width:0;padding:6px 8px;" type="text">
+            <button mat-button color="primary" (click)="addChannel()">{{'device.channels-add' | translate}}</button>
+        </div>
+        <div style="margin-top:16px;color:#888;font-size:12px;">{{'device.channels-move-selected' | translate}}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;">
+            <button mat-stroked-button *ngFor="let ch of getDeclaredChannels()" (click)="assignSelectedToChannel(ch.id)">{{ ch.name }}</button>
+            <button mat-stroked-button (click)="assignSelectedToChannel('')">{{'device.channels-filter-default' | translate}}</button>
+        </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-button mat-dialog-close>{{'device.channels-close' | translate}}</button>
+    </mat-dialog-actions>
+</ng-template>

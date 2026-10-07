@@ -1,0 +1,393 @@
+<div class="scada" *ngIf="view as v; else notfound">
+    <header class="sc-topbar">
+        <div class="sc-topbar__brand">
+            <mat-icon>precision_manufacturing</mat-icon>
+            <div>
+                <div class="sc-topbar__title">{{v.profile?.name || v.session.profileId}}</div>
+                <div class="sc-topbar__sub">{{v.session.id}}</div>
+            </div>
+        </div>
+
+        <div class="sc-topbar__spacer"></div>
+
+        <div class="sc-topbar__meta">
+            <span class="sc-tag">{{v.profile?.sourceTagId}}</span>
+            <span class="sc-led-with-label">
+                <i class="sc-led" [ngClass]="'sc-led--' + statusTone(v.session.status)"
+                   [class.sc-led--pulse]="v.session.status === 'sampling' || v.session.status === 'writing' || v.session.status === 'verifying'"></i>
+                <span class="sc-pill" [ngClass]="'sc-pill--' + statusTone(v.session.status)">{{statusLabel(v.session.status)}}</span>
+            </span>
+            <span class="sc-hint">{{'calibration.revision' | translate}} {{v.session.revision}}</span>
+        </div>
+
+        <button class="sc-btn sc-btn--icon sc-btn--ghost" title="{{'calibration.refresh' | translate}}" (click)="reload()">
+            <mat-icon>refresh</mat-icon>
+        </button>
+        <button class="sc-btn sc-btn--ghost" (click)="onExport('csv')">
+            <mat-icon>file_download</mat-icon>CSV
+        </button>
+    </header>
+
+    <div class="sc-body sc-scroll">
+
+        <!-- ------------------------------------------------ instrument strip -->
+        <div class="sc-grid sc-grid--kpi" style="margin-bottom:16px">
+            <div class="sc-kpi sc-kpi--info">
+                <div class="sc-kpi__label">{{'calibration.live-value' | translate}}</div>
+                <div class="sc-readout sc-readout--xl">
+                    {{liveValue !== null ? (liveValue | number:'1.0-4') : '—'}}
+                    <span class="sc-readout__unit">{{unit}}</span>
+                </div>
+                <div class="sc-kpi__hint">
+                    <span class="sc-led" [ngClass]="sampling ? 'sc-led--pulse sc-led--info' : 'sc-led--idle'" style="margin-right:6px"></span>
+                    {{sampling ? (liveAccepted + ' / ' + liveTarget) : ('calibration.kpi.profiles' | translate)}}
+                </div>
+            </div>
+
+            <div class="sc-kpi" [class.sc-kpi--ok]="!!v.session.fit">
+                <div class="sc-kpi__label">k · gain</div>
+                <div class="sc-kpi__value">{{v.session.fit ? (v.session.fit.gain | number:'1.0-6') : '—'}}</div>
+                <div class="sc-kpi__hint">y = k·x + b</div>
+            </div>
+            <div class="sc-kpi" [class.sc-kpi--ok]="!!v.session.fit">
+                <div class="sc-kpi__label">b · offset</div>
+                <div class="sc-kpi__value">{{v.session.fit ? (v.session.fit.offset | number:'1.0-6') : '—'}}</div>
+                <div class="sc-kpi__hint">{{'calibration.unit' | translate}}: {{unit || '—'}}</div>
+            </div>
+            <div class="sc-kpi" [class.sc-kpi--ok]="v.session.fit && v.session.fit.r2 >= 0.99"
+                 [class.sc-kpi--warn]="v.session.fit && v.session.fit.r2 < 0.99">
+                <div class="sc-kpi__label">R²</div>
+                <div class="sc-kpi__value">{{v.session.fit ? (v.session.fit.r2 | number:'1.0-6') : '—'}}</div>
+                <div class="sc-kpi__hint">{{'calibration.points-count' | translate}}: {{v.points.length}}</div>
+            </div>
+            <div class="sc-kpi">
+                <div class="sc-kpi__label">RMSE</div>
+                <div class="sc-kpi__value">{{v.session.fit ? (v.session.fit.rmse | number:'1.0-6') : '—'}}</div>
+                <div class="sc-kpi__hint">max |e| {{v.session.fit ? (v.session.fit.maxAbsError | number:'1.0-6') : '—'}}</div>
+            </div>
+            <div class="sc-kpi" [class.sc-kpi--ok]="v.session.fit && v.session.fit.qualityPassed"
+                 [class.sc-kpi--alarm]="v.session.fit && !v.session.fit.qualityPassed">
+                <div class="sc-kpi__label">{{'calibration.quality' | translate}}</div>
+                <div class="sc-readout sc-readout--lg">
+                    {{v.session.fit ? (v.session.fit.qualityPassed ? ('calibration.pass' | translate) : 'FAIL') : '—'}}
+                </div>
+                <div class="sc-kpi__hint">{{v.session.fit ? v.session.fit.violations.join(', ') : ('calibration.not-sampled' | translate)}}</div>
+            </div>
+        </div>
+
+        <div class="sc-split">
+            <!-- =================================================== left column -->
+            <div class="sc-col">
+
+                <section class="sc-panel">
+                    <div class="sc-panel__hd">
+                        <mat-icon>memory</mat-icon>
+                        <span>{{'calibration.standard-point' | translate}}</span>
+                        <div class="sc-hd-actions">
+                            <button class="sc-btn sc-btn--icon sc-btn--ghost" *ngIf="sampling"
+                                    (click)="onCancelSample()" title="{{'calibration.sample-cancel' | translate}}">
+                                <mat-icon>stop_circle</mat-icon>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="sc-panel__bd">
+                        <div class="sc-live" style="margin-bottom:12px">
+                            <div class="sc-field" style="flex:1">
+                                <label class="sc-field__label">{{'calibration.reference-value' | translate}}</label>
+                                <input class="sc-input" type="number" step="any" [(ngModel)]="newReferenceValue"
+                                       [disabled]="!canSample()" placeholder="0.000">
+                            </div>
+                            <button class="sc-btn sc-btn--primary" [disabled]="!canSample()" (click)="onAddPointAndSample()">
+                                <mat-icon>addchart</mat-icon>{{'calibration.sample-add' | translate}}
+                            </button>
+                        </div>
+
+                        <div *ngIf="sampling">
+                            <div class="sc-row--tight" style="justify-content:space-between;font-size:11.5px;color:var(--sc-ink-3)">
+                                <span>{{'calibration.progress' | translate}}</span>
+                                <span class="sc-mono">{{liveAccepted}} / {{liveTarget}}</span>
+                            </div>
+                            <div class="sc-bar" style="margin-top:6px">
+                                <div class="sc-bar__fill" [style.width.%]="liveTarget ? (liveAccepted / liveTarget * 100) : 0"></div>
+                            </div>
+                            <div class="sc-hint" style="margin-top:6px">
+                                {{'calibration.accepted-short' | translate}} {{liveAccepted}} ·
+                                {{'calibration.rejected-short' | translate}} {{liveRejected}}
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="sc-panel">
+                    <div class="sc-panel__hd">
+                        <mat-icon>format_list_numbered</mat-icon>
+                        <span>{{'calibration.points' | translate}}</span>
+                        <span class="sc-hd-actions sc-hint">{{v.points.length}}</span>
+                    </div>
+                    <div class="sc-panel__bd" style="padding:0">
+                        <table class="sc-table" *ngIf="v.points.length">
+                            <thead>
+                                <tr>
+                                    <th class="num">#</th>
+                                    <th class="num">{{'calibration.reference-value' | translate}}</th>
+                                    <th class="num">{{'calibration.mean' | translate}}</th>
+                                    <th class="num">{{'calibration.stddev-short' | translate}}</th>
+                                    <th>{{'calibration.stable' | translate}}</th>
+                                    <th style="text-align:right">{{'calibration.actions' | translate}}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let p of v.points">
+                                    <td class="num">{{p.sequence}}</td>
+                                    <td class="num">{{p.referenceValue | number:'1.0-4'}}</td>
+                                    <td class="num">{{p.stats && p.stats.mean !== null ? (p.stats.mean | number:'1.0-4') : '—'}}</td>
+                                    <td class="num">{{p.stats && p.stats.stdDev !== null ? (p.stats.stdDev | number:'1.0-5') : '—'}}</td>
+                                    <td>
+                                        <i class="sc-led" *ngIf="p.stats && p.stats.stable"
+                                           [ngClass]="p.stats.stable === false ? 'sc-led--alarm' : 'sc-led--ok'"></i>
+                                        <i class="sc-led" *ngIf="!p.stats"></i>
+                                    </td>
+                                    <td style="text-align:right;white-space:nowrap">
+                                        <button class="sc-btn sc-btn--icon sc-btn--ghost" [disabled]="!canSample()"
+                                                title="{{'calibration.resample' | translate}}" (click)="onResample(p)">
+                                            <mat-icon>replay</mat-icon>
+                                        </button>
+                                        <button class="sc-btn sc-btn--icon sc-btn--ghost" [disabled]="!canSample()"
+                                                title="{{'calibration.delete-point' | translate}}" (click)="onDeletePoint(p)">
+                                            <mat-icon>delete_outline</mat-icon>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="sc-empty" *ngIf="!v.points.length">{{'calibration.no-points' | translate}}</div>
+                    </div>
+                </section>
+
+                <section class="sc-panel">
+                    <div class="sc-panel__hd">
+                        <mat-icon>show_chart</mat-icon>
+                        <span>{{'calibration.trend' | translate}}</span>
+                    </div>
+                    <div class="sc-panel__bd">
+                        <div class="sc-chart" *ngIf="trendChart as tc; else noTrend">
+                            <svg [attr.viewBox]="'0 0 ' + tc.W + ' ' + tc.H" role="img"
+                                 [attr.aria-label]="'calibration.trend' | translate">
+                                <rect [attr.x]="tc.plot.x" [attr.y]="tc.plot.y" [attr.width]="tc.plot.w" [attr.height]="tc.plot.h"
+                                      class="sc-plot-bg"></rect>
+                                <line *ngIf="tc.meanY !== null" [attr.x1]="tc.plot.x" [attr.x2]="tc.plot.x + tc.plot.w"
+                                      [attr.y1]="tc.meanY" [attr.y2]="tc.meanY" class="sc-plot-mean"
+                                      stroke-width="1" stroke-dasharray="4 4"></line>
+                                <path [attr.d]="tc.d" fill="none" class="sc-plot-line" stroke-width="1.6"></path>
+                                <circle *ngFor="let d of tc.dots" [attr.cx]="d.cx" [attr.cy]="d.cy" r="2.6"
+                                        [class.sc-dot--ok]="d.ok" [class.sc-dot--alarm]="!d.ok"></circle>
+                            </svg>
+                            <div class="sc-legend">
+                                <span><i class="sc-key--ok"></i>{{'calibration.accepted-short' | translate}}</span>
+                                <span><i class="sc-key--alarm"></i>{{'calibration.rejected-short' | translate}}</span>
+                                <span><i class="sc-key--mean"></i>{{'calibration.mean' | translate}} {{tc.meanLabel}}</span>
+                            </div>
+                        </div>
+                        <ng-template #noTrend>
+                            <div class="sc-empty">{{'calibration.no-data' | translate}}</div>
+                        </ng-template>
+                    </div>
+                </section>
+
+                <section class="sc-panel">
+                    <div class="sc-panel__hd">
+                        <mat-icon>view_stream</mat-icon>
+                        <span>{{'calibration.last-samples' | translate}}</span>
+                        <span class="sc-hd-actions sc-hint">{{lastSamples.length}}</span>
+                    </div>
+                    <div class="sc-panel__bd sc-scroll" style="padding:0;max-height:280px">
+                        <table class="sc-table" *ngIf="lastSamples.length">
+                            <thead>
+                                <tr>
+                                    <th>{{'calibration.time' | translate}}</th>
+                                    <th class="num">{{'calibration.value' | translate}}</th>
+                                    <th>{{'calibration.accepted' | translate}}</th>
+                                    <th>{{'calibration.reason' | translate}}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let s of lastSamples" [class.is-rejected]="!s.accepted">
+                                    <td class="sc-mono" style="font-size:11.5px">{{s.timestamp | date:'HH:mm:ss.SSS'}}</td>
+                                    <td class="num">{{s.value === null ? '—' : s.value}}</td>
+                                    <td><i class="sc-led" [ngClass]="s.accepted ? 'sc-led--ok' : 'sc-led--alarm'"></i></td>
+                                    <td>{{s.rejectReason || ''}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="sc-empty" *ngIf="!lastSamples.length">{{'calibration.no-samples' | translate}}</div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- ================================================== right column -->
+            <div class="sc-col">
+
+                <section class="sc-panel">
+                    <div class="sc-panel__hd">
+                        <mat-icon>scatter_plot</mat-icon>
+                        <span>{{'calibration.regression' | translate}}</span>
+                        <span class="sc-hd-actions sc-hint">y = k·x + b</span>
+                    </div>
+                    <div class="sc-panel__bd">
+                        <div class="sc-chart" *ngIf="regChart as rc; else noFit">
+                            <svg [attr.viewBox]="'0 0 ' + rc.W + ' ' + rc.H" role="img"
+                                 [attr.aria-label]="'calibration.regression' | translate">
+                                <rect [attr.x]="rc.plot.x" [attr.y]="rc.plot.y" [attr.width]="rc.plot.w"
+                                      [attr.height]="rc.plot.h" class="sc-plot-bg"></rect>
+
+                                <g class="sc-grid-lines">
+                                    <line *ngFor="let t of rc.xTicks" [attr.x1]="t.x" [attr.x2]="t.x"
+                                          [attr.y1]="rc.plot.y" [attr.y2]="rc.plot.y + rc.plot.h"
+                                          stroke-width="1"></line>
+                                    <line *ngFor="let t of rc.yTicks" [attr.x1]="rc.plot.x"
+                                          [attr.x2]="rc.plot.x + rc.plot.w" [attr.y1]="t.y" [attr.y2]="t.y"
+                                          stroke-width="1"></line>
+                                </g>
+
+                                <text *ngFor="let t of rc.xTicks" [attr.x]="t.x" [attr.y]="rc.H - rc.P + 16"
+                                      font-size="10" text-anchor="middle">{{t.label}}</text>
+                                <text *ngFor="let t of rc.yTicks" [attr.x]="rc.P - 8" [attr.y]="t.y + 3"
+                                      font-size="10" text-anchor="end">{{t.label}}</text>
+
+                                <line [attr.x1]="rc.line.x1" [attr.y1]="rc.line.y1" [attr.x2]="rc.line.x2"
+                                      [attr.y2]="rc.line.y2" class="sc-plot-fit" stroke-width="2"></line>
+
+                                <circle *ngFor="let p of rc.points" [attr.cx]="p.cx" [attr.cy]="p.cy" r="4"
+                                        class="sc-plot-point" stroke-width="1"></circle>
+                            </svg>
+                            <div class="sc-legend">
+                                <span><i class="sc-key--point"></i>{{'calibration.data-points' | translate}}</span>
+                                <span><i class="sc-key--fit"></i>{{'calibration.fit-line' | translate}}</span>
+                            </div>
+                        </div>
+                        <ng-template #noFit>
+                            <div class="sc-empty">{{'calibration.no-data' | translate}}</div>
+                        </ng-template>
+                    </div>
+                </section>
+
+                <section class="sc-panel" *ngIf="residualRows.length">
+                    <div class="sc-panel__hd">
+                        <mat-icon>straighten</mat-icon>
+                        <span>{{'calibration.residual' | translate}}</span>
+                    </div>
+                    <div class="sc-panel__bd" style="padding:0">
+                        <table class="sc-table">
+                            <thead>
+                                <tr>
+                                    <th class="num">{{'calibration.raw' | translate}}</th>
+                                    <th class="num">{{'calibration.reference-value' | translate}}</th>
+                                    <th class="num">{{'calibration.predicted' | translate}}</th>
+                                    <th class="num">{{'calibration.residual' | translate}}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let r of residualRows">
+                                    <td class="num">{{r.raw | number:'1.0-5'}}</td>
+                                    <td class="num">{{r.reference | number:'1.0-5'}}</td>
+                                    <td class="num">{{r.predicted | number:'1.0-5'}}</td>
+                                    <td class="num" [class.sc-residual--alarm]="r.residual < 0"
+                                        [class.sc-residual--ok]="r.residual >= 0">{{r.residual | number:'1.0-6'}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="sc-panel">
+                    <div class="sc-panel__hd">
+                        <mat-icon>verified</mat-icon>
+                        <span>{{'calibration.workflow' | translate}}</span>
+                    </div>
+                    <div class="sc-panel__bd">
+                        <div class="sc-kv"><span>{{'calibration.write-mode' | translate}}</span><b>{{v.profile?.write?.mode}}</b></div>
+                        <div class="sc-kv" *ngIf="v.profile?.write?.mode === 'raw-block'">
+                            <span>{{'calibration.address' | translate}}</span>
+                            <b class="sc-mono">{{v.profile?.write?.startAddress}} · {{v.profile?.write?.numericType}} {{v.profile?.write?.wordOrder}}</b>
+                        </div>
+                        <div class="sc-kv" *ngIf="v.profile?.write?.mode === 'tags'">
+                            <span>{{'calibration.write-tags' | translate}}</span>
+                            <b class="sc-mono">{{v.profile?.write?.gainTagId}} / {{v.profile?.write?.offsetTagId}}</b>
+                        </div>
+                        <div class="sc-kv"><span>fitHash</span><b class="sc-mono" style="font-size:11px">{{v.session.fitHash || '—'}}</b></div>
+                        <div class="sc-kv" *ngIf="v.session.approverId"><span>{{'calibration.approve' | translate}}</span><b>{{v.session.approverId}}</b></div>
+                        <div class="sc-kv" *ngIf="v.session.approvalExpiresAt"><span>TTL</span><b class="sc-mono" style="font-size:11px">{{v.session.approvalExpiresAt | date:'HH:mm:ss'}}</b></div>
+
+                        <div class="sc-divider"></div>
+
+                        <div class="sc-row--tight" style="flex-wrap:wrap">
+                            <button class="sc-btn" [disabled]="!canFit()" (click)="onFit()">
+                                <mat-icon>functions</mat-icon>{{'calibration.run-fit' | translate}}
+                            </button>
+                            <button class="sc-btn" [disabled]="!canSubmit()" (click)="onSubmit()">
+                                <mat-icon>outbox</mat-icon>{{'calibration.submit-approval' | translate}}
+                            </button>
+                            <button class="sc-btn sc-btn--primary" [disabled]="!canApprove()" (click)="onApprove()">
+                                <mat-icon>check_circle</mat-icon>{{'calibration.approve' | translate}}
+                            </button>
+                            <button class="sc-btn" [disabled]="!canApprove()" (click)="onReject()">
+                                <mat-icon>block</mat-icon>{{'calibration.reject' | translate}}
+                            </button>
+                            <button class="sc-btn sc-btn--danger" [disabled]="!canApply()" (click)="onConfirmAndApply()">
+                                <mat-icon>bolt</mat-icon>{{'calibration.write-apply' | translate}}
+                            </button>
+                            <button class="sc-btn sc-btn--ghost" [disabled]="sampling || isFinal()" (click)="onCancelSession()">
+                                <mat-icon>cancel</mat-icon>{{'calibration.cancel-session' | translate}}
+                            </button>
+                        </div>
+
+                        <div class="sc-banner" style="margin-top:12px"
+                             [ngClass]="meta && meta.secureEnabled && meta.writeEnabled ? 'sc-banner--info' : 'sc-banner--warn'">
+                            <mat-icon>{{meta && meta.secureEnabled && meta.writeEnabled ? 'lock' : 'lock_open'}}</mat-icon>
+                            <span>
+                                {{'calibration.write-hint' | translate}}
+                                <b *ngIf="!(meta && meta.secureEnabled)"> · {{'calibration.insecure-warning' | translate}}</b>
+                            </span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="sc-panel" *ngIf="v.audit.length">
+                    <div class="sc-panel__hd">
+                        <mat-icon>history</mat-icon>
+                        <span>{{'calibration.audit' | translate}}</span>
+                    </div>
+                    <div class="sc-panel__bd sc-scroll" style="padding:0;max-height:260px">
+                        <table class="sc-table">
+                            <thead>
+                                <tr>
+                                    <th>{{'calibration.status' | translate}}</th>
+                                    <th>{{'calibration.audit-before' | translate}}</th>
+                                    <th>{{'calibration.audit-intended' | translate}}</th>
+                                    <th>{{'calibration.audit-readback' | translate}}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let a of v.audit">
+                                    <td>
+                                        <span class="sc-pill" [ngClass]="'sc-pill--' + statusTone(a.status)">{{a.status}}</span>
+                                    </td>
+                                    <td class="sc-hex">{{a.beforeHex || '—'}}</td>
+                                    <td class="sc-hex">{{a.intendedHex || '—'}}</td>
+                                    <td class="sc-hex">{{a.readbackHex || '—'}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<ng-template #notfound>
+    <div class="scada">
+        <div class="sc-empty">{{'calibration.session-not-found' | translate}}</div>
+    </div>
+</ng-template>

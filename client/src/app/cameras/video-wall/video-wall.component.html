@@ -1,0 +1,196 @@
+<div class="scada wall">
+    <header class="sc-topbar">
+        <div class="sc-topbar__brand">
+            <mat-icon>video_settings</mat-icon>
+            <div>
+                <div class="sc-topbar__title">{{'wall.title' | translate}}</div>
+                <div class="sc-topbar__sub">{{layout.label}} · {{cells.length}} {{'wall.cells' | translate}}</div>
+            </div>
+        </div>
+
+        <div class="sc-topbar__spacer"></div>
+
+        <!-- layout selector -->
+        <div class="wall-seg">
+            <button *ngFor="let l of layouts" class="wall-seg__btn"
+                    [class.is-active]="layout.id === l.id" (click)="onLayoutChange(l.id)">{{l.label}}</button>
+        </div>
+
+        <!-- rotate -->
+        <button class="sc-btn sc-btn--icon sc-btn--ghost" [class.is-on]="rotate"
+                title="{{'wall.rotate' | translate}}" (click)="toggleRotate()">
+            <mat-icon>autorenew</mat-icon>
+        </button>
+        <input class="wall-num" type="number" min="3" max="120" [(ngModel)]="rotateSec"
+               title="{{'wall.rotate-sec' | translate}}">
+
+        <button class="sc-btn sc-btn--icon sc-btn--ghost" title="{{'wall.prev' | translate}}" (click)="step(-1)">
+            <mat-icon>chevron_left</mat-icon>
+        </button>
+        <button class="sc-btn sc-btn--icon sc-btn--ghost" title="{{'wall.next' | translate}}" (click)="step(1)">
+            <mat-icon>chevron_right</mat-icon>
+        </button>
+        <button class="sc-btn sc-btn--icon sc-btn--ghost" [class.is-on]="osd"
+                title="{{'wall.osd' | translate}}" (click)="toggleOsd()">
+            <mat-icon>subtitles</mat-icon>
+        </button>
+        <button class="sc-btn sc-btn--icon sc-btn--ghost" [class.is-on]="detect"
+                title="{{'wall.detect' | translate}}" (click)="toggleDetect()">
+            <mat-icon>center_focus_strong</mat-icon>
+        </button>
+        <button class="sc-btn sc-btn--icon sc-btn--ghost" title="{{'wall.snapshot' | translate}}" (click)="screenshot()">
+            <mat-icon>photo_camera</mat-icon>
+        </button>
+        <button class="sc-btn sc-btn--icon sc-btn--ghost" [class.is-on]="showResource"
+                title="{{'wall.resource' | translate}}" (click)="showResource = !showResource">
+            <mat-icon>video_library</mat-icon>
+        </button>
+        <button class="sc-btn sc-btn--icon sc-btn--ghost" [class.is-on]="showPad"
+                title="{{'wall.pad' | translate}}" (click)="showPad = !showPad">
+            <mat-icon>gamepad</mat-icon>
+        </button>
+        <button class="sc-btn sc-btn--icon sc-btn--ghost" title="{{'wall.fullscreen' | translate}}" #wallEl
+                (click)="toggleFullscreen(wallEl.parentElement ? wallEl.parentElement : wallEl)">
+            <mat-icon>{{fullscreen ? 'fullscreen_exit' : 'fullscreen'}}</mat-icon>
+        </button>
+    </header>
+
+    <div class="wall-body">
+
+        <!-- ------------------------------------------------ resource panel -->
+        <aside class="wall-resource" *ngIf="showResource">
+            <div class="wall-pane__hd">
+                <mat-icon>video_library</mat-icon>
+                <span>{{'wall.cameras' | translate}}</span>
+                <span class="sc-hint" style="margin-left:auto">{{cameras.length}}</span>
+            </div>
+            <div class="wall-pane__bd sc-scroll">
+                <div class="wall-cam" *ngFor="let c of cameras"
+                     [class.is-assigned]="selectedCamera && selectedCamera.id === c.id"
+                     (click)="assignCamera(c)">
+                    <i class="sc-led" [ngClass]="c.enabled !== false ? 'sc-led--ok' : 'sc-led--idle'"></i>
+                    <div class="wall-cam__meta">
+                        <div class="wall-cam__name">{{c.name}}</div>
+                        <div class="wall-cam__sub">
+                            <span class="sc-tag">{{c.endpoints?.vendor || c.vendor}}</span>
+                            <span *ngIf="c.aiEnabled" class="sc-pill sc-pill--warn">AI</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="sc-empty" *ngIf="!cameras.length">{{'wall.no-cameras' | translate}}</div>
+            </div>
+        </aside>
+
+        <!-- -------------------------------------------------------- the wall -->
+        <main class="wall-stage">
+            <div *ngIf="loading" class="sc-empty"><mat-spinner diameter="34"></mat-spinner></div>
+            <div class="wall-grid" *ngIf="!loading" [ngStyle]="gridStyle">
+                <div class="wall-cell" *ngFor="let cell of cells; let i = index"
+                     [class.is-selected]="selectedCell === i"
+                     [style.grid-row]="cell.r + ' / span ' + cell.rs"
+                     [style.grid-column]="cell.c + ' / span ' + cell.cs"
+                     (click)="selectCell(i)">
+                    <app-camera-view *ngIf="cameraOf(cell) as cam" [camera]="cam"
+                                     [mediaEnabled]="mediaEnabled" [fps]="4" [showOsd]="osd"
+                                     [showDetections]="detect"></app-camera-view>
+                    <div class="wall-cell__empty" *ngIf="!cameraOf(cell)">
+                        <mat-icon>videocam_off</mat-icon>
+                        <span>{{'wall.assign-hint' | translate}}</span>
+                    </div>
+                    <div class="wall-cell__idx" *ngIf="osd">{{i + 1}}</div>
+                </div>
+            </div>
+        </main>
+
+        <!-- -------------------------------------------------- control pad -->
+        <aside class="wall-pad" *ngIf="showPad">
+            <div class="wall-pane__hd">
+                <mat-icon>gamepad</mat-icon>
+                <span>{{'wall.ptz' | translate}}</span>
+                <span class="sc-hint" style="margin-left:auto">{{selectedCamera ? selectedCamera.name : ('wall.no-camera' | translate)}}</span>
+            </div>
+            <div class="wall-pane__bd sc-scroll">
+
+                <div class="sc-banner sc-banner--warn" *ngIf="selectedCamera && !ptz.ptz">
+                    <mat-icon>info</mat-icon>
+                    <span>{{'wall.ptz-unsupported' | translate}}</span>
+                </div>
+
+                <!-- direction pad -->
+                <div class="wall-dpad" [class.is-disabled]="!ptz.ptz">
+                    <button class="wall-dpad__btn dp-up" (mousedown)="onPtzDown('up')" (mouseup)="onPtzUp()"
+                            (mouseleave)="onPtzUp()" [disabled]="!ptz.ptz"><mat-icon>expand_less</mat-icon></button>
+                    <button class="wall-dpad__btn dp-left" (mousedown)="onPtzDown('left')" (mouseup)="onPtzUp()"
+                            (mouseleave)="onPtzUp()" [disabled]="!ptz.ptz"><mat-icon>chevron_left</mat-icon></button>
+                    <button class="wall-dpad__btn dp-home" (click)="onPtz('stop')" [disabled]="!ptz.ptz">
+                        <mat-icon>center_focus_strong</mat-icon>
+                    </button>
+                    <button class="wall-dpad__btn dp-right" (mousedown)="onPtzDown('right')" (mouseup)="onPtzUp()"
+                            (mouseleave)="onPtzUp()" [disabled]="!ptz.ptz"><mat-icon>chevron_right</mat-icon></button>
+                    <button class="wall-dpad__btn dp-down" (mousedown)="onPtzDown('down')" (mouseup)="onPtzUp()"
+                            (mouseleave)="onPtzUp()" [disabled]="!ptz.ptz"><mat-icon>expand_more</mat-icon></button>
+                </div>
+
+                <!-- zoom / focus / iris -->
+                <div class="wall-row2" *ngIf="ptz.lens">
+                    <div class="wall-group">
+                        <div class="wall-group__title">{{'wall.zoom' | translate}}</div>
+                        <div class="sc-row--tight">
+                            <button class="sc-btn sc-btn--icon" (click)="onPtz('zoomIn')" [disabled]="!ptz.ptz"><mat-icon>zoom_in</mat-icon></button>
+                            <button class="sc-btn sc-btn--icon" (click)="onPtz('zoomOut')" [disabled]="!ptz.ptz"><mat-icon>zoom_out</mat-icon></button>
+                        </div>
+                    </div>
+                    <div class="wall-group">
+                        <div class="wall-group__title">{{'wall.focus' | translate}}</div>
+                        <div class="sc-row--tight">
+                            <button class="sc-btn sc-btn--icon" (click)="onPtz('focusNear')" [disabled]="!ptz.ptz"><mat-icon>remove</mat-icon></button>
+                            <button class="sc-btn sc-btn--icon" (click)="onPtz('focusFar')" [disabled]="!ptz.ptz"><mat-icon>add</mat-icon></button>
+                        </div>
+                    </div>
+                    <div class="wall-group">
+                        <div class="wall-group__title">{{'wall.iris' | translate}}</div>
+                        <div class="sc-row--tight">
+                            <button class="sc-btn sc-btn--icon" (click)="onPtz('irisClose')" [disabled]="!ptz.ptz"><mat-icon>brightness_low</mat-icon></button>
+                            <button class="sc-btn sc-btn--icon" (click)="onPtz('irisOpen')" [disabled]="!ptz.ptz"><mat-icon>brightness_high</mat-icon></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- speed -->
+                <div class="wall-group">
+                    <div class="wall-group__title">{{'wall.speed' | translate}} <b class="sc-mono">{{ptzSpeed}}</b></div>
+                    <input class="wall-range" type="range" min="1" max="8" step="1" [(ngModel)]="ptzSpeed">
+                </div>
+
+                <!-- presets -->
+                <div class="wall-group" *ngIf="ptz.presets">
+                    <div class="wall-group__title">{{'wall.presets' | translate}}</div>
+                    <div class="wall-presets">
+                        <button *ngFor="let p of presetRange()" class="wall-preset"
+                                [class.is-active]="activePresets.indexOf(p) >= 0"
+                                (click)="onPreset(p)" (contextmenu)="onPresetDelete(p); $event.preventDefault()"
+                                title="{{'wall.preset-goto' | translate}} {{p}}">
+                            <span class="wall-preset__n">{{p}}</span>
+                            <span class="wall-preset__set" (click)="onPresetSet(p); $event.stopPropagation()"
+                                  title="{{'wall.preset-set' | translate}}"><mat-icon>add</mat-icon></span>
+                        </button>
+                    </div>
+                    <div class="sc-hint">{{'wall.preset-hint' | translate}}</div>
+                </div>
+
+                <!-- cell actions -->
+                <div class="wall-group">
+                    <div class="wall-group__title">{{'wall.cell' | translate}}</div>
+                    <div class="sc-row--tight">
+                        <button class="sc-btn sc-btn--ghost" (click)="clearCell()" [disabled]="!selectedCamera">
+                            <mat-icon>backspace</mat-icon>{{'wall.clear' | translate}}
+                        </button>
+                        <button class="sc-btn sc-btn--ghost" (click)="screenshot()" [disabled]="!selectedCamera">
+                            <mat-icon>photo_camera</mat-icon>{{'wall.snapshot' | translate}}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+</div>

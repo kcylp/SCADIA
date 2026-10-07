@@ -1,0 +1,42 @@
+<div class="mychart-panel" #chartPanel>
+    <div class="mychart-toolbar" *ngIf="withToolbar" [style.display]="(options.hideToolbar)?'none':'block'">
+        <div style="display: block; padding-right: 5px;text-align: center;" class="my-form-field">
+                <button mat-flat-button class="mychart-toolbar-srange"
+                    [style.color]="options.axisLabelColor"
+                    [style.backgroundColor]="options.colorBackground"
+                    [matMenuTriggerFor]="rangeMenu">
+                    {{ getRangeTypeLabel() | translate }}
+                </button>
+                <mat-menu #rangeMenu="matMenu" class="my-select-panel-class" [overlapTrigger]="false"
+                          [style.color]="options.axisLabelColor"
+                          [style.backgroundColor]="options.colorBackground">
+                    <button mat-menu-item *ngFor="let ev of rangeType | enumToArray" (click)="onRangeChanged(ev.key)"
+                            [style.color]="options.axisLabelColor"
+                            [style.backgroundColor]="options.colorBackground">
+                        {{ ev.value | translate }}
+                    </button>
+                </mat-menu>
+            <button mat-flat-button class="mychart-toolbar-step" [style.color]="options.axisLabelColor" [style.background-color]="options.colorBackground"
+                (click)="onDateRange()">
+                <mat-icon aria-label="time range">access_time</mat-icon>
+            </button>
+            <button mat-flat-button class="mychart-toolbar-step" [style.color]="options.axisLabelColor" [style.background-color]="options.colorBackground"
+                (click)="onClick('B')">
+                <mat-icon aria-label="back">skip_previous</mat-icon>
+            </button>
+            <button mat-flat-button class="mychart-toolbar-step" [style.color]="options.axisLabelColor" [style.background-color]="options.colorBackground"
+                (click)="onClick('F')">
+                <mat-icon aria-label="forward">skip_next</mat-icon>
+            </button>
+        </div>
+    </div>
+    <ngx-uplot class="mychart-graph" #nguplot></ngx-uplot>
+    <div *ngIf="!isEditor && withToolbar" class="reload-btn">
+        <button mat-icon-button (click)="onRefresh(true)" class="small-icon-button default-color" [style.color]="options.axisLabelColor">
+            <mat-icon  [ngClass]="{'reload-active': reloadActive}">autorenew</mat-icon>
+        </button>
+    </div>
+    <div *ngIf="loading" class="spinner">
+        <mat-spinner style="margin: auto" diameter="40"></mat-spinner>
+    </div>
+</div>

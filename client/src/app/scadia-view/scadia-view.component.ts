@@ -1,0 +1,1553 @@
+import {
+    AfterViewInit,
+    Component,
+    ComponentFactoryResolver,
+    ElementRef,
+    EventEmitter,
+    HostListener,
+    Input,
+    OnDestroy,
+    OnInit,
+    Output,
+    ViewChild,
+    ViewContainerRef
+} from '@angular/core';
+import { Subject, Subscription, take } from 'rxjs';
+import { ChangeDetectorRef } from '@angular/core';
+
+import { Event, GaugeEvent, GaugeEventActionType, GaugeSettings, GaugeProperty, GaugeEventType, GaugeRangeProperty, GaugeStatus, Hmi, View, ViewType, Variable, ZoomModeType, InputOptionType, DocAlignType, DictionaryGaugeSettings, GaugeEventRelativeFromType, ViewEventType, InputActionEscType, IPropertyVariable, DocProfile, PropertyScaleModeType } from '../_models/hmi';
+import { GaugesManager } from '../gauges/gauges.component';
+import { Utils } from '../_helpers/utils';
+import { ScriptParam, SCRIPT_PARAMS_MAP, ScriptParamType } from '../_models/script';
+import { ScriptService } from '../_services/script.service';
+import { HtmlInputComponent } from '../gauges/controls/html-input/html-input.component';
+import { TranslateService } from '@ngx-translate/core';
+import { ProjectService } from '../_services/project.service';
+import { NgxTouchKeyboardDirective } from '../framework/ngx-touch-keyboard/ngx-touch-keyboard.directive';
+import { HmiService } from '../_services/hmi.service';
+import { EndPointApi } from '../_helpers/endpointapi';
+import { HtmlSelectComponent } from '../gauges/controls/html-select/html-select.component';
+import { ScadiaViewDialogComponent, ScadiaViewDialogData } from './scadia-view-dialog/scadia-view-dialog.component';
+import { DialogPosition as DialogPosition, MatDialog as MatDialog } from '@angular/material/dialog';
+import { WebcamPlayerDialogComponent, WebcamPlayerDialogData } from '../gui-helpers/webcam-player/webcam-player-dialog/webcam-player-dialog.component';
+import { DevicesUtils, PlaceholderDevice, Tag } from '../_models/device';
+import { LanguageService } from '../_services/language.service';
+import { EventUtils } from '../_helpers/event-utils';
+import { createScheduledScripts } from '../_helpers/scheduled-scripts';
+
+declare var SVG: any;
+
+@Component({
+    selector: 'app-scadia-view',
+    templateUrl: './scadia-view.component.html',
+    styleUrls: ['./scadia-view.component.css']
+})
+export class ScadiaViewComponent implements OnInit, AfterViewInit, OnDestroy {
+
+    @Input() id: string;
+    @Input() variablesMapping: any = [];
+    @Input() view: View;
+    @Input() hmi: Hmi;
+    @Input() child = false;
+
+    /**
+     * Opt this instance into the fit system even though it is an embedded ('child') view.
+     *
+     * 'child' answers two questions that happen to have coincided until now: who owns the
+     * scheduled scripts, and who owns the canvas fit. The home page needs the first answered
+     * "the home page does" - unset, it ran every scheduled script twice per interval, which is
+     * measured and why the flag exists (see home.component.html) - but it has just as much need
+     * of the second, and losing it there left a fixed 1920x1080 canvas drawn at 1:1 inside a
+     * 2623x2206 viewport, letterboxed by .home-body's shrink-to-content table. That is a
+     * layout nobody chose; it is only what happened when two unrelated concerns shared a flag.
+     *
+     * Defaults to false, so every other embedded use (a card, the AR view) keeps the fit off
+     * and must ask for it explicitly.
+     */
+    @Input() autoFit = false;
+    @Input() gaugesManager: GaugesManager;        // gauges.component
+    @Input() parentcards: CardModel[];
+    @Input() sourceDeviceId: string;
+    /** Explicit scale mode for this instance; unset = view profile, then project layout. */
+    @Input() scaleMode: PropertyScaleModeType;
+    @Output() onclose = new EventEmitter();
+    @Output() ongoto: EventEmitter<string> = new EventEmitter();
+
+    @ViewChild('dataContainer', {static: false}) dataContainer: ElementRef;
+    @ViewChild('inputDialogRef', {static: false}) inputDialogRef: ElementRef;
+    @ViewChild('inputValueRef', {static: false}) inputValueRef: ElementRef;
+    @ViewChild('touchKeyboard', {static: false}) touchKeyboard: NgxTouchKeyboardDirective;
+
+    eventViewToPanel = Utils.getEnumKey(GaugeEventActionType, GaugeEventActionType.onViewToPanel);
+    eventRunScript = Utils.getEnumKey(GaugeEventActionType, GaugeEventActionType.onRunScript);
+    eventOpenTab = Utils.getEnumKey(GaugeEventActionType, GaugeEventActionType.onOpenTab);
+    endPointConfig = EndPointApi.getURL();
+    scriptParameterValue = Utils.getEnumKey(ScriptParamType, ScriptParamType.value);
+
+    cards: CardModel[] = [];
+    iframes: CardModel[] = [];
+    mapGaugeStatus = {};
+    mapControls = {};
+    inputDialog = { show: false, timer: null, x: 0, y: 0, target: null };
+    gaugeInput = '';
+    gaugeInputCurrent = '';
+    parent: ScadiaViewComponent;
+    cardViewType = Utils.getEnumKey(ViewType, ViewType.cards);
+
+    viewLoaded: boolean = false;
+    private viewRenderDelay = 0; // Delay to render view after loading SVG content
+
+    private subscriptionOnChange: Subscription;
+    private subscriptionLanguage: Subscription;
+
+    /**
+     * The project's scheduled CLIENT scripts.
+     *
+     * /home owns the scheduling for the home route. /view used to own nothing at all, so the
+     * same project's scheduled scripts ran on the office screen and never on the big screen
+     * (defect P0-3: "the wall is frozen"). Both routes now build their timers from the same
+     * factory, and this one only runs when nobody else is already running them for this page.
+     */
+    scheduledScripts = createScheduledScripts(
+        {
+            getScripts: () => this.projectService.getScripts(),
+            onLoadHmi: () => this.projectService.onLoadHmi
+        },
+        { evalScript: (script) => this.scriptService.evalScript(script) },
+        (message) => console.debug(message)
+    );
+    protected staticValues: any = {};
+    protected plainVariableMapping: VariableMappingDictionary = {};
+    private destroy$ = new Subject<void>();
+    private loadOk = false;
+    private zIndexCounter = 1000;
+
+    // Viewport fitting: a view canvas has a fixed design size, the screen never matches it.
+    private fitObserver: ResizeObserver = null;
+    private fitFrame = 0;
+    private fitDetach: Array<() => void> = [];
+    private fitDprQuery: MediaQueryList = null;
+    private fitDprHandler: (event?: MediaQueryListEvent) => void = null;
+
+    constructor(
+        private translateService: TranslateService,
+        private changeDetector: ChangeDetectorRef,
+        private viewContainerRef: ViewContainerRef,
+        private scriptService: ScriptService,
+        private projectService: ProjectService,
+        private hmiService: HmiService,
+        private languageService: LanguageService,
+        private resolver: ComponentFactoryResolver,
+        private scadiaDialog: MatDialog) {
+    }
+
+    ngOnInit() {
+        this.loadVariableMapping();
+        // Switching language must re-render the words inside the drawing, not just the chrome.
+        this.subscriptionLanguage = this.languageService.languageConfig$.subscribe(() => this.applyContentDictionary());
+        // Scheduled CLIENT scripts - but only when this instance is the page.
+        //
+        // The component is reused in five places: the /view route, a home page, a card, the lab
+        // editor and the AR view. In the four embedded cases the owning page (home) already
+        // schedules the project's scripts, and starting a second set here would run every
+        // scheduled script twice per interval - a script that publishes a tag would publish it
+        // twice as often, which is a worse defect than the one being fixed. So the rule is by
+        // ownership, not by route. Everything else about scheduling lives in the factory (A-3).
+        if (!this.child) {
+            this.scheduledScripts.startAndFollowHmi();
+        }
+    }
+
+    /**
+     * Translate the literal text inside a drawing into the current language.
+     *
+     * A project is authored in Simplified Chinese, so the labels in an SVG are plain text
+     * ("报警时间：") rather than @keys. The dictionary is consulted per text node, which is
+     * why no drawing has to be rewritten: the same mechanism covers 55 labels today and
+     * every label added later.
+     *
+     * Two guards make this safe to run repeatedly:
+     *  - an element whose content a tag writes to is skipped, so a live process value is
+     *    never replaced by a translation;
+     *  - the master text is remembered on the element, so switching languages back and forth
+     *    stays lossless and never translates a translation.
+     */
+    private applyContentDictionary() {
+        const root = this.dataContainer?.nativeElement as HTMLElement;
+        if (!root) {
+            return;
+        }
+        try {
+            const nodes = root.querySelectorAll('text, tspan, title');
+            for (let i = 0; i < nodes.length; i++) {
+                const element = nodes[i] as HTMLElement & { __scadiaSourceText?: string };
+                // A <text> that wraps <tspan> children would lose them if rewritten here;
+                // the tspans are leaves and get translated on their own pass.
+                if (element.children.length) {
+                    continue;
+                }
+                const id = element.id;
+                if (id && this.view?.items?.[id]?.property?.variableId) {
+                    continue;
+                }
+                if (element.__scadiaSourceText === undefined) {
+                    element.__scadiaSourceText = element.textContent ?? '';
+                }
+                const source = element.__scadiaSourceText.trim();
+                if (!source) {
+                    continue;
+                }
+                const translated = this.languageService.getTranslation(source);
+                element.textContent = translated ?? element.__scadiaSourceText;
+            }
+        } catch (err) {
+            console.error('SCADIA applyContentDictionary', err);
+        }
+    }
+
+    ngAfterViewInit() {
+        this.loadHmi(this.view);
+        // Scheduling is NOT done here. It happens in ngOnInit (A-3: startAndFollowHmi), before the
+        // first view is loaded, so the timers exist for the whole life of the route. The ten lines
+        // of commented-out code that used to sit here were the pre-P0-3 attempt to schedule in
+        // this hook and had been dead since the factory was introduced.
+        try {
+            this.gaugesManager.emitBindedSignals(this.id);
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    ngOnDestroy() {
+        try {
+            this.destroy$.next(null);
+            this.destroy$.complete();
+            this.teardownFit();
+            this.gaugesManager.unbindGauge(this.id);
+            this.clearGaugeStatus();
+            if (this.subscriptionOnChange) {
+                this.subscriptionOnChange.unsubscribe();
+            }
+            if (this.subscriptionLanguage) {
+                this.subscriptionLanguage.unsubscribe();
+            }
+            // stop() also unsubscribes the project's onLoadHmi follow-up (A-3), so there is no
+            // separate subscription to unwind here any more.
+            this.scheduledScripts.stop();
+            if (this['subscriptionOnGaugeEvent']) {
+                this['subscriptionOnGaugeEvent'].unsubscribe();
+            }
+            if (this.inputDialogRef) {
+                this.inputDialogRef.nativeElement.style.display = 'none';
+            }
+            // Execute onClose script
+            this.view?.property?.events?.forEach(event => {
+                if (event.type === Utils.getEnumKey(ViewEventType, ViewEventType.onclose)) {
+                    this.onRunScript(event);
+                }
+            });
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    public loadVariableMapping(variablesMapped?: any) {
+        try {
+            this.plainVariableMapping = {};
+            if (variablesMapped) {
+                this.variablesMapping = variablesMapped;
+            }
+            this.variablesMapping?.forEach(variableMapping => {
+                this.plainVariableMapping[variableMapping.from.variableId] = variableMapping.to;
+            });
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    private clearGaugeStatus() {
+        Object.values(this.mapGaugeStatus).forEach((gs: GaugeStatus) => {
+            try {
+                if (gs.actionRef) {
+                    if (gs.actionRef.timer) {
+                        clearTimeout(gs.actionRef.timer);
+                        gs.actionRef.timer = null;
+                    }
+                    if (gs.actionRef.animr) {
+                        if (gs.actionRef.animr.reset) {
+                            gs.actionRef.animr.reset();
+                        }
+                        delete gs.actionRef.animr;
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        });
+        this.mapGaugeStatus = {};
+    }
+
+    /**
+     * load the svg content to show in browser, clear all binded to this view
+     * @param view
+     */
+    public loadHmi(view: View, legacyProfile?: boolean) {
+        this.viewLoaded = false;
+        this.viewRenderDelay = 0;
+        if (this.loadOk || !view) {
+            this.viewLoaded = true;
+            return;
+        }
+        if (this.projectService.isViewLazy(view)) {
+            this.resolveView(view).then(resolvedView => {
+                this.loadResolvedHmi(resolvedView, legacyProfile);
+            });
+            return;
+        }
+        this.loadResolvedHmi(this.normalizeView(view), legacyProfile);
+    }
+
+    private loadResolvedHmi(view: View, legacyProfile?: boolean) {
+        if (!view) {
+            this.viewLoaded = true;
+            return;
+        }
+        try {
+            if (!this.hmi) {
+                this.hmi = this.projectService.getHmi();
+            }
+            if (this.id) {
+                try {
+                    this.gaugesManager.unbindGauge(this.id);
+                    this.clearGaugeStatus();
+                    this.viewContainerRef.clear();
+                    this.dataContainer.nativeElement.innerHTML = '';
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+            if (view?.id) {
+                this.id = view.id;
+                this.view = view;
+                if (view.type === this.cardViewType || view.type === ViewType.maps) {
+                    this.ongoto.emit(view.id);
+                    return;
+                } else if (typeof view.svgcontent !== 'string') {
+                    console.warn(`View '${view.name || view.id}' has no SVG content. Render skipped.`);
+                    return;
+                } else {
+                    this.dataContainer.nativeElement.innerHTML = view.svgcontent.replace('<title>Layer 1</title>', '');
+                }
+                if (view.profile?.bkcolor && (this.child || legacyProfile)) {
+                    this.dataContainer.nativeElement.style.backgroundColor = view.profile.bkcolor;
+                }
+                if (view.profile?.align && !this.child) {
+                    ScadiaViewComponent.setAlignStyle(view.profile.align, this.dataContainer.nativeElement);
+                }
+            }
+            this.applyContentDictionary();
+            this.changeDetector.detectChanges();
+            this.loadWatch(this.view);
+            this.setupFit();
+
+            if (view) {
+                // Execute onOpen script for new current view
+                view.property?.events?.forEach(event => {
+                    if (event.type === Utils.getEnumKey(ViewEventType, ViewEventType.onopen)) {
+                        this.onRunScript(event);
+                    }
+                });
+                this.viewRenderDelay = view.profile?.viewRenderDelay || 0;
+            }
+        } catch (err) {
+            console.error('SCADIA loadHmi error', err);
+        } finally {
+            // Garantisce sempre il completamento
+            setTimeout(() => {
+                this.viewLoaded = true;
+                this.changeDetector.detectChanges();
+            }, this.viewRenderDelay);
+        }
+    }
+
+
+    /**
+     * Which scale mode applies here, most specific first:
+     * explicit input -> view profile -> project layout -> contain.
+     *
+     * Manual zoom (pan/zoom) owns the transform, so it disables auto fitting and leaves
+     * the canvas at 1:1 for the user to pan around.
+     * The legacy 'auto resize' zoom mode now maps to contain instead of stretch: stretching
+     * a 16:9 control room canvas onto a 16:10 laptop distorted every circle and label.
+     */
+    private resolveScaleMode(canvas?: { width: number; height: number }, host?: HTMLElement): PropertyScaleModeType {
+        if (this.scaleMode) {
+            return this.scaleMode;
+        }
+        const viewMode = this.view?.profile?.scaleMode;
+        if (viewMode) {
+            return viewMode;
+        }
+        const hmi = this.hmi ?? this.projectService.getHmi();
+        if (hmi?.layout?.zoom && ZoomModeType[hmi.layout.zoom] === ZoomModeType.enabled) {
+            return PropertyScaleModeType.none;
+        }
+        if (hmi?.layout?.viewScaleMode) {
+            return hmi.layout.viewScaleMode;
+        }
+        // Nothing was configured, at either level. Letterboxing ('contain') was the old
+        // fallback, and it is the wrong answer for a screen drawn on a full-canvas backdrop:
+        // those can fill a display of any shape without cropping a single control. An explicit
+        // choice at either level still wins - this only decides the case nobody decided.
+        if (canvas && host && Utils.hasFullCanvasBackdrop(host, canvas.width, canvas.height)) {
+            return PropertyScaleModeType.fill;
+        }
+        return PropertyScaleModeType.contain;
+    }
+
+    /** The element whose size the canvas has to fit into. */
+    private getFitContainer(): HTMLElement {
+        const host = this.dataContainer?.nativeElement as HTMLElement;
+        return host?.parentElement?.parentElement as HTMLElement;
+    }
+
+    /** Apply the current fit. Safe to call at any time; does nothing while hidden. */
+    private applyFit() {
+        this.fitFrame = 0;
+        const host = this.dataContainer?.nativeElement as HTMLElement;
+        const container = this.getFitContainer();
+        if ((this.child && !this.autoFit) || !host || !container) {
+            return;
+        }
+        // The canvas is measured before the mode is resolved: whether a screen can fill the
+        // display depends on its artwork, and that is a property of the loaded canvas.
+        const profile = this.view?.profile;
+        const canvas = (profile?.width > 0 && profile?.height > 0)
+            ? { width: profile.width, height: profile.height }
+            : Utils.measureCanvas(host);
+        const mode = this.resolveScaleMode(canvas, host);
+        if (mode === PropertyScaleModeType.none) {
+            Utils.clearFitView(host);
+            if (this.view?.profile?.align) {
+                ScadiaViewComponent.setAlignStyle(this.view.profile.align, host);
+            }
+            return;
+        }
+        if (!(canvas.width > 0) || !(canvas.height > 0)) {
+            return;
+        }
+        Utils.fitView(host, container, { mode: mode, width: canvas.width, height: canvas.height });
+    }
+
+    /** Coalesce bursts of resize events into one fit per animation frame. */
+    private scheduleFit() {
+        if ((this.child && !this.autoFit) || this.fitFrame) {
+            return;
+        }
+        this.fitFrame = requestAnimationFrame(() => {
+            this.fitFrame = 0;
+            this.applyFit();
+        });
+    }
+
+    private setupFit() {
+        this.teardownFit();
+        if (this.child && !this.autoFit) {
+            return;
+        }
+        const host = this.dataContainer?.nativeElement as HTMLElement;
+        const container = this.getFitContainer();
+        if (!host || !container) {
+            return;
+        }
+        // The container size changes without a window resize when a side menu opens, an
+        // alarm panel slides up, or a column is split, so observing it is not optional.
+        if (typeof ResizeObserver !== 'undefined') {
+            this.fitObserver = new ResizeObserver(() => this.scheduleFit());
+            this.fitObserver.observe(container);
+        }
+        const onViewportChange = () => this.scheduleFit();
+        window.addEventListener('resize', onViewportChange);
+        window.addEventListener('orientationchange', onViewportChange);
+        document.addEventListener('fullscreenchange', onViewportChange);
+        document.addEventListener('visibilitychange', onViewportChange);
+        this.fitDetach.push(() => {
+            window.removeEventListener('resize', onViewportChange);
+            window.removeEventListener('orientationchange', onViewportChange);
+            document.removeEventListener('fullscreenchange', onViewportChange);
+            document.removeEventListener('visibilitychange', onViewportChange);
+        });
+        this.watchPixelRatio();
+        this.scheduleFit();
+        // Web fonts and images settle after first paint and can change the layout.
+        [60, 250, 600].forEach(delay => setTimeout(() => this.scheduleFit(), delay));
+    }
+
+    private teardownFit() {
+        this.fitObserver?.disconnect();
+        this.fitObserver = null;
+        this.fitDetach.forEach(detach => {
+            try {
+                detach();
+            } catch (err) {
+                console.error(err);
+            }
+        });
+        this.fitDetach = [];
+        if (this.fitDprQuery && this.fitDprHandler) {
+            this.fitDprQuery.removeEventListener?.('change', this.fitDprHandler);
+        }
+        this.fitDprQuery = null;
+        this.fitDprHandler = null;
+        if (this.fitFrame) {
+            cancelAnimationFrame(this.fitFrame);
+            this.fitFrame = 0;
+        }
+    }
+
+    /**
+     * Dragging a window to another monitor, or changing the display scaling, changes
+     * devicePixelRatio without necessarily changing the CSS viewport size, so the resize
+     * event alone is not enough. Re-arm after every change because the query is per ratio.
+     */
+    private watchPixelRatio() {
+        if (typeof window.matchMedia !== 'function') {
+            return;
+        }
+        const dpr = window.devicePixelRatio || 1;
+        let query: MediaQueryList;
+        try {
+            query = window.matchMedia('(resolution: ' + dpr + 'dppx)');
+        } catch (err) {
+            return;
+        }
+        const handler = () => {
+            if (this.fitDprQuery && this.fitDprHandler) {
+                this.fitDprQuery.removeEventListener?.('change', this.fitDprHandler);
+            }
+            this.fitDprQuery = null;
+            this.fitDprHandler = null;
+            this.watchPixelRatio();
+            setTimeout(() => this.scheduleFit(), 50);
+        };
+        this.fitDprQuery = query;
+        this.fitDprHandler = handler;
+        query.addEventListener?.('change', handler);
+    }
+
+    @HostListener('window:resize', ['$event'])
+    onResize(event?) {
+        this.scheduleFit();
+    }
+
+    /**
+     * main function to check placeholder of property, events, action
+     * load all gauge settings, bind gauge with signals, bind gauge event
+     * @param view
+     */
+    private loadWatch(view: View) {
+        if (view && view.items) {
+            this.mapControls = {};
+            const device = this.projectService.getDeviceFromId(this.sourceDeviceId);
+            let sourceTags: Tag[] | null = device?.tags ? Object.values(device.tags) : null;
+            let items = this.applyVariableMapping(view.items, sourceTags);
+            // add mapped placeholder -> variable to sourceTags
+            let tagsToAddForPlaceholderMapping: Tag[] = [];
+            Object.entries(this.plainVariableMapping ?? {}).forEach(([key, mappingEntry]) => {
+                if (mappingEntry?.variableId) {
+                    const tagFound = this.projectService.getTagFromId(mappingEntry.variableId);
+                    if (tagFound) {
+                        const tag = new Tag(tagFound.id);
+                        const placeholder = DevicesUtils.getPlaceholderContent(key);
+                        tag.name = placeholder.firstContent;
+                        tagsToAddForPlaceholderMapping.push(tag);
+                    }
+                }
+            });
+            sourceTags = Utils.mergeUniqueBy(sourceTags, tagsToAddForPlaceholderMapping, 'id');
+
+            for (let key in items) {
+                if (!items.hasOwnProperty(key)) {
+                    continue;
+                }
+                try {
+                    // check language translation
+                    const textTranslated = this.languageService.getTranslation(items[key].property?.text);
+                    // init gauge and TagId
+                    let gauge = this.gaugesManager.initElementAdded(items[key], this.resolver, this.viewContainerRef, true, this, textTranslated, sourceTags);
+                    if (gauge) {
+                        this.mapControls[key] = gauge;
+                    }
+                    // bind mouse/key events, signals in gage will be subscribe for notify changes in backend
+                    this.gaugesManager.bindGauge(gauge, this.id, items[key], sourceTags,
+                        (gaToBindMouseEvents) => {
+                            this.onBindMouseEvents(gaToBindMouseEvents);
+                        },
+                        (gaToBindHtmlEvent) => {
+                            this.onBindHtmlEvent(gaToBindHtmlEvent);
+                            if (items[key]?.property?.options?.selectOnClick) {
+                                const existingOnClick = gaToBindHtmlEvent.dom.onclick;
+                                gaToBindHtmlEvent.dom.onclick = function(ev) {
+                                    if (existingOnClick) {
+                                        existingOnClick.call(this, ev);
+                                    }
+                                    gaToBindHtmlEvent.dom.select();
+                                    gaToBindHtmlEvent.dom.focus();
+                                };
+                            }
+                        });
+                    if (items[key].property) {
+                        let gaugeSetting = items[key];
+                        let gaugeStatus = this.getGaugeStatus(gaugeSetting);
+                        let variables = [];
+                        // prepare the start value to precess
+                        if (items[key].property.variableValue || gaugeSetting.property.variableId) {
+                            let variable: Variable = <Variable>{ id: gaugeSetting.property.variableId, value: gaugeSetting.property.variableValue };
+                            if (this.checkStatusValue(gaugeSetting.id, gaugeStatus, variable)) {
+                                variables = [variable];
+                            }
+                        }
+                        // get the the last signal value in memory of gauge, is important that last one is the value (variableId)
+                        variables = variables.concat(this.gaugesManager.getBindSignalsValue(items[key]));
+                        if (variables.length) {
+                            let svgeles = ScadiaViewComponent.getSvgElements(gaugeSetting.id);
+                            for (let y = 0; y < svgeles.length; y++) {
+                                variables.forEach(variable => {
+                                    this.gaugesManager.processValue(gaugeSetting, svgeles[y], variable, gaugeStatus);
+                                });
+                            }
+                        }
+                        // run load events
+                        if (gaugeSetting.property.events) {
+                            const loadEventType = Utils.getEnumKey(GaugeEventType, GaugeEventType.onLoad);
+                            const loadEvents = gaugeSetting.property.events?.filter((ev: GaugeEvent) => ev.type === loadEventType);
+                            if (loadEvents?.length) {
+                                this.runEvents(this, gaugeSetting, null, loadEvents);
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.error('loadWatch: ' + key, err);
+                }
+            }
+            if (!this.subscriptionOnChange) {
+                this.subscriptionOnChange = this.gaugesManager.onchange.subscribe(this.handleSignal.bind(this));
+            }
+            // Subscribe to gauge events from scheduler (or other components)
+            if (!this['subscriptionOnGaugeEvent']) {
+                this['subscriptionOnGaugeEvent'] = this.hmiService.onGaugeEvent.subscribe((event: any) => {
+                    if (event && event.action) {
+                        const gaugeSettings: any = { id: 'scheduler-trigger', property: {} };
+                        this.runEvents(this, gaugeSettings, null, [event]);
+                    } else {
+
+                    }
+                });
+            }
+            for (let variableId in this.staticValues) {
+                if (!this.staticValues.hasOwnProperty(variableId)) {
+                    continue;
+                }
+                this.handleSignal({
+                    id: variableId,
+                    value: this.staticValues[variableId]
+                });
+            }
+            // set subscription to server
+            this.hmiService.viewsTagsSubscribe(this.gaugesManager.getBindedSignalsId(), true);
+        }
+    }
+
+    protected handleSignal(sig) {
+        if (sig.value !== undefined) {
+            try {
+                // take all gauges settings binded to the signal id in this view
+                let gas = this.gaugesManager.getGaugeSettings(this.id, sig.id);
+                if (gas) {
+                    for (let i = 0; i < gas.length; i++) {
+                        let gaugeSetting = gas[i];
+                        let gaugeStatus = this.getGaugeStatus(gaugeSetting);
+                        if (this.checkStatusValue(gaugeSetting.id, gaugeStatus, sig)) {
+                            let svgeles = ScadiaViewComponent.getSvgElements(gaugeSetting.id);
+                            for (let y = 0; y < svgeles.length; y++) {
+                                this.gaugesManager.processValue(gaugeSetting, svgeles[y], sig, gaugeStatus);
+                            }
+                        }
+                    }
+                }
+            } catch (err) {
+            }
+        }
+    }
+
+    /**
+     * return the mapped gauge status, if it doesn't exist add it
+     * @param ga
+     */
+    public getGaugeStatus(ga: GaugeSettings): GaugeStatus {
+        if (this.mapGaugeStatus[ga.id]) {
+            return this.mapGaugeStatus[ga.id];
+        } else {
+            this.mapGaugeStatus[ga.id] = this.gaugesManager.createGaugeStatus(ga);
+            return this.mapGaugeStatus[ga.id];
+        }
+    }
+
+    /**
+     * Replace variables by defined mapping
+     * The variable should be placeholder that was configured in Events and context bind
+     * @param items
+     * @protected
+     */
+    protected applyVariableMapping(items: DictionaryGaugeSettings, sourceTags?: Tag[]): DictionaryGaugeSettings {
+        // Deep clone
+        items = Utils.clone(items);
+
+        for (let gaId in items) {
+            if (!items.hasOwnProperty(gaId)) {
+                continue;
+            }
+            const gaugeSettings = items[gaId];
+            let property = <GaugePropertyExt> gaugeSettings.property;
+            if (!property) {
+                continue;
+            }
+            this.applyVariableMappingTo(property, sourceTags);
+            if (property.actions) {
+                property.actions.forEach(action => {
+                    this.applyVariableMappingTo(action, sourceTags);
+                });
+            }
+
+            if (property.events) {
+                property.events.forEach((event: GaugeEvent) => {
+                    if (event.actoptions) {
+                        if (Utils.isObject(event.actoptions['variable'])) {
+                            this.applyVariableMappingTo(event.actoptions['variable'], sourceTags);
+                        } else {
+                            this.applyVariableMappingTo(event.actoptions, sourceTags);
+                        }
+                    }
+                });
+            }
+
+            if (property.ranges) {
+                property.ranges.forEach((range: GaugeRangeProperty) => {
+                    if (range.textId) {
+                        this.applyVariableMappingTo(range.textId, sourceTags);
+                    }
+                });
+            }
+        }
+        return items;
+    }
+
+    /**
+     * @param target variable to replace with TagId
+     * @param device if don't have a replace, check the device tags name to replace
+     * @returns
+     */
+    protected applyVariableMappingTo(target, tags?: Tag[]) {
+        if (!target || !target['variableId']) {
+            return;
+        }
+        if (this.plainVariableMapping.hasOwnProperty(target.variableId)) {
+            target.variableValue = this.plainVariableMapping[target.variableId]?.variableValue;
+            target.variableId = this.plainVariableMapping[target.variableId]?.variableId;
+            return;
+        }
+        if (tags) {
+            const tag = DevicesUtils.placeholderToTag(target.variableId, tags);
+            if (tag) {
+                target.variableId = tag.id;
+                target.variableValue = tag.value;
+                return;
+            }
+        }
+    }
+
+    /**
+     * check the change of variable value in gauge status
+     * @param gaugeId
+     * @param gaugeStatus
+     * @param signal
+     */
+    private checkStatusValue(gaugeId: string, gaugeStatus: GaugeStatus, signal: any) {
+        let result = true;
+        if (gaugeStatus.onlyChange) {
+            if (gaugeStatus.takeValue) {
+                let value = this.gaugesManager.getGaugeValue(gaugeId);
+                gaugeStatus.variablesValue[signal.id] = value;
+            }
+            if (gaugeStatus.variablesValue[signal.id] === signal.value) {
+                result = false;
+            }
+        }
+        gaugeStatus.variablesValue[signal.id] = signal.value;
+        return result;
+    }
+
+    /**
+     * bind the gauge svg element with mouse events
+     * @param ga
+     */
+    private onBindMouseEvents(ga: GaugeSettings) {
+        let self = this.parent || this;
+        let svgele = ScadiaViewComponent.getSvgElement(ga.id);
+        let clickTimeout;
+
+        if (svgele) {
+            let dblclickEvents = self.gaugesManager.getBindMouseEvent(ga, GaugeEventType.dblclick);
+            let clickEvents = self.gaugesManager.getBindMouseEvent(ga, GaugeEventType.click);
+            if (clickEvents?.length > 0) {
+                svgele.click(function(ev) {
+                    clearTimeout(clickTimeout);
+                    clickTimeout = setTimeout(function() {
+                        self.runEvents(self, ga, ev, clickEvents);
+                    }, dblclickEvents?.length > 0 ? 200 : 0);
+                });
+                svgele.touchstart(function(ev) {
+                    self.runEvents(self, ga, ev, clickEvents);
+                    ev.preventDefault();
+                });
+            } else if (dblclickEvents?.length > 0) {
+                svgele.dblclick(function(ev) {
+                    clearTimeout(clickTimeout);
+                    self.runEvents(self, ga, ev, dblclickEvents);
+                    ev.preventDefault();
+                });
+            }
+
+            let mouseDownEvents = self.gaugesManager.getBindMouseEvent(ga, GaugeEventType.mousedown);
+            if (mouseDownEvents?.length > 0) {
+                svgele.mousedown(function(ev) {
+                    self.runEvents(self, ga, ev, mouseDownEvents);
+                });
+                svgele.touchstart(function(ev) {
+                    self.runEvents(self, ga, ev, mouseDownEvents);
+                    ev.preventDefault();
+                });
+            }
+            let mouseUpEvents = self.gaugesManager.getBindMouseEvent(ga, GaugeEventType.mouseup);
+            if (mouseUpEvents?.length > 0) {
+                svgele.mouseup(function(ev) {
+                    self.runEvents(self, ga, ev, mouseUpEvents);
+                });
+                svgele.touchend(function(ev) {
+                    self.runEvents(self, ga, ev, mouseUpEvents);
+                    ev.preventDefault();
+                });
+            }
+            let mouseOverEvents = self.gaugesManager.getBindMouseEvent(ga, GaugeEventType.mouseover);
+            if (mouseOverEvents?.length > 0) {
+                svgele.mouseover(function(ev) {
+                    self.runEvents(self, ga, ev, mouseOverEvents);
+                });
+            }
+            let mouseOutEvents = self.gaugesManager.getBindMouseEvent(ga, GaugeEventType.mouseout);
+            if (mouseOutEvents?.length > 0) {
+                svgele.mouseout(function(ev) {
+                    self.runEvents(self, ga, ev, mouseOutEvents);
+                });
+            }
+        }
+    }
+
+    public runEvents(self: any, ga: GaugeSettings, ev: any, events: any) {
+        for (let i = 0; i < events.length; i++) {
+            let actindex = Object.keys(GaugeEventActionType).indexOf(events[i].action);
+            let eventTypes = Object.values(GaugeEventActionType);
+            if (eventTypes.indexOf(GaugeEventActionType.onpage) === actindex) {
+                self.loadPage(ev, events[i].actparam, events[i].actoptions);
+            } else if (eventTypes.indexOf(GaugeEventActionType.onwindow) === actindex) {
+                self.onOpenCard(ga.id, ev, events[i].actparam, events[i].actoptions);
+            } else if (eventTypes.indexOf(GaugeEventActionType.ondialog) === actindex) {
+                self.openDialog(ev, events[i].actparam, events[i].actoptions);
+            } else if (eventTypes.indexOf(GaugeEventActionType.onSetValue) === actindex) {
+                self.onSetValue(ga, events[i]);
+            } else if (eventTypes.indexOf(GaugeEventActionType.onToggleValue) === actindex) {
+                self.onToggleValue(ga, events[i]);
+            } else if (eventTypes.indexOf(GaugeEventActionType.onSetInput) === actindex) {
+                self.onSetInput(ga, events[i]);
+            } else if (eventTypes.indexOf(GaugeEventActionType.oniframe) === actindex) {
+                self.openIframe(ga.id, ev, events[i].actparam, events[i].actoptions);
+            } else if (eventTypes.indexOf(GaugeEventActionType.oncard) === actindex) {
+                self.openWindow(ga.id, ev, events[i].actparam, events[i].actoptions);
+            } else if (eventTypes.indexOf(GaugeEventActionType.onclose) === actindex) {
+                self.onClose(ev);
+            } else if (eventTypes.indexOf(GaugeEventActionType.onMonitor) === actindex) {
+                self.onMonitor(ga, ev, events[i].actparam, events[i].actoptions);
+            } else if (events[i].action === this.eventRunScript) {
+                self.onRunScript(events[i]);
+            } else if (events[i].action === this.eventOpenTab) {
+                self.onOpenTab(events[i], events[i].actoptions);
+            } else if (events[i].action === this.eventViewToPanel) {
+                self.onSetViewToPanel(events[i]);
+            }
+        }
+    }
+
+    onToggleValue(ga: GaugeSettings, event: GaugeEvent) {
+        const actionOptions = event.actoptions as ActionOptionsVariable;
+        if (actionOptions?.variable?.variableId) {
+            this.gaugesManager.toggleSignalValue(actionOptions.variable.variableId, actionOptions.variable.bitmask);
+        } else if (ga.property && ga.property.variableId) {
+            this.gaugesManager.toggleSignalValue(ga.property.variableId);
+        }
+    }
+
+    private setInputValidityMessage(result: any, el: any){
+        if(result.errorText === 'html-input.out-of-range'){
+            el.setCustomValidity(`${this.translateService.instant(result.errorText)}. ${this.translateService.instant('html-input.min')}=${result.min}, ${this.translateService.instant('html-input.max')}=${result.max}`);
+        } else{
+            el.setCustomValidity(this.translateService.instant(result.errorText));
+        }
+        el.reportValidity();
+    }
+
+    /**
+     * bind the html input control with key-enter event and select control with change event
+     * @param htmlevent
+     */
+    private onBindHtmlEvent(htmlevent: Event) {
+        let self = this;
+        // let htmlevent = this.getHtmlElement(ga.id);
+        if (this.hmi.layout?.inputdialog === 'keyboardFullScreen') {
+            this.touchKeyboard.ngxTouchKeyboardFullScreen = true;
+        }
+        if (htmlevent.type === 'key-enter') {
+            htmlevent.dom.onkeydown = function(ev) {
+                if (ev.key === 'Enter') {
+                    const isToSkip = HtmlInputComponent.SkipEnterEvent.includes((htmlevent?.dom?.nodeName ?? '').toLowerCase());
+                    const ctrlOrMeta = ev.ctrlKey || ev.metaKey;
+                    if (!ctrlOrMeta && isToSkip) {
+                        return;
+                    }
+                    htmlevent.dbg = 'key pressed ' + htmlevent.dom.id + ' ' + htmlevent.dom.value;
+                    htmlevent.id = htmlevent.dom.id;
+                    htmlevent.value = htmlevent.dom.value;
+                    let res = HtmlInputComponent.validateValue(htmlevent.dom.value, htmlevent.ga);
+                    if(!res.valid){
+                        self.setInputValidityMessage(res, htmlevent.dom);
+                    }
+                    else {
+                        htmlevent.value = res.value;
+                        self.gaugesManager.putEvent(htmlevent);
+                        htmlevent.dom.blur();
+                    }
+                    if (htmlevent.ga.type === HtmlInputComponent.TypeTag) {
+                        // htmlevent.dom.focus();
+                        // htmlevent.dom.select();
+                        const events = Utils.clone(HtmlInputComponent.getEvents(htmlevent.ga.property, GaugeEventType.enter));
+                        self.eventForScript(events, htmlevent.value);
+                    }
+                } else if (ev.key == 'Escape') {
+                    htmlevent.dom.blur();
+                }
+            };
+            if (this.hmi?.layout?.inputdialog === 'true') {
+                htmlevent.dom.onfocus = function(ev) {
+                    if (ev.currentTarget) {
+                        var inputRect = ev.currentTarget.getBoundingClientRect();
+
+                        self.toggleShowInputDialog(true, inputRect.left + ((inputRect.width < 80) ? -((80 - inputRect.width) / 2) : 0) - 7, inputRect.top - 8, htmlevent);
+
+                        for (let i = 0; i < ev.currentTarget.attributes.length; i++)  {
+                            if (ev.currentTarget.attributes['style']) {
+                                self.setInputDialogStyle(self.inputDialogRef.nativeElement, ev.currentTarget.attributes['style'].textContent, inputRect);
+                            }
+                        }
+                        self.gaugeInputCurrent = htmlevent.dom.value;
+                        document.body.appendChild(self.inputDialogRef.nativeElement);
+                        HtmlInputComponent.checkInputType(self.inputValueRef.nativeElement, htmlevent.ga.property?.options);
+                        setTimeout(() => {
+                            self.inputValueRef.nativeElement.focus();
+                        }, 300);
+                    }
+                };
+            } else {
+                // Register events to remove and add unit on input focus and blur. We don'w want units to be part of input value during editing
+                // When input dialog is enabled, these event gets overridden (by binding of HtmlEvent) and are not called.
+                if (this.hmi.layout?.inputdialog.startsWith('keyboard') && htmlevent.ga?.type === HtmlInputComponent.TypeTag) {
+                    htmlevent.dom.onfocus = function(ev) {
+                        self.touchKeyboard.closePanel();
+                        let eleRef = new ElementRef(htmlevent.dom);
+                        if (htmlevent.ga?.property?.options?.numeric || htmlevent.ga?.property?.options?.type === InputOptionType.number) {
+                            eleRef.nativeElement.inputMode = 'decimal';
+                        }
+                        if (htmlevent.ga?.property?.options?.type !== InputOptionType.datetime && htmlevent.ga?.property?.options?.type !== InputOptionType.date &&
+                            htmlevent.ga?.property?.options?.type !== InputOptionType.time) {
+                            self.touchKeyboard.openPanel(eleRef).pipe(
+                                take(1)
+                            ).subscribe(() => {
+                                htmlevent.dom.blur();
+                            });
+                        }
+                        // if(htmlevent.ga.property){
+                        //     let unit = HtmlInputComponent.getUnit(htmlevent.ga.property, new GaugeStatus());
+                        //     if(unit && htmlevent.dom.value.endsWith(unit)){
+                        //         let len = htmlevent.dom.value.length;
+                        //         htmlevent.dom.value = htmlevent.dom.value.substr(0, len - unit.length - 1);
+                        //     }
+                        //     htmlevent.dom.select();
+                        // }
+                    };
+                }
+
+                htmlevent.dom.onblur = function(ev) {
+                    // Update variable value in case it has changed while input had focus
+                    let variables = self.gaugesManager.getBindSignalsValue(htmlevent.ga);
+                    let svgeles = ScadiaViewComponent.getSvgElements(htmlevent.ga.id);
+                    if (variables.length && svgeles.length) {
+                        if (htmlevent.ga?.type !== HtmlInputComponent.TypeTag && !HtmlInputComponent.InputDateTimeType.includes(htmlevent.ga?.property.options?.type)) {
+                            self.gaugesManager.processValue(htmlevent.ga, svgeles[0], variables[0], new GaugeStatus());
+                        }
+                    }
+                    // Remove any error message when input is blured
+                    htmlevent.dom.setCustomValidity('');
+                    self.checkRestoreValue(htmlevent);
+                };
+
+                htmlevent.dom.oninput = function(ev){
+                    // Remove any error message when input changes
+                    htmlevent.dom.setCustomValidity('');
+                };
+            }
+        } else if (htmlevent.type === 'change') {
+            htmlevent.dom.onchange = function(ev) {
+                htmlevent.dbg = 'key pressed ' + htmlevent.dom.id + ' ' + htmlevent.dom.value;
+                htmlevent.id = htmlevent.dom.id;
+                htmlevent.value = htmlevent.dom.value;
+                self.gaugesManager.putEvent(htmlevent);
+                if (htmlevent.ga.type === HtmlSelectComponent.TypeTag) {
+                    const events = Utils.clone(HtmlSelectComponent.getEvents(htmlevent.ga.property, GaugeEventType.select));
+                    self.eventForScript(events, htmlevent.value);
+                }
+            };
+        }
+    }
+
+    private checkRestoreValue(htmlevent: Event) {
+        if (htmlevent.ga?.property?.options?.updated &&
+            (htmlevent.ga.property.options.updatedEsc || htmlevent.ga.property.options.actionOnEsc === InputActionEscType.update)) {
+            //ToDo there is definitely a better way
+            setTimeout(() => {
+                const gaugeStatus = this.getGaugeStatus(htmlevent.ga);
+                const currentInputValue = gaugeStatus?.variablesValue[htmlevent.ga?.property?.variableId];
+                if (!Utils.isNullOrUndefined(currentInputValue)) {
+                    htmlevent.dom.value = currentInputValue;
+                }
+            }, 1000);
+        } else if (htmlevent.ga?.property?.options?.actionOnEsc === InputActionEscType.enter) {
+            this.emulateEnterKey(htmlevent.dom);
+        }
+    }
+
+    private eventForScript(events: GaugeEvent[], value: any) {
+        events?.forEach(ev => {
+            if (value) {
+                let parameters = <ScriptParam[]>ev.actoptions[SCRIPT_PARAMS_MAP];
+                parameters.forEach(param => {
+                    if (param.type === this.scriptParameterValue && !param.value) {
+                        param.value = value;
+                    }
+                });
+            }
+            this.onRunScript(ev);
+        });
+    }
+
+    private setInputDialogStyle(element: any, style: string, sourceBound: DOMRect) {
+        for (let i = 0; i < element.children.length; i++) {
+            let el = element.children[i];
+            if (el.tagName.toLowerCase() === 'input') {
+                el.value = '';
+                style += 'width: ' + sourceBound.width + 'px !important;';
+                el.setAttribute('style', style);
+            }
+        }
+        element.style.backgroundColor = this.view.profile.bkcolor;
+    }
+
+    private async getView(viewref: string): Promise<View> {
+        if (!viewref) {
+            return null;
+        }
+        let view: View;
+        const hmi = this.hmi ?? this.hmiService.hmi;
+        for (let i = 0; i < hmi?.views?.length; i++) {
+            if (hmi.views[i]?.id === viewref || hmi.views[i]?.name === viewref) {
+                view = hmi.views[i];
+                break;
+            }
+        }
+        return this.resolveView(view);
+    }
+
+    private async resolveView(view: View): Promise<View> {
+        if (!view) {
+            return null;
+        }
+        try {
+            if (this.projectService.isViewLazy(view)) {
+                view = await this.projectService.ensureViewLoaded(view.id);
+            }
+        } catch (err) {
+            console.warn(`Unable to load view '${view.name || view.id}'.`, err);
+            return null;
+        }
+        return this.normalizeView(view);
+    }
+
+    private normalizeView(view: View): View {
+        if (!view) {
+            return null;
+        }
+        view.profile = view.profile ?? new DocProfile();
+        view.items = view.items ?? {};
+        view.variables = view.variables ?? {};
+        return view;
+    }
+
+    private static getSvgElements(svgid: string) {
+        let ele = document.getElementsByTagName('svg');
+        let result = [];
+        for (let i = 0; i < ele.length; i++) {
+            let svgItems = ele[i].getElementById(svgid);
+            if (svgItems) {
+                result.push(SVG.adopt(svgItems));
+            }
+        }
+        return result;
+    }
+
+    private static getSvgElement(svgid: string) {
+        let ele = document.getElementsByTagName('svg');
+        for (let i = 0; i < ele.length; i++) {
+            let svgItems = ele[i].getElementById(svgid);
+            if (svgItems) {
+                return SVG.adopt(svgItems);
+            }
+        }
+    }
+
+    private closeAllCards(): void {
+        this.cards = [];
+    }
+
+    async loadPage(param: any, viewref: string, options: any) {
+        let view: View = await this.getView(viewref);
+        this.closeAllCards();
+        if (view) {
+            if (options?.variablesMapping) {
+                this.loadVariableMapping(options.variablesMapping);
+            }
+            this.sourceDeviceId = options.sourceDeviceId;
+            this.loadHmi(view, true);
+            if (param?.scaleMode) {
+                Utils.resizeViewRev(this.dataContainer.nativeElement, this.dataContainer.nativeElement.parentElement?.parentElement, param.scaleMode);
+            }
+        }
+    }
+
+    async openDialog(event, viewref: string, options: any = {}) {
+        const view = await this.getView(viewref);
+        if (!view) {
+            return;
+        }
+        let dialogData = <ScadiaViewDialogData>{
+            view: view,
+            bkColor: 'transparent',
+            variablesMapping: options.variablesMapping,
+            disableDefaultClose: options.hideClose,
+            gaugesManager: this.gaugesManager,
+            sourceDeviceId: options.sourceDeviceId
+        };
+        let dialogRef = this.scadiaDialog.open(ScadiaViewDialogComponent, {
+            panelClass: 'scadia-dialog-property',
+            disableClose: true,
+            data: dialogData,
+            autoFocus: false,
+            position: { top: '60px' }
+        });
+        dialogRef.afterClosed().subscribe();
+    }
+
+    bringCardToFront(card: any) {
+        card.zIndex = this.nextZIndex();
+    }
+
+    private nextZIndex(): number {
+        const targetCards = this.parentcards ?? this.cards;
+        const maxCurrentZIndex = targetCards.reduce((max, currentCard) => {
+            const cardZIndex = Number(currentCard?.zIndex ?? 0);
+            return cardZIndex > max ? cardZIndex : max;
+        }, 0);
+        this.zIndexCounter = Math.max(this.zIndexCounter, maxCurrentZIndex) + 1;
+        return this.zIndexCounter;
+    }
+
+    async onOpenCard(id: string, event: PointerEvent | TouchEvent | any, viewref: string, options: any = {}) {
+        if (options?.singleCard) {
+            this.cards = [];
+            this.changeDetector.detectChanges();
+        }
+        let view: View = await this.getView(viewref);
+        if (!view) {
+            return;
+        }
+        // check existing card
+        let card = null;
+        this.cards.forEach(c => {
+            if (c.id === id) {
+                card = c;
+            }
+        });
+        if (card) {
+            return;
+        }
+        card = new CardModel(id);
+        card.x = Utils.isNumeric(options.left) ? parseInt(options.left) : 0;
+        card.y = Utils.isNumeric(options.top) ? parseInt(options.top) : 0;
+        if (event && options.relativeFrom !== GaugeEventRelativeFromType.window) {
+            const eventPos = EventUtils.getEventClientPosition(event);
+            if (eventPos) {
+                card.x += eventPos.x ?? 0;
+                card.y += eventPos.y ?? 0;
+            }
+        }
+        if (this.hmi?.layout?.hidenavigation) {
+            card.y -= 48;
+        }
+        card.width = view.profile?.width ?? 1024;
+        card.height = view.profile?.height ?? 768;
+        card.view = view;
+        card.variablesMapping = options?.variablesMapping;
+        card.disableDefaultClose = options?.hideClose;
+        card.sourceDeviceId = options?.sourceDeviceId;
+        card.zIndex = this.nextZIndex();
+        console.log('index', card.zIndex);
+        if (this.parentcards) {
+            this.parentcards.push(card);
+        } else {
+            this.cards.push(card);
+        }
+        this.changeDetector.detectChanges();
+    }
+
+    onOpenTab(event: GaugeEvent, options: any) {
+        let link = event.actoptions?.addressType === 'resource' ?  this.endPointConfig + '/' + event.actoptions.resource : event.actparam;
+        window.open(link,  options.newTab ? '_blank' : '_self');
+    }
+
+    openIframe(id: string, event: any, link: string, options: any) {
+        // check existing iframe
+        let iframe = null;
+        this.iframes.forEach(f => {
+            if (f.id === id) {
+                iframe = f;
+            }
+        });
+        if (iframe) {
+            return;
+        }
+        iframe = new CardModel(id);
+        iframe.x = Utils.isNumeric(options.left) ? parseInt(options.left) : event.clientX;
+        iframe.y = Utils.isNumeric(options.top) ? parseInt(options.top) : event.clientY;
+        iframe.width = Utils.isNumeric(options.width) ? parseInt(options.width) : 600;
+        iframe.height = Utils.isNumeric(options.height) ? parseInt(options.height) : 400;
+        iframe.scale = Utils.isNumeric(options.scale) ? parseFloat(options.scale) : 1;
+        iframe.link = link;
+        iframe.name = link;
+        this.iframes.push(iframe);
+        this.onIframeResizing(iframe, { size: { width: iframe.width, height: iframe.height } });
+    }
+
+    onIframeResizing(iframe: CardModel, event) {
+        iframe.width = event.size.width;
+        iframe.height = event.size.height;
+    }
+
+    onCloseIframe(iframe: CardModel) {
+        this.iframes.forEach(f => {
+            if (f.id === iframe.id) {
+                this.iframes.splice(this.cards.indexOf(f), 1);
+            }
+        });
+    }
+
+    openWindow(id: string, event: any, link: string, options: any) {
+        const width = Utils.isNumeric(options.width) ? parseInt(options.width) : 600;
+        const height = Utils.isNumeric(options.height) ? parseInt(options.height) : 400;
+        const left = Utils.isNumeric(options.left) ? parseInt(options.left) : event.clientX;
+        const top = Utils.isNumeric(options.top) ? parseInt(options.top) : event.clientY;
+        window.open(link, '_blank', options.newTab ? null : `height=${height},width=${width},left=${left},top=${top}`);
+    }
+
+    onCloseCard(card: CardModel) {
+        this.cards.splice(this.cards.indexOf(card), 1);
+    }
+
+    private onClose($event) {
+        if (this.onclose) {
+            this.onclose.emit($event);
+        }
+    }
+
+    onSetValue(ga: GaugeSettings, event: GaugeEvent) {
+        if (event.actparam) {
+            let variableId = this.fetchVariableId(event) || ga.property.variableId;
+            let fnc = this.fetchFunction(event);
+            this.gaugesManager.putSignalValue(variableId, event.actparam, fnc);
+        }
+    }
+
+    onSetInput(ga: GaugeSettings, event: GaugeEvent) {
+        if (event.actparam) {
+            let ele = document.getElementById(event.actparam);
+            if (ele) {
+                let input = null;
+                for (let i = 0; i < GaugesManager.GaugeWithProperty.length; i++) {
+                    input = Utils.searchTreeStartWith(ele, GaugesManager.GaugeWithProperty[i]);
+                    if (input) {
+                        break;
+                    }
+                }
+                if (input && !Utils.isNullOrUndefined(input.value)) {
+                    let variableId = this.fetchVariableId(event) || ga.property.variableId;
+                    this.gaugesManager.putSignalValue(variableId, input.value);
+                }
+            }
+        }
+    }
+
+    onRunScript(event: GaugeEvent) {
+        if (event.actparam) {
+            let torun = Utils.clone(this.projectService.getScripts().find(dataScript => dataScript.id == event.actparam));
+            if (!torun) {
+                return;
+            }
+            torun.parameters = Utils.clone(<ScriptParam[]>event.actoptions[SCRIPT_PARAMS_MAP]);
+            const placeholders = torun.parameters.filter(param => param.value?.startsWith(PlaceholderDevice.id)).map(param => param.value);
+            if (placeholders?.length) {
+                const placeholdersMap = this.getViewPlaceholderValue(placeholders);
+                torun.parameters.forEach(param => {
+                    if (!Utils.isNullOrUndefined(placeholdersMap[param.value])) {
+                        param.value = placeholdersMap[param.value];
+                    }
+                });
+            }
+            this.scriptService.runScript(torun).subscribe(result => {
+            }, err => {
+                console.error(err);
+            });
+        }
+    }
+
+    async onMonitor(gaugeSettings: GaugeSettings, event: any, viewref: string, options: any = {}) {
+        const view = await this.getView(viewref);
+        if (!view) {
+            return;
+        }
+        let dialogData = <WebcamPlayerDialogData>{
+            view: view,
+            bkColor: 'transparent',
+            gaugesManager: this.gaugesManager,
+            ga: gaugeSettings
+        };
+        let pos = <DialogPosition> {
+            top: event.layerY + 30 + 'px',
+            left: event.layerX + 10 + 'px'
+        };
+        let dialogRef = this.scadiaDialog.open(WebcamPlayerDialogComponent, {
+            panelClass: 'scadia-dialog-property',
+            disableClose: false,
+            data: dialogData,
+            position: pos
+        });
+        dialogRef.afterClosed().subscribe();
+    }
+
+    onSetViewToPanel(event: GaugeEvent) {
+        if (event.actparam && event.actoptions) {
+            let panelCtrl = <ScadiaViewComponent>this.mapControls[event.actoptions['panelId']];
+            const panelProperty = this.view.items[event.actoptions['panelId']]?.property;
+            panelCtrl.loadPage(panelProperty, event.actparam, event.actoptions);
+        }
+    }
+
+    getCardHeight(height) {
+        return parseInt(height) + 4;
+    }
+
+    private getViewPlaceholderValue(placeholder: string[]) {
+        let result = {};
+        Object.values(this.view.items).forEach(item => {
+            if (placeholder.indexOf(item.property?.variableId) !== -1) {
+                if (this.mapControls[item.id]) {
+                    const ctrl = this.mapControls[item.id];
+                    if (ctrl && ctrl !== true && ctrl.getValue) {
+                        result[item.property?.variableId] = ctrl.getValue();
+                    }
+                }
+            }
+        });
+        this.variablesMapping?.forEach(mappedVariable => {
+            if (placeholder.indexOf(mappedVariable?.from?.variableId) !== -1 && mappedVariable?.to?.variableId) {
+                result[mappedVariable.from.variableId] = mappedVariable.to.variableId;
+            }
+        });
+        return result;
+    }
+
+    protected fetchVariableId(event) {
+        if (!event.actoptions) {
+            return null;
+        }
+        if (Utils.isObject(event.actoptions['variable']) && event.actoptions['variable']['variableId']) {
+            return event.actoptions['variable']['variableId'];
+        }
+        // For legacy events
+        if (event.actoptions['variableId']) {
+            return event.actoptions['variableId'];
+        }
+
+        return null;
+    }
+
+    private fetchFunction(event) {
+        if (event.actoptions && event.actoptions.function) {
+            return event.actoptions.function;
+        }
+        return null;
+    }
+
+    toggleShowInputDialog(show: boolean, x: number = -1, y: number = -1, htmlev: Event = null) {
+        if (show) {
+            // Evaluate top/bottom coordinate and adjust to dialog position to fit into window. We know that dialog height is 112
+            let d = self.innerHeight - (y + 114);
+
+            if(y < 0){
+                y = 0;
+            }else if(d < 0){
+                y += d;
+            }
+
+            this.inputDialog.show = true;
+            if (x >= 0 && y >= 0) {
+                this.inputDialog.target = htmlev;
+                this.inputDialog.x = x;
+                this.inputDialog.y = y;
+            }
+            clearTimeout(this.inputDialog.timer);
+        } else {
+            this.inputDialog.timer = setTimeout(() => {
+                this.inputDialog.show = false;
+                this.gaugeInputCurrent = '';
+            }, 300);
+        }
+    }
+
+    onNoClick() {
+
+    }
+
+    inputOnChange(){
+        // Remove any error message when input changes
+        this.inputValueRef.nativeElement.setCustomValidity('');
+    }
+
+    onOkClick(evintput) {
+        if (this.inputDialog.target.dom) {
+            let res = HtmlInputComponent.validateValue(evintput, this.inputDialog.target.ga);
+            if(!res.valid) {
+                this.setInputValidityMessage(res, this.inputValueRef.nativeElement);
+            }
+            else {
+                this.inputValueRef.nativeElement.setCustomValidity('');
+                this.inputDialog.target.dom.value = evintput;
+                this.inputDialog.target.dbg = 'key pressed ' + this.inputDialog.target.dom.id + ' ' + this.inputDialog.target.dom.value;
+                this.inputDialog.target.id = this.inputDialog.target.dom.id;
+                this.inputDialog.target.value = this.inputDialog.target.dom.value;
+                this.gaugesManager.putEvent({...this.inputDialog.target, value: res.value});
+                this.emulateEnterKey(this.inputDialog.target.dom);
+            }
+        }
+    }
+
+    emulateEnterKey(target: HTMLInputElement) {
+        const event = new KeyboardEvent('keydown', {
+          key: 'Enter',
+          keyCode: 13,
+          code: 'Enter',
+          bubbles: true
+        });
+        target.dispatchEvent(event);
+    }
+
+    static setAlignStyle(align: DocAlignType, nativeElement: HTMLElement) {
+        if (align === DocAlignType.middleCenter) {
+            nativeElement.style.position = 'absolute';
+            nativeElement.style.top = '50%';
+            nativeElement.style.left = '50%';
+            nativeElement.style.transform = 'translate(-50%, -50%)';
+        }
+    }
+}
+
+interface VariableMappingType {
+    variableId: string;
+    variableValue: any;
+}
+
+interface VariableMappingDictionary {
+    [key: string]: VariableMappingType;
+}
+
+interface ActionOptionsVariable {
+    variable: IPropertyVariable;
+}
+
+interface GaugePropertyExt extends GaugeProperty {
+    id: string;
+    type: string;
+}
+
+export class CardModel {
+    public id: string;
+    public name: string;
+    public link: string;
+    public x: number;
+    public y: number;
+    public scale: number;
+    public scaleX: number;
+    public scaleY: number;
+    public width: number;
+    public height: number;
+    public variablesMapping: any = [];
+    public view: View;
+    public sourceDeviceId: string;
+    disableDefaultClose: boolean;
+    zIndex: number;
+
+    constructor(id: string) {
+        this.id = id;
+    }
+}
+
+export class DialogModalModel {
+
+    public id: string;
+    public name: string;
+    public width: number;
+    public height: number;
+    public bkcolor: string;
+    public view: View;
+    public variablesMapping: any = [];
+
+    disableDefaultClose: boolean;
+
+    constructor(id: string) {
+        this.id = id;
+    }
+}

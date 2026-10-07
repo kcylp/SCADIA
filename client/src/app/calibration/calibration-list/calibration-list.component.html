@@ -1,0 +1,160 @@
+<div class="scada">
+    <header class="sc-topbar">
+        <div class="sc-topbar__brand">
+            <mat-icon>tune</mat-icon>
+            <div>
+                <div class="sc-topbar__title">{{'calibration.dashboard' | translate}}</div>
+                <div class="sc-topbar__sub">{{'calibration.subtitle' | translate}}</div>
+            </div>
+        </div>
+
+        <div class="sc-topbar__spacer"></div>
+
+        <div class="sc-topbar__meta" *ngIf="meta">
+            <span class="sc-led-with-label">
+                <i class="sc-led" [class.sc-led--ok]="meta.secureEnabled" [class.sc-led--alarm]="!meta.secureEnabled"></i>
+                {{(meta.secureEnabled ? 'calibration.secure-on' : 'calibration.secure-off') | translate}}
+            </span>
+            <span class="sc-led-with-label">
+                <i class="sc-led" [class.sc-led--ok]="meta.writeEnabled" [class.sc-led--warn]="!meta.writeEnabled"></i>
+                {{(meta.writeEnabled ? 'calibration.write-on' : 'calibration.write-off') | translate}}
+            </span>
+            <span class="sc-led-with-label">
+                <i class="sc-led" [class.sc-led--ok]="meta.rawWriteEnabled" [class.sc-led--idle]="!meta.rawWriteEnabled"></i>
+                {{(meta.rawWriteEnabled ? 'calibration.raw-on' : 'calibration.raw-off') | translate}}
+            </span>
+        </div>
+
+        <button class="sc-btn sc-btn--icon sc-btn--ghost" title="{{'calibration.refresh' | translate}}" (click)="load()">
+            <mat-icon>refresh</mat-icon>
+        </button>
+    </header>
+
+    <div class="sc-body sc-scroll">
+        <div class="sc-grid sc-grid--kpi" style="margin-bottom:16px">
+            <div class="sc-kpi">
+                <div class="sc-kpi__label">{{'calibration.kpi.profiles' | translate}}</div>
+                <div class="sc-kpi__value">{{profiles.length}}</div>
+            </div>
+            <div class="sc-kpi sc-kpi--ok">
+                <div class="sc-kpi__label">{{'calibration.kpi.active' | translate}}</div>
+                <div class="sc-kpi__value">{{activeCount}}</div>
+            </div>
+            <div class="sc-kpi sc-kpi--warn">
+                <div class="sc-kpi__label">{{'calibration.kpi.awaiting' | translate}}</div>
+                <div class="sc-kpi__value">{{awaitingCount}}</div>
+            </div>
+            <div class="sc-kpi sc-kpi--idle">
+                <div class="sc-kpi__label">{{'calibration.kpi.done' | translate}}</div>
+                <div class="sc-kpi__value">{{doneCount}}</div>
+            </div>
+            <div class="sc-kpi sc-kpi--alarm">
+                <div class="sc-kpi__label">{{'calibration.kpi.failed' | translate}}</div>
+                <div class="sc-kpi__value">{{failedCount}}</div>
+            </div>
+        </div>
+
+        <div *ngIf="loading" class="sc-empty">
+            <mat-spinner diameter="34"></mat-spinner>
+        </div>
+
+        <ng-container *ngIf="!loading">
+            <section class="sc-panel" style="margin-bottom:16px">
+                <div class="sc-panel__hd">
+                    <mat-icon>settings_input_component</mat-icon>
+                    <span>{{'calibration.profiles' | translate}}</span>
+                    <span class="sc-hd-actions sc-hint">{{profiles.length}}</span>
+                </div>
+                <div class="sc-panel__bd" style="padding:0">
+                    <table class="sc-table" *ngIf="profiles.length">
+                        <thead>
+                            <tr>
+                                <th>{{'calibration.name' | translate}}</th>
+                                <th>{{'calibration.description' | translate}}</th>
+                                <th>{{'calibration.source-tag' | translate}}</th>
+                                <th>{{'calibration.write-mode' | translate}}</th>
+                                <th class="num">{{'calibration.version' | translate}}</th>
+                                <th style="text-align:right">{{'calibration.actions' | translate}}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let p of profiles">
+                                <td><b style="color:var(--sc-ink)">{{p.name}}</b></td>
+                                <td>{{p.description || '—'}}</td>
+                                <td><span class="sc-tag">{{p.sourceTagId}}</span></td>
+                                <td>
+                                    <span class="sc-pill" [class.sc-pill--info]="p.write?.mode === 'tags'"
+                                          [class.sc-pill--warn]="p.write?.mode === 'raw-block'">
+                                        {{p.write?.mode}}
+                                    </span>
+                                </td>
+                                <td class="num">v{{p.version}}</td>
+                                <td style="text-align:right; white-space:nowrap">
+                                    <button class="sc-btn sc-btn--primary" (click)="onCreateSession(p)">
+                                        <mat-icon>play_arrow</mat-icon>{{'calibration.new-session' | translate}}
+                                    </button>
+                                    <button class="sc-btn sc-btn--icon sc-btn--ghost" style="margin-left:6px"
+                                            title="{{'general.delete' | translate}}" (click)="onDeleteProfile(p)">
+                                        <mat-icon>delete_outline</mat-icon>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="sc-empty" *ngIf="!profiles.length">{{'calibration.no-profiles' | translate}}</div>
+                </div>
+            </section>
+
+            <section class="sc-panel">
+                <div class="sc-panel__hd">
+                    <mat-icon>list_alt</mat-icon>
+                    <span>{{'calibration.sessions' | translate}}</span>
+                    <span class="sc-hd-actions sc-hint">{{sessions.length}}</span>
+                </div>
+                <div class="sc-panel__bd" style="padding:0">
+                    <table class="sc-table" *ngIf="sessions.length">
+                        <thead>
+                            <tr>
+                                <th>{{'calibration.session' | translate}}</th>
+                                <th>{{'calibration.profile' | translate}}</th>
+                                <th>{{'calibration.status' | translate}}</th>
+                                <th>{{'calibration.operator' | translate}}</th>
+                                <th class="num">{{'calibration.revision' | translate}}</th>
+                                <th>{{'calibration.updated-at' | translate}}</th>
+                                <th style="text-align:right">{{'calibration.actions' | translate}}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let s of sessions" class="sc-clickable" (click)="onOpenSession(s)">
+                                <td class="sc-mono" style="color:var(--sc-ink)">{{s.id}}</td>
+                                <td>{{profileName(s.profileId)}}</td>
+                                <td>
+                                    <span class="sc-led-with-label">
+                                        <i class="sc-led" [ngClass]="'sc-led--' + statusTone(s.status)"
+                                           [class.sc-led--pulse]="s.status === 'sampling' || s.status === 'writing' || s.status === 'verifying'"></i>
+                                        <span class="sc-pill" [ngClass]="'sc-pill--' + statusTone(s.status)">
+                                            {{statusLabel(s.status)}}
+                                        </span>
+                                    </span>
+                                </td>
+                                <td>{{s.operatorId}}</td>
+                                <td class="num">{{s.revision}}</td>
+                                <td class="sc-mono" style="font-size:11.5px">{{s.updatedAt | date:'yyyy-MM-dd HH:mm:ss'}}</td>
+                                <td style="text-align:right; white-space:nowrap" (click)="$event.stopPropagation()">
+                                    <button class="sc-btn sc-btn--ghost" (click)="onOpenSession(s)">
+                                        <mat-icon>open_in_new</mat-icon>{{'calibration.open' | translate}}
+                                    </button>
+                                    <button class="sc-btn sc-btn--icon sc-btn--ghost" style="margin-left:6px"
+                                            title="{{'calibration.cancel-session' | translate}}" (click)="onRemoveSession(s)">
+                                        <mat-icon>cancel</mat-icon>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="sc-empty" *ngIf="!sessions.length">{{'calibration.no-sessions' | translate}}</div>
+                </div>
+            </section>
+        </ng-container>
+    </div>
+</div>

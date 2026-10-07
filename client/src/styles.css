@@ -1,0 +1,1346 @@
+@import 'material-icons/iconfont/material-icons.css';
+@import "@angular/material/prebuilt-themes/indigo-pink.css";
+
+@font-face {
+    font-family: "myicons";
+    src: url("./assets/fonts/icomoon.eot?22kwk4");
+    src: url("./assets/fonts/icomoon.eot?22kwk4#iefix")
+            format("embedded-opentype"),
+        url("./assets/fonts/icomoon.ttf?22kwk4") format("truetype"),
+        url("./assets/fonts/icomoon.woff?22kwk4") format("woff"),
+        url("./assets/fonts/icomoon.svg?22kwk4#icomoon") format("svg");
+    font-weight: normal;
+    font-style: normal;
+}
+@font-face {
+    font-family: "Roboto-Thin";
+    src: local("Roboto Thin"), local("Roboto-Thin"),
+        url("./assets/fonts/roboto-thin/roboto-thin-webfont.woff")
+            format("woff"),
+        url("./assets/fonts/roboto-thin/roboto-thin-webfont.woff2")
+            format("woff2"),
+        url("./assets/fonts/roboto-thin/roboto-thin-webfont.ttf")
+            format("truetype"),
+        url("./assets/fonts/roboto-thin/roboto-thin-webfont.svg") format("svg");
+}
+
+@font-face {
+    font-family: "Roboto-Light";
+    src: local("Roboto Light"), local("Roboto-Light"),
+        url("./assets/fonts/roboto-light/roboto-light-webfont.woff")
+            format("woff"),
+        url("./assets/fonts/roboto-light/roboto-light-webfont.woff2")
+            format("woff2"),
+        url("./assets/fonts/roboto-light/roboto-light-webfont.ttf")
+            format("truetype"),
+        url("./assets/fonts/roboto-light/roboto-light-webfont.svg")
+            format("svg");
+}
+
+@font-face {
+    font-family: "Roboto-Regular";
+    src: local("Roboto Regular"), local("Roboto-Regular"),
+        url("./assets/fonts/roboto-regular/roboto-regular-webfont.woff")
+            format("woff"),
+        url("./assets/fonts/roboto-regular/roboto-regular-webfont.woff2")
+            format("woff2"),
+        url("./assets/fonts/roboto-regular/roboto-regular-webfont.ttf")
+            format("truetype"),
+        url("./assets/fonts/roboto-regular/roboto-regular-webfont.svg")
+            format("svg");
+}
+
+@font-face {
+    font-family: "Roboto-Medium";
+    src: local("Roboto Medium"), local("Roboto-Medium"),
+        url("./assets/fonts/roboto-medium/roboto-medium-webfont.woff")
+            format("woff"),
+        url("./assets/fonts/roboto-medium/roboto-medium-webfont.woff2")
+            format("woff2"),
+        url("./assets/fonts/roboto-medium/roboto-medium-webfont.ttf")
+            format("truetype"),
+        url("./assets/fonts/roboto-medium/roboto-medium-webfont.svg")
+            format("svg");
+}
+
+@font-face {
+    font-family: "Quicksand-Regular";
+    src: local("Quicksand"), local("Quicksand-Regular"),
+        url("./assets/fonts/quicksand-regular\Quicksand-Regular.woff")
+            format("woff"),
+        url("./assets/fonts/quicksand-regular\Quicksand-Regular.woff2")
+            format("woff2"),
+        url("./assets/fonts/quicksand-regular\Quicksand-Regular.ttf")
+            format("truetype");
+}
+
+@font-face {
+    font-family: "Quicksand-Medium";
+    src: local("Quicksand Medium"), local("Quicksand-Medium"),
+        url("./assets/fonts/quicksand-medium\Quicksand-Medium.woff")
+            format("woff"),
+        url("./assets/fonts/quicksand-medium\Quicksand-Medium.woff2")
+            format("woff2"),
+        url("./assets/fonts/quicksand-medium\Quicksand-Medium.ttf")
+            format("truetype");
+}
+
+@font-face {
+    font-family: "Quicksand-Bold";
+    src: local("Quicksand"), local("Quicksand-Bold"),
+        url("./assets/fonts/quicksand-bold\Quicksand-Bold.woff")
+            format("woff"),
+        url("./assets/fonts/quicksand-bold\Quicksand-Bold.woff2")
+            format("woff2"),
+        url("./assets/fonts/quicksand-bold\Quicksand-Bold.ttf")
+            format("truetype");
+}
+
+@font-face {
+    font-family: "Roboto-Bold";
+    src: local("Roboto Bold"), local("Roboto-Bold"),
+        url("./assets/fonts/roboto-bold/roboto-bold-webfont.woff")
+            format("woff"),
+        url("./assets/fonts/roboto-bold/roboto-bold-webfont.woff2")
+            format("woff2"),
+        url("./assets/fonts/roboto-bold/roboto-bold-webfont.ttf")
+            format("truetype"),
+        url("./assets/fonts/roboto-bold/roboto-bold-webfont.svg")
+		    format("svg");
+}
+
+/* System and General */
+
+/* ---------------------------------------------------------------------------
+   Base text size - the one declaration nearly every unstyled element inherits.
+
+   WHY IT IS SET AT ALL. It previously was not, so every element without a font-size
+   of its own rendered at the BROWSER DEFAULT of 16px - while this application is
+   designed at 12-14px (13px body text, 12px labels, 11px captions, and the header's
+   own fontSize of 13). The result is exactly the reported symptom: type that reads as
+   oversized and, worse, INCONSISTENT - some labels honoured the design and their
+   neighbours did not, depending only on whether that element happened to carry an
+   explicit size. Relying on a browser default for the base of a designed UI is not a
+   neutral choice; it makes the typography depend on the user's browser settings.
+
+   WHY 14px. It sits inside the design's own 12-14px range, and it is the size the
+   denser editor screens were already approximating. It is a deliberate recalibration
+   from 16px, not an accident of inheritance.
+
+   WHY IT STILL ADAPTS. The base tracks the same --scadia-ui-scale that drives the
+   chrome and the .scada surface, so text follows the viewport like everything else
+   instead of being pinned while its surroundings resize. It is clamped at both ends:
+   below ~12px an industrial label stops being readable, and above ~18px a laptop
+   begins losing whole rows. Between the clamps it is the viewport's ratio to the
+   1920px design width - 14px there, 12px on a 1366 screen, ~18px on a 4K wall.
+   --------------------------------------------------------------------------- */
+html {
+    height: 100%;
+    position: relative;
+    /*min-height: 100%;*/
+    background-color: #ffffff;
+    font-family: "Segoe UI Symbol", "Roboto-Regular", "Helvetica Neue", sans-serif;
+    font-weight: 300;
+    font-size: clamp(12px, calc(14px * var(--scadia-ui-scale, 1)), 18px);
+}
+
+body {
+    height: 100%;
+    margin: 0px;
+    font-family: "Segoe UI Symbol", "Roboto-Regular", "Helvetica Neue", sans-serif;
+    font-weight: 300;
+    background-color: white;
+}
+
+/* Read-only select gauge is "disabled". Make sure browser does not "dim" it */
+select:disabled {
+    opacity: 1;
+}
+
+* {
+    /* font-family: "Segoe UI Symbol", "Roboto-Regular", "Helvetica Neue", sans-serif; */
+    text-decoration: none;
+    scrollbar-width: auto;
+}
+
+@-moz-document url-prefix() {
+    * {
+        scrollbar-width: thin;
+    }
+}
+
+*:focus {
+    outline: none;
+}
+
+app-root {
+    display: block;
+    height: 100%;
+}
+
+.default-color {
+    color:rgba(0, 0, 0, 0.8);
+}
+
+/* toaster overwrite */
+/*-------------------*/
+#toast-container > div {
+    font-size: 13px !important;
+    -moz-border-radius: unset !important;
+    -webkit-border-radius: unset !important;
+    border-radius: unset !important;
+}
+#toast-container > :hover {
+    -moz-border-radius: unset !important;
+    -webkit-border-radius: unset !important;
+    border-radius: unset !important;
+}
+
+/* toast styles */
+/* .toast-title {
+    font-weight: bold;
+  } */
+/* .toast-message {
+    word-wrap: break-word;
+  } */
+/* .toast-message a,
+  .toast-message label {
+    color: #FFFFFF;
+  } */
+/* .toast-message a:hover {
+    color: #CCCCCC;
+    text-decoration: none;
+  } */
+.toast-close-button {
+    /* position: relative; */
+    /* right: -0.3em; */
+    /* top: -0.3em; */
+    /* float: right; */
+    font-size: 17px !important;
+    font-weight: 100 !important;
+    /* color: #FFFFFF; */
+    /* text-shadow: 0 1px 0 #ffffff; */
+    /* opacity: 0.8; */
+}
+.toast-close-button:hover,
+.toast-close-button:focus {
+    color: #ffffff !important;
+    /* text-decoration: none; */
+    /* cursor: pointer; */
+    /* opacity: 0.4; */
+}
+/*Additional properties for button version
+   iOS requires the button element instead of an anchor tag.
+   If you want the anchor version, it requires `href="#"`.*/
+/* button.toast-close-button {
+    padding: 0;
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+  } */
+/* .toast-container {
+    pointer-events: none;
+    position: fixed;
+    z-index: 999999;
+  } */
+/* .toast-container * {
+    box-sizing: border-box;
+  } */
+.toast-container .toast {
+    /* position: relative; */
+    /* overflow: hidden; */
+    /* margin: 0 0 6px; */
+    /* padding: 15px 15px 15px 50px; */
+    padding: 10px 15px 10px 40px !important;
+    /* width: 300px; */
+    /* border-radius: 3px 3px 3px 3px; */
+    background-position: 10px 10px !important;
+    /* background-repeat: no-repeat; */
+    background-size: 20px !important;
+    box-shadow: 0 0 12px #000000 !important;
+    /* -moz-border-radius: none !important;
+    -webkit-border-radius: none !important;
+    border-radius: none !important; */
+    /* color: #FFFFFF; */
+}
+.toast-container .toast:hover {
+    box-shadow: 0 0 12px #000000 !important;
+}
+/* https://github.com/FortAwesome/Font-Awesome-Pro/blob/master/advanced-options/raw-svg/regular/info-circle.svg */
+/* .toast-info {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' width='512' height='512'%3E%3Cpath fill='rgb(255,255,255)' d='M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z'/%3E%3C/svg%3E");
+  } */
+/* https://github.com/FortAwesome/Font-Awesome-Pro/blob/master/advanced-options/raw-svg/regular/times-circle.svg */
+/* .toast-error {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' width='512' height='512'%3E%3Cpath fill='rgb(255,255,255)' d='M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm121.6 313.1c4.7 4.7 4.7 12.3 0 17L338 377.6c-4.7 4.7-12.3 4.7-17 0L256 312l-65.1 65.6c-4.7 4.7-12.3 4.7-17 0L134.4 338c-4.7-4.7-4.7-12.3 0-17l65.6-65-65.6-65.1c-4.7-4.7-4.7-12.3 0-17l39.6-39.6c4.7-4.7 12.3-4.7 17 0l65 65.7 65.1-65.6c4.7-4.7 12.3-4.7 17 0l39.6 39.6c4.7 4.7 4.7 12.3 0 17L312 256l65.6 65.1z'/%3E%3C/svg%3E");
+  } */
+/* https://github.com/FortAwesome/Font-Awesome-Pro/blob/master/advanced-options/raw-svg/regular/check.svg */
+/* .toast-success {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' width='512' height='512'%3E%3Cpath fill='rgb(255,255,255)' d='M173.898 439.404l-166.4-166.4c-9.997-9.997-9.997-26.206 0-36.204l36.203-36.204c9.997-9.998 26.207-9.998 36.204 0L192 312.69 432.095 72.596c9.997-9.997 26.207-9.997 36.204 0l36.203 36.204c9.997 9.997 9.997 26.206 0 36.204l-294.4 294.401c-9.998 9.997-26.207 9.997-36.204-.001z'/%3E%3C/svg%3E");
+  } */
+/* https://github.com/FortAwesome/Font-Awesome-Pro/blob/master/advanced-options/raw-svg/regular/exclamation-triangle.svg */
+/* .toast-warning {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 576 512' width='576' height='512'%3E%3Cpath fill='rgb(255,255,255)' d='M569.517 440.013C587.975 472.007 564.806 512 527.94 512H48.054c-36.937 0-59.999-40.055-41.577-71.987L246.423 23.985c18.467-32.009 64.72-31.951 83.154 0l239.94 416.028zM288 354c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z'/%3E%3C/svg%3E");
+  } */
+/* .toast-container.toast-top-center .toast,
+  .toast-container.toast-bottom-center .toast {
+    width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+  } */
+/* .toast-container.toast-top-full-width .toast,
+  .toast-container.toast-bottom-full-width .toast {
+    width: 96%;
+    margin-left: auto;
+    margin-right: auto;
+  } */
+/* .toast {
+    background-color: #030303;
+    pointer-events: auto;
+  } */
+/* .toast-success {
+    background-color: #51A351;
+  } */
+/* .toast-error {
+    background-color: #BD362F;
+  } */
+/* .toast-info {
+    background-color: #2F96B4;
+  } */
+/* .toast-warning {
+    background-color: #F89406;
+  } */
+
+.logo {
+    display: block;
+    text-indent: -9999px;
+    width: 30px;
+    height: 30px;
+    background: url(assets/images/logo.svg);
+    background-size: 30px 30px;
+}
+
+/* Menu */
+.backdrop-white {
+    background-color: rgb(255, 255, 255);
+}
+
+.backdrop-black {
+    background-color: rgba(0, 0, 0);
+}
+
+.sidenav-menu {
+    padding: 0px 0px 0px 0px;
+    /* Theme tokens, not literals. The literal light grey here made the menu the one surface
+       that ignored the dark theme, and the text then inherited the theme's white - unreadable.
+       A project that configures layout.navigation.bkcolor/fgcolor still wins: those are bound
+       inline in the template, and an inline style beats any selector. */
+    background-color: var(--sidenavBackground, #f9f9f9);
+    color: var(--sidenavColor, #1D1D1D);
+    /* max-width: 100px; */
+    display: inline-block !important;
+}
+
+.sidenav-menu-icon {
+    max-width: calc(65px * var(--scadia-ui-scale, 1));
+    width: calc(65px * var(--scadia-ui-scale, 1));
+}
+
+.sidenav-menu-text {
+    max-width: calc(160px * var(--scadia-ui-scale, 1));
+    width: calc(160px * var(--scadia-ui-scale, 1));
+}
+
+.sidenav-menu-block {
+    max-width: calc(120px * var(--scadia-ui-scale, 1));
+    width: calc(120px * var(--scadia-ui-scale, 1));
+}
+
+.sidenav-menu-inline {
+    max-width: calc(200px * var(--scadia-ui-scale, 1));
+    width: calc(200px * var(--scadia-ui-scale, 1));
+}
+
+.mat-list .mat-list-item .mat-list-item-content {
+    padding: 0px !important;
+}
+
+.menu-item-text {
+    min-height: calc(50px * var(--scadia-ui-scale, 1));
+    margin: 5px;
+}
+.menu-item-icon {
+    min-height: calc(60px * var(--scadia-ui-scale, 1));
+    margin: 5px;
+}
+.menu-item-block {
+    min-height: calc(80px * var(--scadia-ui-scale, 1));
+    margin: 5px;
+}
+
+.menu-item-inline {
+    min-height: calc(50px * var(--scadia-ui-scale, 1));
+    margin: 5px;
+}
+
+.menu-item-content-icon {
+    height: calc(50px * var(--scadia-ui-scale, 1));
+    width: calc(55px * var(--scadia-ui-scale, 1));
+    display:table-cell;
+    vertical-align:middle;
+    padding-top: 4px;
+}
+
+.menu-item-content-icon .mat-icon {
+    font-size: calc(32px * var(--scadia-ui-scale, 1));
+    height: calc(32px * var(--scadia-ui-scale, 1));
+    width: calc(32px * var(--scadia-ui-scale, 1));
+}
+
+.menu-item-content-icon img {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    max-height: 35px;
+    max-width: 35px;
+}
+
+.menu-item-content-text {
+    padding: calc(10px * var(--scadia-ui-scale, 1)) calc(10px * var(--scadia-ui-scale, 1)) calc(10px * var(--scadia-ui-scale, 1)) calc(10px * var(--scadia-ui-scale, 1));
+}
+
+.menu-item-content-text span {
+    text-align: left !important;
+}
+
+.menu-item-content-block {
+    display: inline-block;
+    padding: 10px 0px 10px 0px;
+    text-align: -webkit-center;
+    text-align: -moz-center;
+}
+
+.menu-item-content-block .mat-icon {
+    display: block;
+    font-size: calc(32px * var(--scadia-ui-scale, 1));
+    height: calc(32px * var(--scadia-ui-scale, 1));
+    width: calc(32px * var(--scadia-ui-scale, 1));
+}
+
+.menu-item-content-block img {
+    display: block;
+    max-height: 35px;
+    max-width: 35px;
+}
+
+.menu-item-content-block span {
+    display: block;
+    font-size: calc(14px * var(--scadia-ui-scale, 1));
+}
+
+.menu-item-content-inline {
+    text-align: left;
+    padding: 10px 10px 10px 10px;
+    display: flex;
+}
+
+.menu-item-content-inline .mat-icon {
+    display: inline-block;
+    font-size: calc(22px * var(--scadia-ui-scale, 1));
+    height: calc(22px * var(--scadia-ui-scale, 1));
+    width: calc(22px * var(--scadia-ui-scale, 1));
+    vertical-align: middle;
+}
+
+.menu-item-content-inline img {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    vertical-align: middle;
+}
+
+.menu-item-content-inline span {
+    padding-left: 5px;
+    display: inline-block;
+    font-size: calc(16px * var(--scadia-ui-scale, 1));
+    text-align: left !important;
+}
+
+.sidenav-btn {
+    width: 100%;
+    min-width: 100% !important;
+    font: inherit;
+    font-size: 16px;
+    text-align: center;
+    -webkit-align-content: center;
+    align-content: center;
+    /* padding: 14px 2px 14px 2px; */
+    padding: 0px !important;
+    /* min-height: 85px; */
+    /* margin-top: 5px; */
+    /* margin-bottom: 5px; */
+    /* color: rgba(0, 0, 0, 1) !important; */
+}
+
+.sidenav-btn span {
+    display: block;
+    /* width: 100%; */
+    font: inherit;
+    font-weight: normal !important;
+    font-size: calc(14px * var(--scadia-ui-scale, 1));
+    text-align: center;
+    /* color: rgba(0, 0, 0, 1) !important; */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: break-spaces;
+    line-height: calc(20px * var(--scadia-ui-scale, 1));
+}
+
+/* Layout form */
+.my-form-field {
+    display: inline-block;
+    position: relative;
+    /* padding: 15px 0px 4px 0px; */
+}
+
+.my-form-field > span {
+    display: block;
+    font-size: 12px;
+    position: relative;
+    top: 0px;
+    left: 3px;
+    opacity: 0.5;
+    overflow: hidden;
+    white-space:nowrap;
+    text-overflow:ellipsis;
+}
+
+.my-form-field input,
+.my-form-field mat-select,
+.my-form-field textarea {
+  font-size: 13px;
+  border: none;
+  border-radius: 2px;
+  opacity: 1;
+}
+
+.my-form-field input,
+.my-form-field textarea {
+  padding: 6px 3px 7px 4px;
+  background-color: var(--formInputBackground);
+  color: var(--formInputColor);
+}
+
+.my-form-field input:focus {
+    padding: 5px 2px 6px 3px;
+    border: 1px solid var(--formInputBorderFocus);
+    background-color: var(--formInputBackgroundFocus);
+}
+
+.my-form-field .mat-mdc-select {
+  display: inline-flex;
+}
+
+.my-form-field .mat-mdc-select-trigger {
+  min-height: 28px;
+  line-height: 28px;
+  padding: 0 4px;
+  background-color: var(--formInputBackground);
+}
+
+.my-form-field .mat-mdc-select-arrow {
+  align-self: center;
+}
+
+.my-form-field .mat-mdc-form-field-infix {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.my-form-field-info {
+    color:rgba(210, 210, 210, 0.5);
+    padding-left: 10px;
+    display: inline-block;
+    height: 18px;
+    width: 18x;
+    font-size: 18px;
+}
+
+.my-form-readonly-input {
+    padding: 6px 3px 7px 4px !important;
+    background-color: var(--formInputReadonlyBackground) !important;
+    border: unset !important;
+}
+
+.my-form-field-permission {
+    width:80px;
+    height:28px;
+    background-color: var(--formInputBackground);
+    color: var(--formInputColor);
+}
+
+.my-form-field-bitmask {
+    width:65px;
+    height:28px;
+    background-color: var(--formInputBackground);
+    color: var(--formInputColor);
+    cursor: pointer;
+}
+
+.my-form-field-bitmask mat-icon {
+    position: absolute;
+    left: 40px;
+    line-height: 28px;
+}
+
+.my-form-field-bitmask input {
+    position: absolute;
+    left: 0px;
+    font-size: 13px;
+    width: 35px;
+    text-align:left;
+}
+
+.my-form-field-link {
+    position:absolute;
+    bottom: 0px;
+    right: 0px;
+    height: 28px;
+    width: 28px;
+    border-radius: 2px 0px 0px 2px;
+    background-color: var(--formInputBackground);
+    color: var(--formInputColor);
+}
+
+.icon-button-text span  {
+    display: inline-block;
+    font-size: 14px;
+    text-align: left;
+    line-height: 26px;
+}
+
+.fill-box {
+    width: 100%;                    /* fallback base */
+    width: -webkit-fill-available;  /* Chrome/Safari/Edge */
+    width: -moz-available;          /* old Firefox */
+}
+
+@supports (width: stretch) {
+    .fill-box { width: stretch; }
+}
+
+/*
+.my-form-field mat-select:focus {
+  padding: 4px 1px 5px 2px;
+  border: 2px solid #ccc;
+  background-color: white;
+} */
+
+/* pointer */
+.mycursor-pointer {
+    cursor: pointer;
+}
+
+mat-toolbar {
+    padding-top: 2px !important;
+}
+
+mat-toolbar,
+mat-toolbar-row {
+    /* min-height: 44px !important; */
+    height: 46px !important;
+    font-family: "Segoe UI Symbol", "Roboto-Regular", "Helvetica Neue", sans-serif !important;
+    font-weight: 300 !important;
+    font-size: 22px !important;
+    padding-left: 2px !important;
+    align-items: unset !important;
+}
+
+/* Rules for icon sizes: */
+.material-icons.md-18 {
+    font-size: 18px;
+}
+.material-icons.md-24 {
+    font-size: 24px;
+} /* Default */
+.material-icons.md-36 {
+    font-size: 36px;
+}
+.material-icons.md-48 {
+    font-size: 48px;
+}
+
+mat-toolbar {
+    padding-top: 2px !important;
+}
+
+mat-toolbar,
+mat-toolbar-row {
+    /* min-height: 44px !important; */
+    height: 46px !important;
+    font-family: "Segoe UI Symbol", "Roboto-Regular", "Helvetica Neue", sans-serif !important;
+    font-weight: 300 !important;
+    font-size: 22px !important;
+    padding-left: 2px !important;
+    align-items: unset !important;
+}
+
+.dark-theme .mat-mdc-icon-button.mat-mdc-button-base {
+    width: 40px !important;
+    height: 40px !important;
+    padding: 0px !important;
+}
+
+.mat-dialog-title {
+    margin: 0 0 12px !important;
+    width: calc(100% - 50px);
+    cursor: move;
+}
+
+.mat-raised-button {
+    /* padding: 2px 4px !important; */
+    font-weight: 600 !important;
+    line-height: 28px !important;
+    font-size: 11px !important;
+}
+
+.mat-button {
+    /* padding: 2px 4px !important; */
+    font-weight: 600 !important;
+    line-height: 28px !important;
+    font-size: 11px !important;
+}
+
+.mat-tooltip {
+    font-size: 14px !important;
+    white-space: pre-line;
+}
+
+.mat-button-sm {
+    height: 30px !important;
+    width: 30px !important;
+    line-height: 22px !important;
+}
+
+/* width */
+::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+    background: var(--scrollbarTrack);
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: var(--scrollbarThumb);
+}
+
+/* Color Picker */
+
+.preset-color {
+    margin: unset !important;
+    border: unset !important;
+    border-radius: unset !important;
+}
+
+.cpOKButtonClass {
+    margin-top: 5px !important;
+    padding: 4px 10px 4px 10px;
+    background-color: transparent;
+    color: #000;
+    font-size: 14px !important;
+    font-weight: bold;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    /* box-shadow: 0 1px 4px rgba(0, 0, 0, .6); */
+    border-radius: 4px;
+}
+
+.cpOKButtonClass:hover {
+    background-color: #f0f0f0;
+}
+
+.cpCancelButtonClass {
+    margin-top: 5px !important;
+    padding: 4px 10px 4px 10px;
+    background-color: transparent;
+    color: #000;
+    font-size: 14px !important;
+    font-weight: bold;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    /* box-shadow: 0 1px 4px rgba(0, 0, 0, .6); */
+    border-radius: 4px;
+}
+
+.cpCancelButtonClass:hover {
+    background-color: #f0f0f0;
+}
+
+.alarm-color {
+    background-color: #e00012;
+    color: #ffffff;
+}
+
+.info-color {
+    background-color: #007acc;
+    color: #ffffff;
+}
+
+/* HtmlSwitch */
+.md-switch {
+    z-index: 1;
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+}
+
+.md-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-button {
+    position: relative;
+    background-color: #ccc;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    cursor: pointer;
+    transition: margin-left 300ms ease-in-out, background-color 300ms;
+}
+
+.toggle-button > .inner-circle {
+    background: white;
+    width: 50%;
+    height: 100%;
+    border-radius: inherit;
+    transition: margin-left 300ms ease-in-out, background-color 300ms,
+        color 300ms;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.28);
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+}
+
+.toggle-button.active {
+    background-color: #2196f3;
+}
+
+.toggle-button.active > .inner-circle {
+    margin-left: 50%;
+    background-color: #2196f3;
+}
+
+@media screen and (max-height: 1500px) {
+    .dialog-ld-content {
+        max-height: 820px !important;
+        height: 820px !important;
+        overflow-y: scroll;
+        overflow-x: hidden;
+    }
+}
+
+@media screen and (max-height: 1200px) {
+    .dialog-ld-content {
+        max-height: 720px !important;
+        height: 720px !important;
+        overflow-y: scroll;
+        overflow-x: hidden;
+    }
+}
+
+@media screen and (max-height: 920px) {
+    .dialog-ld-content {
+        max-height: 600px !important;
+        height: 600px !important;
+        overflow-y: scroll;
+        overflow-x: hidden;
+    }
+    .dialog-mdsd-content {
+        height: 605px !important;
+        overflow-y: scroll;
+        overflow-x: hidden;
+    }
+    .dialog-mdsd-main {
+        height: 700px !important;
+    }
+    .dialog-mdsd-table {
+        height: 500px !important;
+    }
+}
+
+@media screen and (max-height: 820px) {
+    .dialog-ld-content {
+        max-height: 500px !important;
+        height: 500px !important;
+        overflow-y: scroll;
+        overflow-x: hidden;
+    }
+}
+
+@media screen and (max-height: 720px) {
+    .dialog-ld-content {
+        max-height: 400px !important;
+        height: 400px !important;
+        overflow-y: scroll;
+        overflow-x: hidden;
+    }
+}
+
+.fab-add {
+    position: fixed !important;
+    right: 20px !important;
+    bottom: 30px !important;
+    z-index: 9999 !important;
+}
+
+.input-color {
+    cursor: pointer;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    font-size: 13px;
+    padding: 5px 2px 6px 3px !important;
+    color:gray;
+}
+
+.input-color input:focus {
+    padding: 5px 2px 6px 3px !important;
+    /* background-color: white; */
+    border: 1px solid var(--formInputBorderFocus);
+}
+
+/* NgxUplot */
+#overlay {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.8);
+    /* padding: 0.5rem; */
+    /* margin: 0.75rem; */
+    color: #fff;
+    z-index: 10;
+    pointer-events: none;
+    font-size: 13px;
+    /* font-family: 'Rombo'; */
+    border-radius: 3px;
+    z-index: 9999;
+    padding-bottom: 0.3rem;
+}
+
+#overlay > .ut-head {
+    display: block;
+    border-bottom: 1px solid;
+    /* margin-bottom: 10px; */
+    padding: 0.3rem 0.5rem;
+}
+
+#overlay > .ut-serie {
+    padding: 0.4rem 0.5rem 0 0.5rem;
+    display: block;
+}
+
+#overlay > .ut-serie .ut-marker {
+    display: inline-block;
+    width: 0.6em;
+    height: 0.6em;
+    margin-right: 4px;
+    background-clip: content-box !important;
+    border: 2px solid red;
+    /* background: rgba(255, 0, 0, 0.3); */
+}
+
+#overlay > .ut-serie .ut-value {
+    display: inline-block;
+    margin-left: 4px;
+}
+
+.show-password {
+    bottom: 2px;
+    right: 4px;
+    position: absolute;
+}
+
+/* Color picker */
+.color-picker .hue-alpha {
+    padding: 0 !important;
+    height: 50px;
+}
+
+.color-picker .hue {
+    margin-bottom: 4px !important;
+}
+
+.color-picker .type-policy {
+    top: 185px !important;
+}
+.color-picker > .hex-text, .rgba-text, .hsla-text {
+    padding: 0px 8px !important;
+}
+
+.color-picker .preset-area {
+    padding: 0px 8px !important;
+}
+
+.color-picker .hex-text .box input, .color-picker input {
+    background-color: #ffffff !important;
+}
+
+/* Element side property */
+.element-property {
+    display: block;
+    width: calc(100% - 10px);
+}
+
+.element-property-title {
+    line-height: 30px;
+    font-size: 17px;
+}
+
+.element-property-header {
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+.light-dialog-container .mat-dialog-container {
+    padding: 5px 0px  !important;
+    color: unset !important;
+}
+
+.light-dialog-container .md-drppicker {
+    box-shadow: none !important;
+}
+
+.md-drppicker .btn {
+    float: right !important;
+    background-color: white !important;
+    color: black !important;
+    line-height: 28px !important;
+    margin-right: 10px;
+    margin-bottom: 5px;
+}
+
+.gauge-property-button {
+    background-color: dimgrey;
+    color:white;
+}
+
+/* standard */
+.hidden {
+    display: none !important;
+}
+
+.mdc-checkbox .mdc-checkbox__native-control {
+    display: none !important;
+}
+
+/* Angular Material (MDC): tabs should size to label content (no stretch) */
+.mat-mdc-tab-group .mat-mdc-tab-header .mat-mdc-tab-labels {
+    justify-content: flex-start;
+}
+
+.mat-mdc-tab-group .mat-mdc-tab-header .mat-mdc-tab-labels .mdc-tab,
+.mat-mdc-tab-group .mat-mdc-tab-header .mat-mdc-tab-labels .mat-mdc-tab {
+    flex: 0 0 auto !important;
+}
+
+/* Angular Material sets `flex-grow: 1` when stretchTabs is enabled. Override it globally. */
+.mat-mdc-tab-group.mat-mdc-tab-group-stretch-tabs > .mat-mdc-tab-header .mat-mdc-tab {
+    flex-grow: 0 !important;
+}
+
+/* Reduce horizontal padding for tab labels (Angular Material MDC). */
+.mat-mdc-tab-group .mat-mdc-tab-header .mdc-tab.mat-mdc-tab {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+}
+
+/* Legacy (pre-MDC) tabs */
+.mat-tab-group .mat-tab-label {
+    flex: 0 0 auto;
+}
+
+.mat-tab-group .mat-tab-label {
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+.inbk {
+    display: inline-block;
+}
+
+.message-error {
+    color:#ff5151;
+}
+
+.tohide {
+    display: none !important;
+}
+
+.block {
+    display: block;
+}
+
+.lbk {
+    display: inline-block;
+}
+
+.force-lbk {
+    display: inline-block !important;
+}
+
+.table {
+    display: table;
+}
+.mt3 {
+    margin-top: 3px;
+}
+.mt5 {
+    margin-top: 5px;
+}
+
+.mt10 {
+    margin-top: 10px;
+}
+
+.mt15 {
+    margin-top: 15px;
+}
+
+.mt20 {
+    margin-top: 20px;
+}
+
+.mt25 {
+    margin-top: 25px;
+}
+
+.mt30 {
+    margin-top: 30px;
+}
+
+.mr5 {
+    margin-right: 5px;
+}
+
+.mr10 {
+    margin-right: 10px;
+}
+
+.mr15 {
+    margin-right: 15px;
+}
+
+.ml5 {
+    margin-left: 5px;
+}
+
+.ml-8 {
+    margin-left: 8px;
+}
+
+.ml10 {
+    margin-left: 10px;
+}
+
+.ml15 {
+    margin-left: 15px;
+}
+
+.ml12 {
+    margin-left: 12px;
+}
+
+.ml20 {
+    margin-left: 20px;
+}
+
+.ml30 {
+    margin-left: 30px;
+}
+
+.mr20 {
+    margin-right: 20px;
+}
+
+.mr5 {
+    margin-right: 5px;
+}
+.mb3 {
+    margin-bottom: 3px;
+}
+.mb5 {
+    margin-bottom: 5px;
+}
+
+.mb10 {
+    margin-bottom: 10px;
+}
+
+.mb15 {
+    margin-bottom: 15px;
+}
+
+.mb20 {
+    margin-bottom: 20px;
+}
+
+.mb25 {
+    margin-bottom: 25px;
+}
+
+.ftl {
+    float: left;
+}
+
+.ftr {
+    float: right;
+}
+
+.w100 {
+    width: 100%;
+}
+
+.flex {
+    display: flex;
+}
+
+.container-split-ver {
+    display: flex;
+}
+
+.font-edit {
+    font-size: 14px;
+}
+
+.container-split-ver > div {
+    flex: 1;
+}
+
+.pointer {
+    cursor: pointer;
+}
+
+.pointer-move {
+    cursor: move;
+}
+
+.tac {
+    text-align: center;
+}
+
+.form-input-error {
+    display: block;
+    color: #ff9122;
+    font-size: 12px !important;
+    font-weight: bold;
+}
+.wp100 {
+    width: 100%;
+}
+
+.fs-10 {
+    font-size: 10px;
+}
+.fs-11 {
+    font-size: 11px;
+}
+.fs-12 {
+    font-size: 12px;
+}
+.fs-13 {
+    font-size: 13px;
+}
+.fs-14 {
+    font-size: 14px;
+}
+
+/* ROW */
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  /* COLUMN BASE */
+  .col {
+    flex: 1 0 0;
+  }
+
+  /* COLUMN SIZES (12-grid style) */
+  .col-1  { flex: 0 0 8.33%; }
+  .col-2  { flex: 0 0 16.66%; }
+  .col-3  { flex: 0 0 25%; }
+  .col-4  { flex: 0 0 33.33%; }
+  .col-5  { flex: 0 0 41.66%; }
+  .col-6  { flex: 0 0 50%; }
+  .col-7  { flex: 0 0 58.33%; }
+  .col-8  { flex: 0 0 66.66%; }
+  .col-9  { flex: 0 0 75%; }
+  .col-10 { flex: 0 0 83.33%; }
+  .col-11 { flex: 0 0 91.66%; }
+  .col-12 { flex: 0 0 100%; }
+
+  /* OPTIONAL: spacing */
+  .gap-8  { gap: 8px; }
+  .gap-16 { gap: 16px; }
+
+  .center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+/* ---------------------------------------------------------------------------
+   Control-room wall / kiosk presentation (?kiosk=1)
+
+   A video wall runs unattended for months. Everything that is only useful to a
+   person sitting at the machine - the mouse pointer, scrollbars, text selection
+   and the developer shortcut - is removed here. The dashboard itself is scaled
+   by Utils.fitView, this only cleans up the chrome.
+   --------------------------------------------------------------------------- */
+body.scadia-kiosk {
+    cursor: none;
+    overflow: hidden;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+}
+
+body.scadia-kiosk * {
+    scrollbar-width: none;
+}
+
+body.scadia-kiosk ::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+    display: none;
+}
+
+body.scadia-kiosk .fab-button {
+    display: none !important;
+}
+/* ------------------------------------------------------------------ dialogs
+ *
+ * The dialogs are rendered with LIGHT text on DARK fields, but the dialog container itself
+ * had no background of its own: it stayed transparent, so on a white page the whole dialog
+ * was white-on-white and effectively invisible.
+ *
+ * That is not cosmetic. The login dialog is the gate in front of every management page -
+ * an operator who cannot read it cannot log in at all, and the symptom looks like 'the page
+ * is blank', which sends everyone looking at the wrong thing.
+ */
+.mat-mdc-dialog-container,
+mat-dialog-container,
+.cdk-overlay-pane .mat-mdc-dialog-surface {
+    background-color: #3a3a40;
+    border-radius: 8px;
+    color: #ffffff;
+}

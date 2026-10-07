@@ -1,0 +1,659 @@
+'use strict';
+
+const http = require('http');
+const express = require('express');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+
+const apiIndex = require('../../api');
+const authApi = require('../../api/auth');
+const usersApi = require('../../api/users');
+
+const SECRET = 'jwt-lifecycle-secret';
+
+let expect;
+
+function request(server, options) {
+    return new Promise((resolve, reject) => {
+        const req = http.request({
+            host: '127.0.0.1',
+            port: server.address().port,
+            method: options.method || 'GET',
+            path: options.path,
+            headers: options.headers || {}
+        }, (res) => {
+            let body = '';
+            res.setEncoding('utf8');
+            res.on('data', (chunk) => {
+                body += chunk;
+            });
+            res.on('end', () => {
+                let json = null;
+                try {
+                    json = body ? JSON.parse(body) : null;
+                } catch (err) {
+                    json = null;
+                }
+                resolve({
+                    statusCode: res.statusCode,
+                    headers: res.headers,
+                    body,
+                    json
+                });
+            });
+        });
+        req.on('error', reject);
+        req.end(options.body || undefined);
+    });
+}
+
+function listen(app) {
+    return new Promise((resolve) => {
+        const server = app.listen(0, '127.0.0.1', () => {
+            resolve(server);
+        });
+    });
+}
+
+describe('Security - JWT lifecycle', () => {
+    before(async () => {
+        const chai = await import('chai');
+        expect = chai.expect;
+    });
+
+    it('returns the same signin failure response for unknown users and bad passwords', async () => {
+        const passwordHash = bcrypt.hashSync('correct-password', 4);
+        const runtime = {
+            project: {},
+            users: {
+                findOne(credentials) {
+                    if (credentials.username === 'admin') {
+                        return Promise.resolve([
+                            {
+                                username: 'admin',
+                                fullname: 'Administrator',
+                                password: passwordHash,
+                                groups: -1,
+                                info: '{}'
+                            }
+                        ]);
+                    }
+                    return Promise.resolve([]);
+                }
+            },
+            logger: {
+                error() {},
+                info() {}
+            }
+        };
+
+        authApi.init(runtime, SECRET, '1h', false, '7d');
+        const app = express();
+        app.use(express.json());
+        app.use(authApi.app());
+        const server = await listen(app);
+
+        try {
+            const headers = { 'Content-Type': 'application/json' };
+            const existingUser = await request(server, {
+                method: 'POST',
+                path: '/api/signin',
+                headers,
+                body: JSON.stringify({ username: 'admin', password: 'wrong-password' })
+            });
+            const unknownUser = await request(server, {
+                method: 'POST',
+                path: '/api/signin',
+                headers,
+                body: JSON.stringify({ username: 'user_does_not_exist_999', password: 'wrong-password' })
+            });
+
+            expect(existingUser.statusCode).to.equal(401);
+            expect(unknownUser.statusCode).to.equal(401);
+            expect(unknownUser.json).to.deep.equal(existingUser.json);
+        } finally {
+            await new Promise((resolve) => server.close(resolve));
+        }
+    });
+
+    it('rejects refresh cookies for deleted users instead of reusing token groups', async () => {
+        const runtime = {
+            project: {},
+            settings: {
+                secureEnabled: true,
+                enableRefreshCookieAuth: true
+            },
+            users: {
+                getUsers() {
+                    return Promise.resolve();
+                }
+            },
+            logger: {
+                error() {},
+                info() {}
+            }
+        };
+
+        authApi.init(runtime, SECRET, '1h', true, '7d');
+        const app = express();
+        app.use(authApi.app());
+        const server = await listen(app);
+
+        try {
+            const refreshToken = jwt.sign({ id: 'admin', groups: -1, type: 'refresh' }, SECRET, { expiresIn: '7d' });
+            const response = await request(server, {
+                method: 'POST',
+                path: '/api/refresh',
+                headers: {
+                    Cookie: `scadia_refresh=${refreshToken}`
+                }
+            });
+
+            expect(response.statusCode).to.equal(401);
+            expect(response.json.message).to.equal('Invalid refresh token');
+        } finally {
+            await new Promise((resolve) => server.close(resolve));
+        }
+    });
+
+    it('clears Node-RED auth cookies on signout', async () => {
+        const accessEvents = [];
+        const runtime = {
+            project: {},
+            settings: {
+                https: false
+            },
+            events: {
+                emit(event, data) {
+                    accessEvents.push({ event, data });
+                }
+            },
+            logger: {
+                error() {},
+                info() {}
+            }
+        };
+
+        authApi.init(runtime, SECRET, '1h', false, '7d');
+        const app = express();
+        app.use(authApi.app());
+        const server = await listen(app);
+
+        try {
+            const response = await request(server, {
+                method: 'POST',
+                path: '/api/signout',
+                headers: {
+                    Cookie: 'nodered_auth=stale-token'
+                }
+            });
+
+            expect(response.statusCode).to.equal(204);
+            const setCookies = response.headers['set-cookie'] || [];
+            expect(setCookies.some(cookie =>
+                cookie.startsWith('nodered_auth=;') &&
+                cookie.includes('Path=/nodered')
+            )).to.equal(true);
+            expect(setCookies.some(cookie =>
+                cookie.startsWith('nodered_auth=;') &&
+                cookie.includes('Path=/;')
+            )).to.equal(true);
+            expect(accessEvents).to.deep.equal([]);
+        } finally {
+            await new Promise((resolve) => server.close(resolve));
+        }
+    });
+
+    it('includes the verified username in the signout event', async () => {
+        const accessEvents = [];
+        const runtime = {
+            project: {},
+            settings: { https: false },
+            events: {
+                emit(event, data) {
+                    accessEvents.push({ event, data });
+                }
+            },
+            logger: { error() {}, info() {} }
+        };
+
+        authApi.init(runtime, SECRET, '1h', false, '7d');
+        const app = express();
+        app.use(authApi.app());
+        const server = await listen(app);
+
+        try {
+            const token = jwt.sign({ id: 'alice', groups: 1 }, SECRET, { expiresIn: '1h' });
+            const response = await request(server, {
+                method: 'POST',
+                path: '/api/signout',
+                headers: { 'x-access-token': token }
+            });
+
+            expect(response.statusCode).to.equal(204);
+            expect(accessEvents).to.deep.equal([{ event: 'access:logout', data: { username: 'alice' } }]);
+        } finally {
+            await new Promise((resolve) => server.close(resolve));
+        }
+    });
+
+    it('does not trust an invalid access token for logout attribution', async () => {
+        const accessEvents = [];
+        const runtime = {
+            project: {},
+            settings: { https: false },
+            events: {
+                emit(event, data) {
+                    accessEvents.push({ event, data });
+                }
+            },
+            logger: { error() {}, info() {} }
+        };
+
+        authApi.init(runtime, SECRET, '1h', false, '7d');
+        const app = express();
+        app.use(authApi.app());
+        const server = await listen(app);
+
+        try {
+            const forgedToken = jwt.sign({ id: 'mallory', groups: -1 }, 'different-secret', { expiresIn: '1h' });
+            const response = await request(server, {
+                method: 'POST',
+                path: '/api/signout',
+                headers: { 'x-access-token': forgedToken }
+            });
+
+            expect(response.statusCode).to.equal(204);
+            expect(accessEvents).to.deep.equal([]);
+        } finally {
+            await new Promise((resolve) => server.close(resolve));
+        }
+    });
+
+    it('attributes logout to a user with an expired but correctly signed access token', async () => {
+        const accessEvents = [];
+        const runtime = {
+            project: {},
+            settings: { https: false },
+            events: {
+                emit(event, data) {
+                    accessEvents.push({ event, data });
+                }
+            },
+            logger: { error() {}, info() {} }
+        };
+
+        authApi.init(runtime, SECRET, '1h', false, '7d');
+        const app = express();
+        app.use(authApi.app());
+        const server = await listen(app);
+
+        try {
+            const token = jwt.sign({ id: 'alice', groups: 1 }, SECRET, { expiresIn: '-1s' });
+            const response = await request(server, {
+                method: 'POST',
+                path: '/api/signout',
+                headers: { 'x-access-token': token }
+            });
+
+            expect(response.statusCode).to.equal(204);
+            expect(accessEvents).to.deep.equal([{ event: 'access:logout', data: { username: 'alice' } }]);
+        } finally {
+            await new Promise((resolve) => server.close(resolve));
+        }
+    });
+
+    it('refreshes access tokens with current stored groups after demotion', async () => {
+        const runtime = {
+            project: {},
+            settings: {
+                secureEnabled: true,
+                enableRefreshCookieAuth: true
+            },
+            users: {
+                getUsers() {
+                    return Promise.resolve([
+                        {
+                            username: 'admin',
+                            fullname: 'Administrator',
+                            groups: 1,
+                            info: '{}'
+                        }
+                    ]);
+                }
+            },
+            logger: {
+                error() {},
+                info() {}
+            }
+        };
+
+        authApi.init(runtime, SECRET, '1h', true, '7d');
+        const app = express();
+        app.use(authApi.app());
+        const server = await listen(app);
+
+        try {
+            const refreshToken = jwt.sign({ id: 'admin', groups: -1, type: 'refresh' }, SECRET, { expiresIn: '7d' });
+            const response = await request(server, {
+                method: 'POST',
+                path: '/api/refresh',
+                headers: {
+                    Cookie: `scadia_refresh=${refreshToken}`
+                }
+            });
+
+            expect(response.statusCode).to.equal(200);
+            expect(response.json.data.groups).to.equal(1);
+
+            const decodedAccess = jwt.verify(response.json.data.token, SECRET);
+            expect(decodedAccess.groups).to.equal(1);
+        } finally {
+            await new Promise((resolve) => server.close(resolve));
+        }
+    });
+
+    it('refreshes access tokens with groups zero after role clear', async () => {
+        const runtime = {
+            project: {},
+            settings: {
+                secureEnabled: true,
+                enableRefreshCookieAuth: true
+            },
+            users: {
+                getUsers() {
+                    return Promise.resolve([
+                        {
+                            username: 'admin',
+                            fullname: 'Administrator',
+                            groups: 0,
+                            info: '{"roles":[]}'
+                        }
+                    ]);
+                }
+            },
+            logger: {
+                error() {},
+                info() {}
+            }
+        };
+
+        authApi.init(runtime, SECRET, '1h', true, '7d');
+        const app = express();
+        app.use(authApi.app());
+        const server = await listen(app);
+
+        try {
+            const refreshToken = jwt.sign({ id: 'admin', groups: -1, type: 'refresh' }, SECRET, { expiresIn: '7d' });
+            const response = await request(server, {
+                method: 'POST',
+                path: '/api/refresh',
+                headers: {
+                    Cookie: `scadia_refresh=${refreshToken}`
+                }
+            });
+
+            expect(response.statusCode).to.equal(200);
+            expect(response.json.data.groups).to.equal(0);
+            expect(response.json.data.info).to.equal('{"roles":[]}');
+
+            const decodedAccess = jwt.verify(response.json.data.token, SECRET);
+            expect(decodedAccess.groups).to.equal(0);
+        } finally {
+            await new Promise((resolve) => server.close(resolve));
+        }
+    });
+
+    it('does not expose password hashes from the users endpoint', async () => {
+        const runtime = {
+            project: {},
+            users: {
+                getUsers() {
+                    return Promise.resolve([
+                        {
+                            username: 'admin',
+                            fullname: 'Administrator',
+                            password: '$2a$10$hash',
+                            groups: -1,
+                            info: '{}'
+                        }
+                    ]);
+                }
+            },
+            logger: {
+                error() {}
+            }
+        };
+
+        function secureFnc(req, res, next) {
+            req.userId = 'admin';
+            req.userGroups = -1;
+            next();
+        }
+
+        function checkGroupsFnc() {
+            return -1;
+        }
+
+        usersApi.init(runtime, secureFnc, checkGroupsFnc);
+        const app = express();
+        app.use(usersApi.app());
+        const server = await listen(app);
+
+        try {
+            const response = await request(server, {
+                path: '/api/users'
+            });
+
+            expect(response.statusCode).to.equal(200);
+            expect(response.json[0]).to.not.have.property('password');
+            expect(response.body).to.not.contain('$2a$10$hash');
+        } finally {
+            await new Promise((resolve) => server.close(resolve));
+        }
+    });
+
+    it('heartbeat reissues tokens with current stored groups after demotion', async () => {
+        const runtime = {
+            project: {},
+            settings: {
+                secureEnabled: true,
+                secretCode: SECRET,
+                tokenExpiresIn: '1h',
+                logApiLevel: 'none'
+            },
+            users: {
+                getUserCache(username) {
+                    if (username === 'alice') {
+                        return { groups: 2, info: {} };
+                    }
+                    return null;
+                },
+                getUsers() {
+                    return Promise.resolve([
+                        {
+                            username: 'alice',
+                            groups: 2,
+                            info: '{"roles":["operator"]}'
+                        }
+                    ]);
+                }
+            },
+            logger: {
+                error() {},
+                info() {},
+                warn() {}
+            }
+        };
+
+        await apiIndex.init(null, runtime);
+        const server = await listen(apiIndex.apiApp);
+
+        try {
+            const staleAdminToken = jwt.sign({ id: 'alice', groups: -1 }, SECRET, { expiresIn: '1h' });
+            const response = await request(server, {
+                method: 'POST',
+                path: '/api/heartbeat',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-access-token': staleAdminToken
+                },
+                body: JSON.stringify({ params: true })
+            });
+
+            expect(response.statusCode).to.equal(200);
+            expect(response.json.message).to.equal('tokenRefresh');
+            expect(response.json.data.groups).to.equal(2);
+            expect(response.json.data.info).to.equal('{"roles":["operator"]}');
+
+            const decodedAccess = jwt.verify(response.json.token, SECRET);
+            expect(decodedAccess.groups).to.equal(2);
+        } finally {
+            await new Promise((resolve) => server.close(resolve));
+        }
+    });
+
+    it('heartbeat answers 503, not 401, when the user store itself fails', async () => {
+        // A 401 on a token refresh tells the client its credentials are void, and a client that
+        // believes that forces a re-login or drops the operator mid-shift. The credentials were
+        // fine in this scenario - the database was not - so the answer has to be different.
+        let errorMessages = [];
+        const runtime = {
+            project: {},
+            settings: {
+                secureEnabled: true,
+                secretCode: SECRET,
+                tokenExpiresIn: '1h',
+                logApiLevel: 'none'
+            },
+            users: {
+                getUserCache() { return { groups: -1, info: {} }; },
+                getUsers() { return Promise.reject(new Error('sqlite is busy')); }
+            },
+            logger: {
+                error(message) { errorMessages.push(String(message)); },
+                info() {},
+                warn() {}
+            }
+        };
+
+        await apiIndex.init(null, runtime);
+        const server = await listen(apiIndex.apiApp);
+
+        try {
+            const token = jwt.sign({ id: 'alice', groups: -1 }, SECRET, { expiresIn: '1h' });
+            const response = await request(server, {
+                method: 'POST',
+                path: '/api/heartbeat',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-access-token': token
+                },
+                body: JSON.stringify({ params: true })
+            });
+
+            expect(response.statusCode, 'a store failure must not be reported as a rejected token')
+                .to.equal(503);
+            expect(response.json.error).to.equal('identity_store_unavailable');
+            expect(response.json.message).to.contain('could not be checked');
+            expect(errorMessages.join(' '), 'the failure must say it was a FAILURE, not a miss')
+                .to.contain('store unavailable');
+            expect(errorMessages.join(' ')).to.contain('sqlite is busy');
+        } finally {
+            await new Promise((resolve) => server.close(resolve));
+        }
+    });
+
+    it('a user with no stored groups is still a MISS, not a failure', async () => {
+        // Threshold check on the distinction: the fix must not turn every odd record into a 503.
+        const runtime = {
+            project: {},
+            settings: {
+                secureEnabled: true,
+                secretCode: SECRET,
+                tokenExpiresIn: '1h',
+                logApiLevel: 'none'
+            },
+            users: {
+                getUserCache() { return { groups: -1, info: {} }; },
+                getUsers() { return Promise.resolve([{ username: 'alice', groups: undefined }]); }
+            },
+            logger: { error() {}, info() {}, warn() {} }
+        };
+
+        await apiIndex.init(null, runtime);
+        const server = await listen(apiIndex.apiApp);
+
+        try {
+            const token = jwt.sign({ id: 'alice', groups: -1 }, SECRET, { expiresIn: '1h' });
+            const response = await request(server, {
+                method: 'POST',
+                path: '/api/heartbeat',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-access-token': token
+                },
+                body: JSON.stringify({ params: true })
+            });
+
+            expect(response.statusCode, 'the token is refused, at the transport level, with a 401')
+                .to.equal(401);
+            expect(response.json.error, 'a domain code, like the sibling identity_store_unavailable branch ' +
+                '(N-23) - not the platform-wide unauthorized_error').to.equal('heartbeat_user_not_found');
+            expect(response.json.message, 'the body must distinguish "no such user" from "bad token"')
+                .to.contain('no longer exists');
+        } finally {
+            await new Promise((resolve) => server.close(resolve));
+        }
+    });
+
+    it('heartbeat refuses to reissue tokens for deleted users', async () => {
+        const runtime = {
+            project: {},
+            settings: {
+                secureEnabled: true,
+                secretCode: SECRET,
+                tokenExpiresIn: '1h',
+                logApiLevel: 'none'
+            },
+            users: {
+                getUserCache() {
+                    return null;
+                },
+                getUsers() {
+                    return Promise.resolve();
+                }
+            },
+            logger: {
+                error() {},
+                info() {},
+                warn() {}
+            }
+        };
+
+        await apiIndex.init(null, runtime);
+        const server = await listen(apiIndex.apiApp);
+
+        try {
+            const staleAdminToken = jwt.sign({ id: 'alice', groups: -1 }, SECRET, { expiresIn: '1h' });
+            const response = await request(server, {
+                method: 'POST',
+                path: '/api/heartbeat',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-access-token': staleAdminToken
+                },
+                body: JSON.stringify({ params: true })
+            });
+
+            expect(response.statusCode, 'the token is refused, at the transport level, with a 401')
+                .to.equal(401);
+            expect(response.json.error, 'a domain code, like the sibling identity_store_unavailable branch ' +
+                '(N-23) - not the platform-wide unauthorized_error').to.equal('heartbeat_user_not_found');
+            expect(response.json.message, 'the body must distinguish "no such user" from "bad token"')
+                .to.contain('no longer exists');
+        } finally {
+            await new Promise((resolve) => server.close(resolve));
+        }
+    });
+});

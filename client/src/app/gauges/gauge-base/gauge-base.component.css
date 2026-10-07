@@ -1,0 +1,32 @@
+.svg-property-split2:after {
+    display: table;
+    clear: both;
+}
+
+.svg-property-split2 div {
+    display: inline-block;
+}
+
+.svg-property {
+    color: rgba(255, 255, 255, 0.75);
+
+}
+
+.svg-property span {
+    display: block;
+    font-size: 10px;
+    margin: 0px 5px 0px 10px;
+}
+
+.svg-property input {
+    display: block;
+    margin: 0px 10px 12px 10px;
+    border: unset;
+    background-color: inherit;
+    color: var(--toolboxFlyColor);
+    border-bottom: 1px solid var(--toolboxFlyColor);
+}
+
+.mat-button {
+    min-width: 60px;
+}

@@ -1,0 +1,54 @@
+<div class="cam-tile" [class.cam-tile--error]="state === 'error'" [class.cam-tile--live]="state === 'live'">
+    <div class="cam-tile__frame">
+        <img *ngIf="!usingWebrtc && objectUrl" [src]="objectUrl" alt="{{camera?.name}}">
+        <video *ngIf="usingWebrtc" #videoEl muted autoplay playsinline></video>
+
+        <div class="cam-tile__placeholder" *ngIf="state !== 'live'">
+            <mat-spinner diameter="26" *ngIf="state === 'connecting'"></mat-spinner>
+            <ng-container *ngIf="state === 'error'">
+                <mat-icon class="cam-err-icon">videocam_off</mat-icon>
+                <span class="cam-err-code">{{errorCode}}</span>
+                <button class="sc-btn sc-btn--ghost cam-retry" (click)="retry()">
+                    <mat-icon>refresh</mat-icon>{{'camera.retry' | translate}}
+                </button>
+            </ng-container>
+            <span class="cam-idle" *ngIf="state === 'idle'">{{'camera.standby' | translate}}</span>
+        </div>
+
+        <!-- 视数融合: OSD overlay (LIVE SCADIA tag values, resolved server-side) -->
+        <div class="cam-osd" *ngIf="showOsd">
+            <div class="cam-osd__corner cam-osd__corner--tl">
+                <div *ngFor="let i of osd['top-left']" class="cam-osd__line"
+                     [class.cam-osd__line--bad]="i.quality === 'bad'">{{i.text}}</div>
+            </div>
+            <div class="cam-osd__corner cam-osd__corner--tr">
+                <div *ngFor="let i of osd['top-right']" class="cam-osd__line"
+                     [class.cam-osd__line--bad]="i.quality === 'bad'">{{i.text}}</div>
+            </div>
+            <div class="cam-osd__corner cam-osd__corner--bl">
+                <div *ngFor="let i of osd['bottom-left']" class="cam-osd__line cam-osd__line--val"
+                     [class.cam-osd__line--bad]="i.quality === 'bad'">{{i.text}}</div>
+            </div>
+            <div class="cam-osd__corner cam-osd__corner--br">
+                <div *ngFor="let i of osd['bottom-right']" class="cam-osd__line cam-osd__line--val"
+                     [class.cam-osd__line--bad]="i.quality === 'bad'">{{i.text}}</div>
+            </div>
+        </div>
+
+        <!-- AI 视频分析: detection boxes, percentages from normalised regions -->
+        <div class="cam-det" *ngIf="showDetections && detections.length">
+            <div class="cam-det__box" *ngFor="let d of detections"
+                 [style.left.%]="d.region.x * 100" [style.top.%]="d.region.y * 100"
+                 [style.width.%]="d.region.w * 100" [style.height.%]="d.region.h * 100">
+                <span class="cam-det__tag">{{boxLabel(d)}}</span>
+            </div>
+        </div>
+
+        <div class="cam-tile__osd">
+            <span class="sc-led" [ngClass]="state === 'live' ? 'sc-led--ok' : (state === 'error' ? 'sc-led--alarm' : 'sc-led--idle')"></span>
+            <span class="cam-name">{{camera?.name}}</span>
+            <span class="cam-badge">{{usingWebrtc ? 'WebRTC' : 'JPEG'}}</span>
+            <span class="cam-badge cam-badge--ai" *ngIf="camera?.aiEnabled">AI</span>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,163 @@
+import { Utils } from '../_helpers/utils';
+import { Tag } from './device';
+import { Chart } from './chart';
+export class Report {
+    id: string;
+    name: string;
+    receiver?: string;
+    scheduling: string;
+    docproperty: ReportDocProperty;
+    content?: ReportContent;
+    constructor(_id: string) {
+        this.id = _id;
+        this.docproperty = this.defaultDocProperty();
+        this.scheduling = Utils.getEnumKey(ReportSchedulingType, ReportSchedulingType.week);
+        this.content = <ReportContent> { items: [] };
+    }
+
+    defaultDocProperty() {
+        return <ReportDocProperty> {
+            pageSize: 'A4',
+            pageOrientation: 'portrait',        // landscape
+            pageMargins: [ 60, 40, 40, 40 ],    // [left, top, right, bottom] or [horizontal, vertical] or just a number for equal margins
+            fontName: 'Helvetica',
+        };
+    }
+}
+
+export enum ReportSchedulingType {
+    none = 'report.scheduling-none',
+    day = 'report.scheduling-day',
+    week = 'report.scheduling-week',
+    month = 'report.scheduling-month',
+}
+
+export interface ReportContent {
+    items?: ReportItem[];
+}
+
+export interface ReportDocProperty {
+    pageSize: string;
+    pageOrientation: string;
+    pageMargins: number[];
+    fontName: string;
+}
+
+export interface ReportPageMargin {
+    top: number;
+    bottom: number;
+    left: number;
+    right: number;
+}
+
+export interface ReportItem {
+    type: ReportItemType;
+    align?: string;
+    width?: number;
+    size?: number;
+}
+
+export interface ReportItemText extends ReportItem {
+    text: string;
+}
+export interface ReportItemTable extends ReportItem {
+    columns: ReportTableColumn[];
+    range: ReportDateRangeType;
+    interval: ReportIntervalType;
+}
+
+export interface ReportTableColumn {
+    type: ReportTableColumnType;
+    tag: Tag;
+    label: string;
+    align: string;
+    width: string;
+    function: ReportFunctionType;
+}
+
+export enum ReportTableColumnType {
+    timestamp = 0,
+    tag = 1,
+}
+
+export interface ReportItemAlarms extends ReportItem {
+    priority: {};
+    priorityText: {};
+    property: {};
+    propertyText: {};
+    statusText: {};
+    range: ReportDateRangeType;
+    alarmFilter: string[];
+}
+
+export interface ReportItemChart extends ReportItem {
+    chart: Chart;
+    range: ReportDateRangeType;
+    width?: number;
+    height?: number;
+}
+
+export enum ReportItemType {
+    text = 'report.item-type-text',
+    table = 'report.item-type-table',
+    alarms = 'report.item-type-alarms',
+    chart = 'report.item-type-chart',
+}
+
+/**
+ * Period of a report item. The enum KEYS travel on the wire and must match
+ * server/runtime/reporting/contract.js exactly - the values are only for display, and are
+ * what used to make the two sides look compatible when they were not.
+ *
+ * test/reporting/contract.test.js fails the build if these keys and the contract diverge.
+ */
+export enum ReportDateRangeType {
+    none = 'report.item-daterange-none',
+    shift = 'report.item-daterange-shift',
+    day = 'report.item-daterange-day',
+    week = 'report.item-daterange-week',
+    month = 'report.item-daterange-month',
+    quarter = 'report.item-daterange-quarter',
+    year = 'report.item-daterange-year',
+}
+
+export enum ReportIntervalType {
+    min5 = 'report.item-interval-min5',
+    min10 = 'report.item-interval-min10',
+    min15 = 'report.item-interval-min15',
+    min30 = 'report.item-interval-min30',
+    hour = 'report.item-interval-hour',
+    day = 'report.item-interval-day',
+}
+
+export enum ReportFunctionType {
+    min = 'report.item-function-min',
+    max = 'report.item-function-max',
+    average = 'report.item-function-average',
+    sum = 'report.item-function-sum',
+}
+
+export const REPORT_PREFIX = 'r_';
+
+export enum ReportColumnsType {
+    name = 'name',
+    ontime = 'ontime',
+    download =  'download',
+    delete = 'delete'
+}
+export const ReportColumns: string[] = Object.values(ReportColumnsType);
+
+export interface ReportsFilter {
+    name?: string;
+    count?: string;
+}
+
+export interface ReportsQuery extends ReportsFilter {
+}
+
+export interface ReportFile {
+    fileName: string;
+    reportName: string;
+    created: Date;
+    deletable?: boolean;
+}

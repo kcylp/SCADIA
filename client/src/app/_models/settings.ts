@@ -1,0 +1,232 @@
+/**
+ * Languages this build actually ships.
+ *
+ * assets/i18n contains exactly these files. Anything else would be a request for a
+ * missing file, which ngx-translate answers by rendering raw keys - far worse than
+ * falling back. Keeping the list here, next to the setting it constrains, means the
+ * settings UI and the loader can never disagree about what is available.
+ *
+ * Simplified Chinese is the master; English and Russian serve the export markets.
+ */
+export const SHIPPED_APP_LANGUAGES = ['zh-cn', 'en', 'ru'];
+
+/** Names shown in the language menu, each written in its own language. */
+export const SHIPPED_APP_LANGUAGE_NAMES: { [languageId: string]: string } = {
+    'zh-cn': '简体中文',
+    'en': 'English',
+    'ru': 'Русский'
+};
+
+/**
+ * Date, time and number conventions per shipped language.
+ *
+ * "All displayed information switches language" includes how a timestamp reads: a Russian
+ * operator expects 31.12.2026, an English one 12/31/2026, and the Chinese master uses
+ * 2026.12.31. Hard-coding one pattern in a template quietly exports the master's convention
+ * to every customer.
+ */
+export interface LocaleFormat {
+    dateTime: string;
+    date: string;
+    time: string;
+    /** Decimal separator used when a value is rendered for display. */
+    decimalSeparator: string;
+}
+
+export const SHIPPED_LOCALE_FORMATS: { [languageId: string]: LocaleFormat } = {
+    'zh-cn': { dateTime: 'yyyy.MM.dd HH:mm:ss', date: 'yyyy.MM.dd', time: 'HH:mm:ss', decimalSeparator: '.' },
+    'en': { dateTime: 'MM/dd/yyyy HH:mm:ss', date: 'MM/dd/yyyy', time: 'HH:mm:ss', decimalSeparator: '.' },
+    'ru': { dateTime: 'dd.MM.yyyy HH:mm:ss', date: 'dd.MM.yyyy', time: 'HH:mm:ss', decimalSeparator: ',' }
+};
+
+/** Clamp a stored or requested language onto the shipped set. */
+export function normalizeAppLanguage(requested?: string, fallback = 'zh-cn'): string {
+    if (requested && SHIPPED_APP_LANGUAGES.indexOf(requested) !== -1) {
+        return requested;
+    }
+    return SHIPPED_APP_LANGUAGES.indexOf(fallback) !== -1 ? fallback : SHIPPED_APP_LANGUAGES[0];
+}
+
+export class AppSettings {
+    /** Editor language: the product is authored in Simplified Chinese */
+    language = 'zh-cn';
+    /** Hide the editor onboarding wizard on editor entry */
+    hideEditorOnboarding = false;
+    /** Per-section informational messages in editor areas */
+    editorSectionMessages = new EditorSectionMessagesSettings();
+    /** Web server port */
+    uiPort = 1881;
+    /** Security access to enable user and authentication */
+    secureEnabled = false;
+    /** Secret code to sign/verify tokens */
+    secretCode = '';
+    /** Expiration of authanticated token (15m)*/
+    tokenExpiresIn = '1h';
+    /** Enable refresh token HttpOnly cookie flow */
+    enableRefreshCookieAuth = false;
+    /** Expiration of refresh token (default 7d) */
+    refreshTokenExpiresIn?: string;
+    /** authentication are valid only for edit mode */
+    secureOnlyEditor = false;
+    /** Broadcast all tags, without check the frontend views */
+    broadcastAll = false;
+    /** Load HMI views on demand */
+    lazyViewLoading = false;
+    /** Smtp to send mails */
+    smtp = new SmtpSettings();
+    /** Daq store database */
+    daqstore = new DaqStore();
+    /** Alarms store settings */
+    alarms = new AlarmsSettings();
+    /** Logs settings */
+    logs = new LogsSettings();
+    /** Log Full enabled to log all setValue */
+    logFull = false;
+    /** User role enabled (default group) */
+    userRole = false;
+    /** Enable Node-Red */
+    nodeRedEnabled = true;
+    /** Node-RED access mode: secure | legacy-open */
+    nodeRedAuthMode = 'secure';
+    /** Enable Swagger */
+    swaggerEnabled = false;
+}
+
+export class EditorSectionMessagesSettings {
+    /** Hide the drivers/plugins notice shown in device connections */
+    hideDevicePluginsNotice = false;
+    /** Hide the AR markers notice shown in AR marker configuration */
+    hideArMarkersNotice = false;
+
+    constructor(settings: Partial<EditorSectionMessagesSettings> = null) {
+        if (settings) {
+            this.hideDevicePluginsNotice = !!settings.hideDevicePluginsNotice;
+            this.hideArMarkersNotice = !!settings.hideArMarkersNotice;
+        }
+    }
+}
+
+export class SmtpSettings {
+    /** Host address */
+    host = '';
+    /** Connection port */
+    port = 587;
+    /** Sender Email address */
+    mailsender = '';
+    /** authentication user */
+    username = '';
+    /** authentication password */
+    password = '';
+
+    constructor(smtp: SmtpSettings = null) {
+        if (smtp) {
+            this.host = smtp.host;
+            this.port = smtp.port;
+            this.mailsender = smtp.mailsender;
+            this.username = smtp.username;
+            this.password = smtp.password;
+        }
+    }
+}
+
+export class DaqStore {
+    type = DaqStoreType.SQlite;
+    varsion?: string;
+    url?: string;
+    host = '127.0.0.1';
+    tableName = 'meters';
+    configurationString = 'http::addr=localhost:9000;';
+    organization?: string;
+    credentials?: StoreCredentials;
+    bucket?: string;
+    database?: string;
+    retention = DaqStoreRetentionType.year1;
+
+    constructor(daqstore: DaqStore = null) {
+        if (daqstore) {
+            this.type = daqstore.type;
+            this.url = daqstore.url;
+            this.host = daqstore.host;
+            this.tableName = daqstore.tableName || 'meters';
+            this.configurationString = daqstore.configurationString;
+            this.organization = daqstore.organization;
+            this.credentials = daqstore.credentials;
+            this.bucket = daqstore.bucket;
+            this.database = daqstore.database;
+            this.retention = daqstore.retention || DaqStoreRetentionType.year1;
+        }
+    }
+
+    isEquals(store: DaqStore) {
+        if (this.type === store.type && this.bucket === store.bucket && this.url === store.url &&
+            this.host === store.host && this.tableName === store.tableName && this.configurationString === store.configurationString &&
+            this.organization === store.organization && this.database === store.database &&
+            (this.credentials && StoreCredentials.isEquals(this.credentials, store.credentials)) && this.retention === store.retention) {
+            return true;
+        }
+        return false;
+    }
+}
+
+export class AlarmsSettings {
+    retention = AlarmsRetentionType.year1;
+}
+
+export class LogsSettings {
+    retention = DaqStoreRetentionType.none;
+}
+
+export class StoreCredentials {
+    token?: string;
+    username?: string;
+    password?: string;
+
+    static isEquals(a: StoreCredentials, b: StoreCredentials) {
+        return (a.token === b.token && a.username === b.username && a.password === b.password);
+    }
+}
+
+export enum DaqStoreType {
+    SQlite = 'SQlite',
+    influxDB = 'influxDB',
+    influxDB18 = 'influxDB 1.8',
+    TDengine = 'TDengine' ,
+    questDB = 'questDB',
+}
+
+export enum influxDBVersionType {
+    VERSION_18_FLUX = '1.8-flux',
+    VERSION_20 = '2.0',
+}
+
+export enum DaqStoreRetentionType {
+    none = 'none',
+    day1 = 'day1',
+    days2 = 'days2',
+    days3 = 'days3',
+    days7 = 'days7',
+    days14 = 'days14',
+    days30 = 'days30',
+    days90 = 'days90',
+    year1 = 'year1',
+    year3 = 'year3',
+    year5 = 'year5',
+}
+
+export enum AlarmsRetentionType {
+    none = 'none',
+    days7 = 'days7',
+    days30 = 'days30',
+    days90 = 'days90',
+    year1 = 'year1',
+    year3 = 'year3',
+    year5 = 'year5',
+}
+
+export class MailMessage {
+    from: string;
+    to: string;
+    subject: string;
+    text: string;
+    html: string;
+}

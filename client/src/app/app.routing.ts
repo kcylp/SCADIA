@@ -1,0 +1,73 @@
+import { Routes, RouterModule } from '@angular/router';
+
+import { AuthGuard } from './auth.guard';
+
+import { HomeComponent } from './home/home.component';
+import { EditorComponent } from './editor/editor.component';
+import { DeviceComponent } from './device/device.component';
+import { LabComponent } from './lab/lab.component';
+import { UsersComponent } from './users/users.component';
+import { ViewComponent } from './view/view.component';
+import { AlarmViewComponent } from './alarms/alarm-view/alarm-view.component';
+import { LogsViewComponent } from './logs-view/logs-view.component';
+import { AlarmListComponent } from './alarms/alarm-list/alarm-list.component';
+import { NotificationListComponent } from './notifications/notification-list/notification-list.component';
+import { ScriptListComponent } from './scripts/script-list/script-list.component';
+import { DEVICE_READONLY } from './_models/hmi';
+import { ReportListComponent } from './reports/report-list/report-list.component';
+import { UsersRolesComponent } from './users/users-roles/users-roles.component';
+import { MapsLocationListComponent } from './maps/maps-location-list/maps-location-list.component';
+import { LanguageTextListComponent } from './language/language-text-list/language-text-list.component';
+import { NodeRedFlowsComponent } from './integrations/node-red/node-red-flows/node-red-flows.component';
+import { ApiKeysListComponent } from './apikeys/api-keys-list/api-keys-list.component';
+import { PluginsListComponent } from './plugins/plugins-list/plugins-list.component';
+import { ArMarkerListComponent } from './ar/ar-marker-list/ar-marker-list.component';
+import { ArViewComponent } from './ar/ar-view/ar-view.component';
+import { RecipeListComponent } from './recipes/recipe-list/recipe-list.component';
+import { CalibrationListComponent } from './calibration/calibration-list/calibration-list.component';
+import { CalibrationWorkbenchComponent } from './calibration/calibration-workbench/calibration-workbench.component';
+import { CameraListComponent } from './cameras/camera-list/camera-list.component';
+import { VideoWallComponent } from './cameras/video-wall/video-wall.component';
+import { MesBoardComponent } from './mes/mes-board/mes-board.component';
+import { EmsBoardComponent } from './ems/ems-board/ems-board.component';
+
+const appRoutes: Routes = [
+    { path: '', component: HomeComponent},//, canActivate: [AuthGuard] },
+    { path: 'home', component: HomeComponent},//, canActivate: [AuthGuard] },
+    { path: 'home/:viewName', component: HomeComponent},//, canActivate: [AuthGuard] },
+    { path: 'editor', component: EditorComponent, canActivate: [AuthGuard]},
+    { path: 'lab', component: LabComponent, canActivate: [AuthGuard] },
+    { path: 'device', component: DeviceComponent, canActivate: [AuthGuard] },
+    { path: DEVICE_READONLY, component: DeviceComponent, canActivate: [AuthGuard] },
+    { path: 'users', component: UsersComponent, canActivate: [AuthGuard] },
+    { path: 'userRoles', component: UsersRolesComponent, canActivate: [AuthGuard] },
+    { path: 'alarms', component: AlarmViewComponent, canActivate: [AuthGuard] },
+    { path: 'messages', component: AlarmListComponent, canActivate: [AuthGuard] },
+    { path: 'notifications', component: NotificationListComponent, canActivate: [AuthGuard] },
+    { path: 'scripts', component: ScriptListComponent, canActivate: [AuthGuard] },
+    { path: 'recipes', component: RecipeListComponent, canActivate: [AuthGuard] },
+    { path: 'calibrations', component: CalibrationListComponent, canActivate: [AuthGuard] },
+    { path: 'calibrations/:id', component: CalibrationWorkbenchComponent, canActivate: [AuthGuard] },
+    { path: 'cameras', component: CameraListComponent, canActivate: [AuthGuard] },
+    { path: 'video', component: VideoWallComponent, canActivate: [AuthGuard] },
+    // KPI boards over demo data. No backend domain of their own: the platform reaches a plant
+    // through OPC UA / REST / WebSocket, so a real deployment swaps the constants for a call.
+    { path: 'mes', component: MesBoardComponent, canActivate: [AuthGuard] },
+    { path: 'ems', component: EmsBoardComponent, canActivate: [AuthGuard] },
+    { path: 'reports', component: ReportListComponent, canActivate: [AuthGuard] },
+    { path: 'language', component: LanguageTextListComponent, canActivate: [AuthGuard] },
+    { path: 'logs', component: LogsViewComponent, canActivate: [AuthGuard] },
+    { path: 'events', component: LogsViewComponent, canActivate: [AuthGuard] },
+    { path: 'view', component: ViewComponent },
+    { path: 'mapsLocations', component: MapsLocationListComponent, canActivate: [AuthGuard] },
+    { path: 'flows', component: NodeRedFlowsComponent, canActivate: [AuthGuard] },
+    { path: 'apikeys', component: ApiKeysListComponent, canActivate: [AuthGuard] },
+    { path: 'plugins', component: PluginsListComponent, canActivate: [AuthGuard] },
+    { path: 'arMarkers', component: ArMarkerListComponent, canActivate: [AuthGuard] },
+    { path: 'ar', component: ArViewComponent },
+
+    // otherwise redirect to home
+    { path: '**', redirectTo: '' }
+];
+
+export const routing = RouterModule.forRoot(appRoutes, {});

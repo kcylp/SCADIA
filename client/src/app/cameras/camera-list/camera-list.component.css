@@ -1,0 +1,51 @@
+:host {
+    display: block;
+    height: 100%;
+    min-height: 0;
+}
+
+.scada .sc-panel__bd {
+    overflow-x: auto;
+}
+
+.scada .sc-table th:first-child,
+.scada .sc-table td:first-child { padding-left: calc(16px * var(--sc-u, 1)); }
+
+.scada .sc-table th:last-child,
+.scada .sc-table td:last-child { padding-right: calc(16px * var(--sc-u, 1)); }
+
+/* camera preview column keeps a stable 16:9 stage */
+.cam-preview {
+    display: flex;
+    flex-direction: column;
+    gap: calc(10px * var(--sc-u, 1));
+}
+
+.cam-preview app-camera-view {
+    display: block;
+    width: 100%;
+}
+
+.scada .sc-table tr.sc-clickable.is-selected td {
+    background: rgba(61, 155, 255, 0.10);
+    color: var(--sc-ink);
+}
+
+.scada .row-actions {
+    display: inline-flex;
+    gap: calc(4px * var(--sc-u, 1));
+    justify-content: flex-end;
+}
+
+.scada .cam-vendor {
+    font-size: clamp(10px, calc(11px * var(--sc-u, 1)), 17.6px);
+    color: var(--sc-ink-3);
+}
+
+@media (max-width: calc(1100px * var(--sc-u, 1))) {
+    .cam-preview { order: -1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .scada .sc-table tbody tr { transition: none; }
+}

@@ -1,0 +1,190 @@
+<div *ngIf="isLoading" style="position:absolute;top:0px;left:0px;right:0px;bottom:0px;background-color:rgba(0,0,0,0.2); z-index: 99999;">
+	<mat-progress-bar mode="indeterminate" color="warn" style="position: absolute; top: 0px; left: 0px; right: 0px; z-index: 99999;">
+	</mat-progress-bar>
+</div>
+<mat-sidenav-container class="sidenav-container" [hasBackdrop]="false">
+	<mat-sidenav #matsidenav *ngIf="showNavigation && showSidenav" class="sidenav" [mode]="showSidenav"
+		[disableClose]="showSidenav === 'side'">
+		<app-sidenav #sidenav [sidenav]="matsidenav" (goToPage)="onGoToPage($event)" (goToLink)="onGoToLink($event)"></app-sidenav>
+	</mat-sidenav>
+	<mat-sidenav-content
+		[style.--header-height]="layoutHeader.height ? layoutHeader.height + 'px' : null"
+		[style.--header-button-height]="layoutHeader.buttonHeight ? layoutHeader.buttonHeight + 'px' : null"
+		[style.background-color]="backgroudColor"
+		(click)="checkToCloseSideNav()">
+		<div *ngIf="showNavigation"
+			 class="header"
+			 [style.--header-height]="layoutHeader.height ? layoutHeader.height + 'px' : null"
+			 [style.--header-button-height]="layoutHeader.buttonHeight ? layoutHeader.buttonHeight + 'px' : null"
+			 [style.background-color]="layoutHeader.bkcolor"
+			 [style.color]="layoutHeader.fgcolor">
+			<div *ngIf="showSidenav && showSidenav !== 'side'" class="header-menu">
+				<button mat-icon-button
+					(click)="$event.stopPropagation(); (matsidenav.opened) ? matsidenav.close() : matsidenav.open()">
+					<mat-icon aria-label="Menu">menu</mat-icon>
+				</button>
+			</div>
+			<div #header
+				 class="header-items-button"
+				 [style.textAlign]="layoutHeader.itemsAnchor"
+				 [style.justifyContent]="layoutHeader.itemsAnchor === 'right' ? 'flex-end' : layoutHeader.itemsAnchor">
+				<ng-container *ngFor="let item of layoutHeader.items; let i = index" [ngSwitch]="item.type">
+					<ng-container *ngSwitchCase="'button'">
+						<button mat-raised-button
+								[id]="item.id"
+								[style.--header-item-button-height]="item.height ? item.height + 'px' : null"
+								[style.background-color]="item.bkcolor ?? layoutHeader.bkcolor"
+								[style.color]="item.fgcolor ?? layoutHeader.fgcolor"
+								[style.fontFamily]="layoutHeader.fontFamily"
+								[style.fontSize]="layoutHeader.fontSize + 'px !important'"
+								[style.marginLeft.px]="item.marginLeft"
+								[style.marginRight.px]="item.marginRight">
+							<img *ngIf="item.image; else headerButtonIcon" class="header-item-button-image" [src]="item.image" alt="">
+							<ng-template #headerButtonIcon>
+								<mat-icon *ngIf="item.icon"
+										  class="header-item-icon">
+									{{item.icon}}
+								</mat-icon>
+							</ng-template>
+							{{ item.text ?? item.type }}
+						</button>
+					</ng-container>
+					<ng-container *ngSwitchCase="'label'">
+						<button mat-button
+								[id]="item.id"
+								[style.--header-item-button-height]="item.height ? item.height + 'px' : null"
+								[style.background-color]="item.bkcolor ?? layoutHeader.bkcolor"
+								[style.color]="item.fgcolor ?? layoutHeader.fgcolor"
+								[style.fontFamily]="layoutHeader.fontFamily"
+								[style.fontSize]="layoutHeader.fontSize + 'px !important'"
+								[style.marginLeft.px]="item.marginLeft"
+								[style.marginRight.px]="item.marginRight">
+							<img *ngIf="item.image; else headerLabelIcon" class="header-item-label-image" [src]="item.image" alt="">
+							<ng-template #headerLabelIcon>
+								<mat-icon *ngIf="item.icon" class="header-item-icon">{{item.icon}}</mat-icon>
+							</ng-template>
+							{{ item.text ?? item.type }}
+						</button>
+					</ng-container>
+					<ng-container *ngSwitchCase="'image'">
+						<button mat-icon-button
+								[id]="item.id"
+								[style.--header-item-button-height]="item.height ? item.height + 'px' : null"
+								[style.background-color]="item.bkcolor ?? layoutHeader.bkcolor"
+								[style.color]="item.fgcolor ?? layoutHeader.fgcolor"
+								[style.marginLeft.px]="item.marginLeft"
+								[style.marginRight.px]="item.marginRight">
+							<img *ngIf="item.image; else headerImageIcon" class="header-item-image" [src]="item.image" alt="">
+							<ng-template #headerImageIcon>
+								<mat-icon class="header-item-icon">{{ item.icon }}</mat-icon>
+							</ng-template>
+						</button>
+					</ng-container>
+				</ng-container>
+			</div>
+			<div class="header-notify-button">
+				<div class="alarm-button" style="min-width: 40px;">
+					<button mat-icon-button *ngIf="alarms.show" (click)="onAlarmsShowMode('collapse')">
+						<mat-icon aria-label="Alarms">notifications_none</mat-icon>
+						<div class="button-counter alarm-color" [style.opacity]="alarms.count?'':'0'">{{alarms.count}}</div>
+					</button>
+				</div>
+				<div class="info-button" style="min-width: 40px;">
+					<button mat-icon-button *ngIf="infos.show" (click)="onAlarmsShowMode('collapse')">
+						<mat-icon aria-label="Info">error_outline</mat-icon>
+						<div class="button-counter info-color" [style.opacity]="infos.count?'':'0'">{{infos.count}}</div>
+					</button>
+				</div>
+				<!--
+					The data plane's own indicator. It appears when the server reports that data is NOT
+					reaching this screen (a lost live update, or a failed history query) and stays until
+					the operator dismisses it: a toast is the wrong instrument for a condition that
+					persists, because it expires while the picture on screen stays stale.
+				-->
+				<div class="data-plane-button" *ngIf="dataPlane.show"
+					 [style.fontFamily]="layoutHeader.fontFamily"
+					 [style.fontSize]="layoutHeader.fontSize + 'px'"
+					 [matTooltip]="'msg.data-plane-dismiss' | translate"
+					 (click)="onDataPlaneDismiss()">
+					<mat-icon aria-label="Data" color="warn">cloud_off</mat-icon>
+					<span class="data-plane-message">{{ dataPlane.error }}</span>
+				</div>
+				<div class="header-date-time"
+					 *ngIf="layoutHeader.dateTimeDisplay"
+					 [style.fontFamily]="layoutHeader.fontFamily"
+					 [style.fontSize]="layoutHeader.fontSize + 'px !important'">
+                    {{ currentDateTime | date: layoutHeader.dateTimeDisplay }}
+				</div>
+				<div *ngIf="layoutHeader.language && layoutHeader.language !== 'nothing' && language$ | async as language" class="header-language">
+					<button mat-icon-button [matMenuTriggerFor]="languageMenu">
+						<mat-icon aria-label="Language">language</mat-icon>
+					</button>
+					<div class="inbk"
+						 [style.fontFamily]="layoutHeader.fontFamily"
+						 [style.fontSize]="layoutHeader.fontSize + 'px !important'">
+						<span *ngIf="layoutHeader.language === 'key' && language.currentLanguage" class="inbk">{{ language.currentLanguage.id }}</span>
+						<span *ngIf="layoutHeader.language === 'fullname' && language.currentLanguage" class="inbk">{{ language.currentLanguage.name }}</span>
+						<mat-menu #languageMenu [overlapTrigger]="false"
+								  [style.background-color]="layoutHeader.bkcolor ?? layoutHeader.bkcolor"
+								  [style.color]="layoutHeader.fgcolor ?? layoutHeader.fgcolor">
+							<button mat-menu-item (click)="onSetLanguage(language.default)" style="font-size: 14px;">{{ language.default?.id }} ({{ language.default?.name }})</button>
+							<button mat-menu-item *ngFor="let languageOption of language.options" (click)="onSetLanguage(languageOption)" style="font-size: 14px;">{{ languageOption.id }} ({{ languageOption.name }})</button>
+						</mat-menu>
+					</div>
+				</div>
+				<div *ngIf="securityEnabled" class="header-login">
+					<button mat-icon-button (click)="onLogin()">
+						<mat-icon aria-label="Login" [style.color]="isLoggedIn() ? 'rgb(59, 144, 255)' : layoutHeader.fgcolor">account_circle</mat-icon>
+					</button>
+					<div *ngIf="layoutHeader.loginInfo && loggedUser$ | async as user" class="info">
+						<ng-container [ngSwitch]="layoutHeader.loginInfo">
+							<ng-container *ngSwitchCase="'username'">
+								<span class="primary">{{ user?.username }}</span>
+							</ng-container>
+							<ng-container *ngSwitchCase="'fullname'">
+								<span class="primary">{{ user?.fullname }}</span>
+							</ng-container>
+							<ng-container *ngSwitchCase="'both'">
+								<span class="primary">{{ user?.username }}</span>
+								<span class="secondary">{{ user?.fullname }}</span>
+							</ng-container>
+						</ng-container>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div id="container"
+			 [ngClass]="showNavigation?'home-container-nav':'home-container'"
+			 [style.top.px]="showNavigation ? (layoutHeader.height || defaultHeaderHeight) : 0"
+			 #container
+			 (click)="checkToCloseSideNav()">
+			<ng-container *ngIf="!showHomeLink && homeView">
+				<ng-container [ngSwitch]="homeView.type">
+					<ng-container *ngSwitchCase="cardViewType">
+						<app-cards-view #cardsview [edit]="false" [options]="gridOptions"
+							[view]="homeView" [hmi]="hmi" [gaugesManager]="gaugesManager" (onGoTo)="onGoToPage($event)">
+						</app-cards-view>
+					</ng-container>
+					<ng-container *ngSwitchCase="mapsViewType">
+						<app-maps-view [view]="homeView" [hmi]="hmi" [gaugesManager]="gaugesManager" (onGoTo)="onGoToPage($event)"></app-maps-view>
+					</ng-container>
+					<ng-container *ngSwitchDefault>
+						<!-- [child]="true": /home owns the scheduled client scripts for this page
+						     (home.component.ts initScheduledScripts). Measured, not assumed: leaving the
+						     flag unset made the same scheduled script run TWICE per interval. -->
+						<app-scadia-view #scadiaview class="home-body" id="home" [child]="true" [autoFit]="true" [view]="homeView"
+								[hmi]="hmi" [gaugesManager]="gaugesManager" (ongoto)="onGoToPage($event)">
+						</app-scadia-view>
+					</ng-container>
+				</ng-container>
+			</ng-container>
+			<ng-container *ngFor="let iframe of iframes">
+				<app-iframe [link]="iframe.link" class="home-body" [style.display]="iframe.hide ? 'none' : 'block'" style="width:100%; height:100%"></app-iframe>
+			</ng-container>
+			<div id="alarms-panel" [style.width]="alarmPanelWidth">
+				<app-alarm-view #alarmsview [fullview]="false" [autostart]="false" (showMode)="onAlarmsShowMode($event)"></app-alarm-view>
+			</div>
+		</div>
+	</mat-sidenav-content>
+
+</mat-sidenav-container>

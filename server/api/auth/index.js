@@ -1,0 +1,257 @@
+/**
+ * 'api/auth': Authentication API to Sign In/Out users
+ */
+
+var express = require('express');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const authJwt = require('../jwt-helper');
+const { projectGuard } = require('../_domain');
+
+// In order to work under a reverse proxy, I import the BASE PATH
+const BASE_PATH = (process.env.BASE_PATH || '').replace(/\/+$/, '');
+
+var runtime;
+var secretCode;
+var tokenExpiresIn;
+var enableRefreshCookieAuth = false;
+var refreshTokenExpiresIn = '7d';
+const refreshCookieName = 'scadia_refresh';
+const nodeRedAuthCookieName = 'nodered_auth';
+
+function parseExpiresToMs(expiresIn) {
+    if (expiresIn === undefined || expiresIn === null) {
+        return null;
+    }
+    if (typeof expiresIn === 'number') {
+        return expiresIn * 1000;
+    }
+    if (typeof expiresIn !== 'string') {
+        return null;
+    }
+    const match = expiresIn.trim().match(/^(\d+)\s*([smhd])?$/i);
+    if (!match) {
+        return null;
+    }
+    const value = Number(match[1]);
+    const unit = (match[2] || 's').toLowerCase();
+    const multipliers = { s: 1000, m: 60000, h: 3600000, d: 86400000 };
+    return value * (multipliers[unit] || 1000);
+}
+
+function getCookieValue(req, name) {
+    const cookieHeader = req.headers.cookie;
+    if (!cookieHeader) return null;
+    const cookies = cookieHeader.split(';');
+    for (const cookie of cookies) {
+        const [key, ...rest] = cookie.trim().split('=');
+        if (key === name) {
+            return decodeURIComponent(rest.join('='));
+        }
+    }
+    return null;
+}
+
+function buildAccessToken(user) {
+    return jwt.sign({ id: user.username, groups: user.groups }, secretCode, { expiresIn: tokenExpiresIn });
+}
+
+function buildRefreshToken(user) {
+    return jwt.sign({ id: user.username, type: 'refresh' }, secretCode, { expiresIn: refreshTokenExpiresIn });
+}
+
+function setRefreshCookie(res, token) {
+    const maxAge = parseExpiresToMs(refreshTokenExpiresIn);
+    const options = {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: !!runtime?.settings?.https,
+        path: BASE_PATH + '/api/refresh'
+    };
+    if (maxAge) {
+        options.maxAge = maxAge;
+    }
+    res.cookie(refreshCookieName, token, options);
+}
+
+function clearRefreshCookie(res) {
+    res.clearCookie(refreshCookieName, {
+        path: BASE_PATH + '/api/refresh'
+    });
+}
+
+function clearNodeRedAuthCookie(res) {
+    res.clearCookie(nodeRedAuthCookieName, {
+        path: BASE_PATH + '/nodered',
+        sameSite: 'lax'
+    });
+    res.clearCookie(nodeRedAuthCookieName, {
+        path: BASE_PATH || '/',
+        sameSite: 'lax'
+    });
+}
+
+function sendInvalidSignInResponse(res) {
+    res.status(401).json({ status: 'error', message: 'Invalid email/password!!!', data: null });
+}
+
+function getLogoutUser(req) {
+    const accessToken = req.headers['x-access-token'];
+    if (accessToken) {
+        try {
+            const decoded = jwt.verify(accessToken, secretCode, { ignoreExpiration: true });
+            if (typeof decoded.id === 'string' && decoded.id && decoded.id !== 'guest' && decoded.type !== 'refresh') {
+                return { username: decoded.id };
+            }
+        } catch (err) {
+            // Logout must still clear cookies when the access token is expired or invalid.
+        }
+    }
+
+    const refreshToken = getCookieValue(req, refreshCookieName);
+    if (refreshToken) {
+        try {
+            const decoded = jwt.verify(refreshToken, secretCode);
+            if (decoded.type === 'refresh' && typeof decoded.id === 'string' && decoded.id && decoded.id !== 'guest') {
+                return { username: decoded.id };
+            }
+        } catch (err) {
+            // Do not trust an invalid refresh cookie for user attribution.
+        }
+    }
+
+    return {};
+}
+
+module.exports = {
+    init: function (_runtime, _secretCode, _tokenExpires, _enableRefreshCookieAuth, _refreshTokenExpires) {
+        runtime = _runtime;
+        secretCode = _secretCode;
+        tokenExpiresIn = _tokenExpires;
+        enableRefreshCookieAuth = !!_enableRefreshCookieAuth;
+        if (_refreshTokenExpires) {
+            refreshTokenExpiresIn = _refreshTokenExpires;
+        }
+    },
+    app: function () {
+        var authApp = express();
+        authApp.use(projectGuard(() => runtime));
+
+        /**
+         * POST SignIn
+         * Sign In with User credentials
+         */
+        authApp.post('/api/signin', function (req, res, next) {
+            runtime.users.findOne(req.body).then(function (userInfo) {
+                if (userInfo && userInfo.length && userInfo[0].password) {
+                    if (bcrypt.compareSync(req.body.password, userInfo[0].password)) {
+                        const token = buildAccessToken(userInfo[0]);
+                        if (enableRefreshCookieAuth) {
+                            const refreshToken = buildRefreshToken(userInfo[0]);
+                            setRefreshCookie(res, refreshToken);
+                        }
+                        res.json({
+                            status: 'success',
+                            message: 'user found!!!',
+                            data: {
+                                username: userInfo[0].username,
+                                fullname: userInfo[0].fullname,
+                                groups: userInfo[0].groups,
+                                info: userInfo[0].info,
+                                token: token
+                            }
+                        });
+                        runtime.logger.info('api-signin: ' + userInfo[0].username + ' ' + userInfo[0].fullname + ' ' + userInfo[0].groups);
+                        runtime.events.emit('access:login', { username: userInfo[0].username, fullname: userInfo[0].fullname });
+                    } else {
+                        sendInvalidSignInResponse(res);
+                        runtime.logger.error('api post signin: Invalid email/password!!!');
+                    }
+                } else {
+                    sendInvalidSignInResponse(res);
+                    runtime.logger.error('api post signin: Invalid email/password!!!');
+                }
+            }).catch(function (err) {
+                if (err.code) {
+                    res.status(400).json({error:err.code, message: err.message});
+                } else {
+                    res.status(400).json({error:'unexpected_error', message:err.toString()});
+                }
+                runtime.logger.error('api post signin: ' + err.message);
+            });
+        });
+
+        /**
+         * POST Refresh
+         * Refresh access token using HttpOnly refresh cookie
+         */
+        authApp.post('/api/refresh', async function (req, res, next) {
+            if (!runtime?.settings?.secureEnabled || !enableRefreshCookieAuth) {
+                return res.status(204).end();
+            }
+            const refreshToken = getCookieValue(req, refreshCookieName);
+            if (!refreshToken) {
+                return res.status(401).json({ status: 'error', message: 'Refresh token missing' });
+            }
+            try {
+                const decoded = jwt.verify(refreshToken, secretCode);
+                if (decoded?.type !== 'refresh') {
+                    clearRefreshCookie(res);
+                    return res.status(401).json({ status: 'error', message: 'Invalid refresh token' });
+                }
+
+                const users = await runtime.users.getUsers({ username: decoded.id });
+                if (!users || !users.length) {
+                    clearRefreshCookie(res);
+                    return res.status(401).json({ status: 'error', message: 'Invalid refresh token' });
+                }
+
+                const userData = users[0];
+
+                const user = {
+                    username: decoded.id,
+                    fullname: userData?.fullname,
+                    groups: userData?.groups,
+                    info: userData?.info
+                };
+
+                const newAccessToken = buildAccessToken(user);
+                const newRefreshToken = buildRefreshToken(user);
+                setRefreshCookie(res, newRefreshToken);
+
+                res.json({
+                    status: 'success',
+                    message: 'token refreshed',
+                    data: {
+                        username: user.username,
+                        fullname: user.fullname,
+                        groups: user.groups,
+                        info: user.info,
+                        token: newAccessToken
+                    }
+                });
+            } catch (err) {
+                clearRefreshCookie(res);
+                res.status(401).json({ status: 'error', message: 'Invalid refresh token' });
+            }
+        });
+
+        /**
+         * POST SignOut
+         * Clear refresh cookie
+         */
+        authApp.post('/api/signout', function (req, res, next) {
+            if (enableRefreshCookieAuth) {
+                clearRefreshCookie(res);
+            }
+            clearNodeRedAuthCookie(res);
+            const logoutUser = getLogoutUser(req);
+            if (logoutUser.username) {
+                runtime.events.emit('access:logout', logoutUser);
+            }
+            res.status(204).end();
+        });
+
+        return authApp;
+    }
+}

@@ -1,0 +1,23 @@
+开诚智枢 SCADIA · 安装说明
+
+一、安装（二选一）
+1) 运行「开诚智枢SCADIA-安装程序.exe」：自动安装到 C:\开诚智枢SCADIA 并启动。
+2) 或把「开诚智枢SCADIA-完整包.zip」解压到任意目录（路径建议不含空格）。
+
+二、运行
+双击目录下的「启动 SCADIA.cmd」（或 start-scadia.ps1，建议 PowerShell 7）。
+浏览器会自动打开 http://127.0.0.1:1881 ，默认账号 admin / 123456（安全开关默认关闭，通常免登录）。
+本包自带 Node 运行时（runtime\node），目标机无需安装 Node.js 或任何其它依赖。
+
+三、使用手册
+在线版：界面右上角「使用手册」图标，或直接访问 http://127.0.0.1:1881/_help/index.htm （18 章，含真实截图）。
+离线版：帮助\开诚智枢SCADIA帮助.chm ，双击打开。
+
+四、常见问题
+端口被占用：用 start-scadia.ps1 -Port 1882 换端口。
+设备写值 / 标定应用被拒（403）：平台在安全关闭时不允许写入，需在设置里启用安全并登录管理员。
+GB28181 实时点播：需另配 ZLMediaKit 媒体网关（settings 里 mediaServer）。
+Node-RED 编辑器在 /nodered/，界面为简体中文；开放模式与整包安全姿态一致，收紧可改 nodeRedAuthMode=secure。
+
+五、安全提醒
+默认关闭登录（secureEnabled=false）且 Node-RED 为开放模式，仅建议在受控内网使用；对外暴露前请先启用安全并修改默认密码。

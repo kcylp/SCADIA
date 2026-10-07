@@ -1,0 +1,58 @@
+<div class="header-panel">
+    <mat-icon>people</mat-icon>
+	{{'users.list-title' | translate}}
+</div>
+<div class="work-panel">
+	<div class="container">
+		<mat-table #table [dataSource]="dataSource" matSort>
+			<ng-container matColumnDef="select">
+				<mat-header-cell *matHeaderCellDef [ngClass]="'selectidthClass'">
+					<button mat-icon-button (click)="onAddUser()" class="remove">
+						<mat-icon>add</mat-icon>
+					</button>
+				</mat-header-cell>
+				<mat-cell *matCellDef="let element" [ngClass]="'selectidthClass'">
+					<button mat-icon-button (click)="onEditUser(element)" class="remove">
+						<mat-icon>edit</mat-icon>
+					</button>
+				</mat-cell>
+			</ng-container>
+
+			<ng-container matColumnDef="username">
+				<mat-header-cell *matHeaderCellDef mat-sort-header> {{'users.list-name' | translate}} </mat-header-cell>
+				<mat-cell *matCellDef="let element"> {{element.username}} </mat-cell>
+			</ng-container>
+
+			<ng-container matColumnDef="fullname">
+				<mat-header-cell *matHeaderCellDef mat-sort-header> {{'users.list-fullname' | translate}} </mat-header-cell>
+				<mat-cell *matCellDef="let element"> {{element.fullname}} </mat-cell>
+			</ng-container>
+
+			<ng-container matColumnDef="groups">
+				<mat-header-cell *matHeaderCellDef mat-sort-header> {{ (isRolePermission() ? 'users.list-roles' : 'users.list-groups') | translate}} </mat-header-cell>
+				<mat-cell *matCellDef="let element"> {{permissionValueToLabel(element)}} </mat-cell>
+			</ng-container>
+
+			<ng-container matColumnDef="start">
+				<mat-header-cell *matHeaderCellDef mat-sort-header> {{'users.list-start' | translate}} </mat-header-cell>
+				<mat-cell *matCellDef="let element"> {{getViewStartName(element.username)}} </mat-cell>
+			</ng-container>
+
+			<ng-container matColumnDef="remove">
+				<mat-header-cell *matHeaderCellDef> </mat-header-cell>
+				<mat-cell *matCellDef="let element">
+					<button mat-icon-button (click)="$event.stopPropagation();onRemoveUser(element)" class="remove" *ngIf="!isAdmin(element)">
+						<mat-icon>clear</mat-icon>
+					</button>
+				</mat-cell>
+			</ng-container>
+
+			<mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
+			<mat-row *matRowDef="let row; columns: displayedColumns;" class="my-mat-row"></mat-row>
+		</mat-table>
+	</div>
+</div>
+
+<button mat-fab color="primary" (click)="onAddUser()" class="fab-add">
+	<mat-icon class="">add</mat-icon>
+</button>

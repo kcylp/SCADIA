@@ -1,0 +1,313 @@
+<div class="scada">
+    <header class="sc-topbar">
+        <div class="sc-topbar__brand">
+            <mat-icon>electric_bolt</mat-icon>
+            <div>
+                <div class="sc-topbar__title">{{'ems.title' | translate}}</div>
+                <div class="sc-topbar__sub">{{'ems.subtitle' | translate}}</div>
+            </div>
+        </div>
+
+        <div class="sc-topbar__spacer"></div>
+
+        <div class="sc-topbar__meta">
+            <span class="sc-pill sc-pill--info">{{'ems.plant' | translate}}</span>
+            <span class="sc-led-with-label">
+                <i class="sc-led sc-led--ok sc-led--pulse"></i>
+                <span class="sc-mono">{{reportDate}} {{reportTime}}</span>
+            </span>
+            <span class="sc-hint">{{'ems.range' | translate}}: <b>{{'ems.range-today' | translate}}</b></span>
+        </div>
+
+        <span class="sc-tag">{{'ems.demo-badge' | translate}}</span>
+    </header>
+
+    <div class="sc-body sc-scroll">
+        <div class="sc-banner sc-banner--info">
+            <mat-icon>info</mat-icon>
+            <span>{{'ems.demo-banner' | translate}}</span>
+        </div>
+
+        <!-- ------------------------------------------------------------- KPI tiles -->
+        <div class="sc-grid sc-grid--kpi">
+            <div class="sc-kpi sc-kpi--info">
+                <div class="sc-kpi__label">{{'ems.kpi.electricity' | translate}}</div>
+                <div class="sc-kpi__value">{{kwhTotal | number}}
+                    <span class="sc-readout__unit">{{'ems.unit-kwh' | translate}}</span>
+                </div>
+                <div class="sc-kpi__hint">{{'ems.kpi.electricity-hint' | translate}}</div>
+            </div>
+            <div class="sc-kpi sc-kpi--warn">
+                <div class="sc-kpi__label">{{'ems.kpi.load' | translate}}</div>
+                <div class="sc-kpi__value">{{kwPeak}}
+                    <span class="sc-readout__unit">{{'ems.unit-kw' | translate}}</span>
+                </div>
+                <div class="sc-kpi__hint">
+                    {{'ems.kpi.load-hint' | translate}} {{loadRate}}% ·
+                    {{'ems.contract-demand' | translate}} {{contractDemand}}{{'ems.unit-kw' | translate}}
+                </div>
+            </div>
+            <div class="sc-kpi sc-kpi--ok">
+                <div class="sc-kpi__label">{{'ems.kpi.water' | translate}}</div>
+                <div class="sc-kpi__value">{{waterTotal | number}}
+                    <span class="sc-readout__unit">{{'ems.unit-m3' | translate}}</span>
+                </div>
+                <div class="sc-kpi__hint">{{'ems.kpi.water-hint' | translate}}</div>
+            </div>
+            <div class="sc-kpi sc-kpi--ok">
+                <div class="sc-kpi__label">{{'ems.kpi.gas' | translate}}</div>
+                <div class="sc-kpi__value">{{gasTotal | number}}
+                    <span class="sc-readout__unit">{{'ems.unit-m3' | translate}}</span>
+                </div>
+                <div class="sc-kpi__hint">{{'ems.kpi.gas-hint' | translate}}</div>
+            </div>
+            <div class="sc-kpi sc-kpi--idle">
+                <div class="sc-kpi__label">{{'ems.kpi.steam' | translate}}</div>
+                <div class="sc-kpi__value">{{steamTotal}}
+                    <span class="sc-readout__unit">{{'ems.unit-t' | translate}}</span>
+                </div>
+                <div class="sc-kpi__hint">{{'ems.kpi.steam-hint' | translate}}</div>
+            </div>
+            <div class="sc-kpi sc-kpi--alarm">
+                <div class="sc-kpi__label">{{'ems.kpi.carbon' | translate}}</div>
+                <div class="sc-kpi__value">{{co2Daily}}
+                    <span class="sc-readout__unit">{{'ems.unit-tco2' | translate}}</span>
+                </div>
+                <div class="sc-kpi__hint">{{'ems.alerts' | translate}} {{alerts.length}}</div>
+            </div>
+        </div>
+
+        <!-- ---------------------------------------------------- energy 24h trends -->
+        <section class="sc-panel">
+            <div class="sc-panel__hd">
+                <mat-icon>show_chart</mat-icon>
+                <span>{{'ems.trend' | translate}}</span>
+                <span class="sc-hd-actions sc-hint">{{'ems.trend-hint' | translate}}</span>
+            </div>
+            <div class="sc-panel__bd">
+                <div class="sc-chart">
+                    <svg viewBox="0 0 960 260" preserveAspectRatio="none" role="img"
+                         [attr.aria-label]="'ems.trend' | translate">
+                        <rect class="ems-plot-bg" x="0" y="0" width="960" height="240"></rect>
+                        <line class="ems-grid" x1="0" y1="60" x2="960" y2="60"></line>
+                        <line class="ems-grid" x1="0" y1="120" x2="960" y2="120"></line>
+                        <line class="ems-grid" x1="0" y1="180" x2="960" y2="180"></line>
+                        <line class="ems-grid" x1="0" y1="240" x2="960" y2="240"></line>
+                        <polyline *ngFor="let s of trendSeries" class="ems-series" [ngClass]="s.cls"
+                                  [attr.points]="s.points"></polyline>
+                        <text class="ems-axis" x="4" y="256">{{'ems.axis-00' | translate}}</text>
+                        <text class="ems-axis" x="480" y="256" text-anchor="middle">{{'ems.axis-12' | translate}}</text>
+                        <text class="ems-axis" x="956" y="256" text-anchor="end">{{'ems.axis-23' | translate}}</text>
+                    </svg>
+                </div>
+                <div class="sc-legend">
+                    <span *ngFor="let s of trendSeries" [ngClass]="s.cls">
+                        <i></i>{{s.key | translate}} ·
+                        <b class="sc-mono">{{s.peak}}</b> {{s.unit | translate}}
+                    </span>
+                </div>
+
+                <div class="sc-divider"></div>
+
+                <div class="ems-bars">
+                    <div class="ems-bars__col" *ngFor="let v of kwProfile; let i = index">
+                        <div class="ems-bars__track">
+                            <div class="ems-bars__fill" [ngClass]="isPeakHour(i) ? 'ems-bars__fill--peak' : 'ems-bars__fill--flat'"
+                                 [style.height]="barWidth(v, kwPeak)"></div>
+                        </div>
+                        <span class="ems-bars__label">{{hours[i]}}</span>
+                    </div>
+                </div>
+                <div class="sc-legend">
+                    <span class="ems-series--peak"><i></i>{{'ems.load-peak' | translate}}</span>
+                    <span class="ems-series--flat"><i></i>{{'ems.load-flat' | translate}}</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ----------------------------------------------------- peak/valley tariff -->
+        <div class="sc-split">
+            <div class="sc-col">
+                <section class="sc-panel">
+                    <div class="sc-panel__hd">
+                        <mat-icon>schedule</mat-icon>
+                        <span>{{'ems.tariff' | translate}}</span>
+                        <span class="sc-hd-actions sc-hint">
+                            {{'ems.tariff-total' | translate}} {{tariffTotal | number}}{{'ems.unit-kwh' | translate}} ·
+                            ¥{{tariffCost | number}}
+                        </span>
+                    </div>
+                    <div class="sc-panel__bd" style="padding:0">
+                        <table class="sc-table">
+                            <thead>
+                                <tr>
+                                    <th>{{'ems.col-period' | translate}}</th>
+                                    <th>{{'ems.col-hours' | translate}}</th>
+                                    <th class="num">{{'ems.col-usage' | translate}}</th>
+                                    <th class="num">{{'ems.col-price' | translate}}</th>
+                                    <th class="num">{{'ems.col-cost' | translate}}</th>
+                                    <th style="min-width:150px">{{'ems.col-share' | translate}}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let t of tariffs">
+                                    <td>
+                                        <span class="sc-led-with-label">
+                                            <i class="sc-led" [ngClass]="'ems-led--' + t.key.replace('ems.tariff-', '')"></i>
+                                            <b>{{t.band | translate}}</b>
+                                        </span>
+                                    </td>
+                                    <td class="sc-mono" style="font-size:11.5px">{{t.hoursRange | translate}}</td>
+                                    <td class="num">{{t.usage | number}}</td>
+                                    <td class="num">¥{{t.price}}</td>
+                                    <td class="num">¥{{t.cost | number}}</td>
+                                    <td>
+                                        <div class="ems-progress">
+                                            <div class="ems-progress__track">
+                                                <div class="ems-progress__fill"
+                                                     [ngClass]="'ems-progress__fill--' + t.key.replace('ems.tariff-', '')"
+                                                     [style.width]="barWidth(t.usage, tariffTotal)"></div>
+                                            </div>
+                                            <span class="sc-mono ems-progress__pct">{{barWidth(t.usage, tariffTotal)}}</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="sc-panel__bd">
+                        <div class="sc-kv">
+                            <span>{{'ems.tariff-avg' | translate}}</span>
+                            <span>¥{{tariffAvgPrice}} / {{'ems.unit-kwh' | translate}}</span>
+                        </div>
+                        <div class="sc-banner sc-banner--warn" style="margin-top:10px">
+                            <mat-icon>savings</mat-icon>
+                            <span>{{'ems.tariff-advice' | translate}}</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="sc-col">
+                <section class="sc-panel">
+                    <div class="sc-panel__hd">
+                        <mat-icon>co2</mat-icon>
+                        <span>{{'ems.carbon' | translate}}</span>
+                        <span class="sc-hd-actions sc-hint">{{'ems.co2-today' | translate}}</span>
+                    </div>
+                    <div class="sc-panel__bd">
+                        <div class="ems-co2">
+                            <div class="sc-readout sc-readout--xl">{{co2Daily}}
+                                <span class="sc-readout__unit">{{'ems.unit-tco2' | translate}}</span>
+                            </div>
+                            <span class="sc-pill sc-pill--ok">{{'ems.co2-reduction' | translate}} {{co2Drop}}%</span>
+                            <span class="sc-hint">{{'ems.co2-reduction-hint' | translate}} {{co2Reduction}}%</span>
+                        </div>
+                        <div class="sc-divider"></div>
+                        <div class="sc-kv">
+                            <span>{{'ems.co2-total' | translate}}</span><span>{{co2Year | number}} {{'ems.unit-tco2' | translate}}</span>
+                        </div>
+                        <div class="sc-kv">
+                            <span>{{'ems.co2-intensity' | translate}}</span>
+                            <span>{{co2Intensity}} {{'ems.unit-kgco2-per-pcs' | translate}}</span>
+                        </div>
+                        <div class="sc-kv">
+                            <span>{{'ems.co2-baseline' | translate}}</span>
+                            <span>{{co2IntensityBaseline}} {{'ems.unit-kgco2-per-pcs' | translate}}</span>
+                        </div>
+                        <div class="sc-kv">
+                            <span>{{'ems.co2-factor' | translate}}</span><span>0.410</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="sc-panel">
+                    <div class="sc-panel__hd">
+                        <mat-icon>speed</mat-icon>
+                        <span>{{'ems.intensity' | translate}}</span>
+                        <span class="sc-hd-actions sc-hint">{{'ems.output' | translate}} {{plantOutput | number}}</span>
+                    </div>
+                    <div class="sc-panel__bd" style="padding:0">
+                        <table class="sc-table">
+                            <thead>
+                                <tr>
+                                    <th>{{'ems.col-energy' | translate}}</th>
+                                    <th class="num">{{'ems.col-unit-consumption' | translate}}</th>
+                                    <th>{{'ems.col-unit' | translate}}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let i of intensity">
+                                    <td>{{i.key | translate}}</td>
+                                    <td class="num">{{i.value}}</td>
+                                    <td><span class="sc-tag">{{i.unit | translate}}</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="sc-panel__bd">
+                        <div class="sc-kv">
+                            <span>{{'ems.intensity-baseline' | translate}}</span>
+                            <span>{{intensityBaseline}} {{'ems.unit-kwh-per-pcs' | translate}}</span>
+                        </div>
+                        <div class="sc-kv">
+                            <span>{{'ems.intensity-now' | translate}}</span>
+                            <span>{{intensityNow}} {{'ems.unit-kwh-per-pcs' | translate}} <b class="ems-delta--ok">-{{intensityDrop}}</b></span>
+                        </div>
+                        <div class="sc-kv">
+                            <span>{{'ems.intensity-today' | translate}}</span>
+                            <span>{{intensityToday}} {{'ems.unit-kwh-per-pcs' | translate}}</span>
+                        </div>
+                        <div class="sc-kv">
+                            <span>{{'ems.target' | translate}}</span>
+                            <span>{{intensityTarget}} {{'ems.unit-kwh-per-pcs' | translate}}</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- --------------------------------------------------------------- alerts -->
+        <section class="sc-panel">
+            <div class="sc-panel__hd">
+                <mat-icon>notification_important</mat-icon>
+                <span>{{'ems.alerts' | translate}}</span>
+                <span class="sc-hd-actions sc-hint">
+                    <span class="sc-pill sc-pill--alarm">{{'ems.level-alarm' | translate}} {{alarmCount}}</span>
+                    <span class="sc-pill sc-pill--warn">{{'ems.level-warn' | translate}} {{warnCount}}</span>
+                    <span class="sc-pill sc-pill--info">{{'ems.level-info' | translate}} {{infoCount}}</span>
+                </span>
+            </div>
+            <div class="sc-panel__bd" style="padding:0">
+                <table class="sc-table">
+                    <thead>
+                        <tr>
+                            <th>{{'ems.col-alarm-no' | translate}}</th>
+                            <th>{{'ems.col-alarm' | translate}}</th>
+                            <th>{{'ems.col-energy-type' | translate}}</th>
+                            <th>{{'ems.col-value' | translate}}</th>
+                            <th>{{'ems.col-level' | translate}}</th>
+                            <th>{{'ems.col-time' | translate}}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let a of alerts" [class.is-rejected]="a.level === 'ems.level-alarm'">
+                            <td class="sc-mono">{{a.no}}</td>
+                            <td>{{a.key | translate}}</td>
+                            <td><span class="sc-tag">{{a.energy | translate}}</span></td>
+                            <td class="sc-mono">{{a.value}}</td>
+                            <td>
+                                <span class="sc-pill" [ngClass]="{
+                                    'sc-pill--alarm': a.level === 'ems.level-alarm',
+                                    'sc-pill--warn': a.level === 'ems.level-warn',
+                                    'sc-pill--info': a.level === 'ems.level-info'
+                                }">{{a.level | translate}}</span>
+                            </td>
+                            <td class="sc-mono">{{a.time}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>

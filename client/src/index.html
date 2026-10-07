@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+
+<head>
+    <base href="/" />
+    <!-- useful to handle the favicon when relative root is used-->
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <title>开诚智枢</title>
+    <meta charset="UTF-8">
+    <script>
+        (function() {
+            // Use actual screen dimensions
+            var screenWidth = window.screen.width * (window.devicePixelRatio || 1);
+            var targetWidth = 768; // Target width for mobile devices (lower = bigger content)
+
+            if (window.screen.width < 768) {
+                var scale = window.screen.width / targetWidth;
+                document.write('<meta name="viewport" content="width=' + targetWidth + ', initial-scale=' + scale + ', minimum-scale=' + scale + ', maximum-scale=' + scale + ', user-scalable=no, viewport-fit=cover">');
+            } else {
+                document.write('<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">');
+            }
+
+            /* DEBUGGING ONLY
+            var j = JSON.stringify({
+                screenWidth: window.screen.width,
+                innerWidth: window.innerWidth,
+                devicePixelRatio: window.devicePixelRatio,
+                scale: window.visualViewport?.scale,
+                vpWidth: window.visualViewport?.width,
+                vpHeight: window.visualViewport?.height,
+                calculatedScale: window.screen.width / targetWidth
+            })
+            console.log(j)
+            */
+
+            // Reload page on orientation change
+            window.addEventListener('orientationchange', function() {
+                window.location.reload();
+            });
+        })();
+    </script>
+    <style>
+        /* disable pitch html pich zoom. zoom in scadia svg view still works */
+        html, body {
+            touch-action: manipulation;
+            -webkit-text-size-adjust: none;
+        }
+    </style>
+
+    <!-- 1° Load styles -->
+    <link rel="stylesheet" href="assets/lib/svgeditor/jquery-plugin.min.css">
+
+    <link rel="stylesheet" href="assets/lib/svgeditor/extensions/ext-html_button.min.css">
+    <link rel="stylesheet" href="assets/lib/svgeditor/svg-editor.min.css">
+    <link rel="stylesheet" href="assets/lib/ext-styles.css">
+    <link rel="stylesheet" href="assets/lib/nouislider/nouislider.min.css">
+
+    <!-- 2° Load libraries -->
+    <script src="assets/lib/svgeditor/jquery.min.js"></script>
+    <script src="assets/lib/svgeditor/jquery-ui-1.8.17.custom.min.js"></script>
+    <script src="assets/lib/svgeditor/jquery-plugin.min.js"></script>
+
+    <script src="assets/lib/gauge/gauge.js"></script>
+    <script src="assets/lib/nouislider/nouislider.min.js"></script>
+    <script src="assets/lib/numeral/numeral.min.js"></script>
+
+    <script src="assets/lib/svgeditor/extensions/ext-bundle.min.js"></script>
+
+    <script src="assets/lib/svgeditor/scadia-editor.min.js"></script>
+    <script src="assets/lib/svgeditor/shapes/shapes.js"></script>
+
+
+    <script src="assets/lib/svg/svg.min.js"></script>
+    <script src="assets/lib/svg/raphael.min.js"></script>
+
+</head>
+<!-- 3. Display the application -->
+
+<body>
+    <app-root>
+        <div style="position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);">
+            <div class="logo" style="display:block;width:60px;height:60px;background-size:60px 60px;margin-left: 45px;"></div>
+            <div style="display: block; padding-left:10px">
+                <div style="display:block;font-size: 18px; font-weight: 600; text-align: center;">正在加载…</div>
+                <div style="display: block;font-size: 10px;padding-top: 3px; text-align: center;">
+                    开诚智枢
+                </div>
+            </div>
+        </div>
+    </app-root>
+</body>
+
+</html>

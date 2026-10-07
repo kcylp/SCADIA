@@ -1,0 +1,97 @@
+# ---------------------------------------------------------------- dependencies
+node_modules/
+**/node_modules/
+
+# ---------------------------------------------------------------- build output
+dist/
+**/dist/
+.angular/
+**/.angular/
+build/
+out/
+*.tsbuildinfo
+
+# ---------------------------------------------------------------- runtime data (NEVER commit)
+# These hold live project databases, logs and - critically - settings.js /
+# mysettings.json, which carry secureCode / SMTP credentials / API keys.
+_appdata/
+_db/
+_logs/
+_reports/
+_images/
+_pkg/
+_widgets/
+_assets/
+_webcam_snapshots/
+**/_appdata/
+**/_db/
+**/_logs/
+**/_reports/
+**/_pkg/
+**/_widgets/
+**/_webcam_snapshots/
+
+# ---------------------------------------------------------------- secrets / local config
+settings.js
+mysettings.json
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+
+# ---------------------------------------------------------------- project / user data
+*.scadiap.db
+*.scadiap.db-*
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.bak
+*.bak-*
+*.log
+
+# ---------------------------------------------------------------- verification / scratch
+_probe*/
+**/_probe*/
+_ui_verify/
+screenshot/
+_drafts/
+_backup/
+ToReview/
+__tmp_sqlfix2/
+
+# ---------------------------------------------------------------- editor / OS noise
+.vs/
+.vscode/*.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+Thumbs.db
+desktop.ini
+.DS_Store
+~$*
+
+# ---------------------------------------------------------------- source maps (large, regenerable)
+*.map
+
+# ---------------------------------------------------------------- node-red runtime
+.config.*.json
+.flows*.json
+.sessions.json
+
+# ---------------------------------------------------------------- keep these
+!docs/**
+!client/src/**
+!server/**
+
+# ---------------------------------------------------------------- 示例工程例外
+# examples/exhibition-project 是**已脱敏**的可运行示例：必须随仓发布，
+# 否则拿到仓库的人无法看到完整示例。
+# 注意 gitignore 的语义：目录一旦被排除，就无法再用 ! 重新包含其内部文件，
+# 所以这里必须用 !examples/.../** 形式，且放在文件末尾最后生效。
+!examples/
+!examples/**

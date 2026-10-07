@@ -1,0 +1,24 @@
+<div class="flex-variable-mapping">
+    <div class="flex-join">
+    </div>
+    <div style="display: inline-block;">
+        <flex-variable style="display: block"
+                       [(value)]="value.from"
+                       [data]="data"
+                       [placeholders]="placeholders"
+                       (valueChange)="onValueChange()"
+                       [allowManualEdit]="true"
+                       [withStaticValue]="false"
+                       [tagTitle]="'gauges.property-tag-internal-title'">
+        </flex-variable>
+        <flex-variable style="display: block"
+                       [(value)]="value.to"
+                       [data]="data"
+                       (valueChange)="onValueChange()"
+                       [allowManualEdit]="false"
+                       [withStaticValue]="true"
+                       [devicesOnly]="true">
+        </flex-variable>
+    </div>
+    <ng-content></ng-content>
+</div>

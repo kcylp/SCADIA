@@ -1,0 +1,76 @@
+<div class="header-panel">
+    <mat-icon>code</mat-icon>
+    {{'scripts.list-title' | translate}}
+</div>
+<div class="work-panel">
+    <div class="container">
+        <mat-table #table [dataSource]="dataSource" matSort class="mat-table">
+            <!-- Checkbox Column -->
+            <ng-container matColumnDef="select">
+                <mat-header-cell *matHeaderCellDef [ngClass]="'selectidthClass'">
+                    <button mat-icon-button (click)="onAddScript()" class="remove">
+                        <mat-icon>add</mat-icon>
+                    </button>
+                </mat-header-cell>
+                <mat-cell *matCellDef="let element" [ngClass]="'selectidthClass'">
+                    <button mat-icon-button (click)="onEditScript(element)" class="remove">
+                        <mat-icon>edit</mat-icon>
+                    </button>
+                </mat-cell>
+            </ng-container>
+
+            <!-- Name Column -->
+            <ng-container matColumnDef="name">
+                <mat-header-cell *matHeaderCellDef mat-sort-header> {{'scripts.list-name' | translate}} </mat-header-cell>
+                <mat-cell *matCellDef="let element"> {{element.name}} </mat-cell>
+            </ng-container>
+            <!-- Parameter Column -->
+            <ng-container matColumnDef="params">
+                <mat-header-cell *matHeaderCellDef mat-sort-header> {{'scripts.list-params' | translate}} </mat-header-cell>
+                <mat-cell *matCellDef="let element"> {{getParameters(element)}} </mat-cell>
+            </ng-container>
+            <!-- Parameter Scheduling -->
+            <ng-container matColumnDef="scheduling">
+                <mat-header-cell *matHeaderCellDef mat-sort-header> {{'scripts.list-scheduling' | translate}} </mat-header-cell>
+                <mat-cell *matCellDef="let element"> {{getScheduling(element)}}</mat-cell>
+            </ng-container>
+
+            <!-- Mode Column -->
+            <ng-container matColumnDef="mode">
+                <mat-header-cell *matHeaderCellDef mat-sort-header> {{'scripts.list-mode' | translate}} </mat-header-cell>
+                <mat-cell *matCellDef="let element"> {{element.mode || 'SERVER'}} </mat-cell>
+            </ng-container>
+
+            <!-- Button edit options row -->
+            <ng-container matColumnDef="options">
+                <mat-header-cell *matHeaderCellDef></mat-header-cell>
+                <mat-cell *matCellDef="let element">
+                    <button mat-icon-button [matMenuTriggerFor]="optionsgMenu" class="options" matTooltip="{{'scripts.list-options' | translate}}">
+                        <mat-icon>more_vert</mat-icon>
+                    </button>
+                    <mat-menu #optionsgMenu [overlapTrigger]="false">
+                        <button mat-menu-item (click)="onEditScriptScheduling(element)" style="font-size: 14px;">{{'scripts.list-scheduling' | translate}}</button>
+                        <button mat-menu-item (click)="onEditScriptPermission(element)" style="font-size: 14px;">{{'scripts.list-permission' | translate}}</button>
+                        <button mat-menu-item (click)="onEditScriptMode(element)" style="font-size: 14px;">{{'scripts.list-mode' | translate}}</button>
+                    </mat-menu>
+                </mat-cell>
+            </ng-container>
+
+            <!-- Button remove Column -->
+            <ng-container matColumnDef="remove">
+                <mat-header-cell *matHeaderCellDef> </mat-header-cell>
+                <mat-cell *matCellDef="let element">
+                    <button mat-icon-button (click)="$event.stopPropagation();onRemoveScript(element)" class="remove">
+                        <mat-icon>clear</mat-icon>
+                    </button>
+                </mat-cell>
+            </ng-container>
+
+            <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
+            <mat-row *matRowDef="let row; columns: displayedColumns;" class="mat-row"></mat-row>
+        </mat-table>
+    </div>
+</div>
+<button mat-fab color="primary" (click)="onAddScript()" class="fab-add">
+    <mat-icon class="">add</mat-icon>
+</button>

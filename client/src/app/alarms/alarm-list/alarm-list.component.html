@@ -1,0 +1,104 @@
+<div class="header-panel">
+    <mat-icon>warning_amber</mat-icon>
+    {{'alarms.list-title' | translate}}
+</div>
+<div class="work-panel">
+    <!-- <div class="filter">
+      <div class="my-form-field" style="padding-right: 10px;">
+          <span>{{'texts.list-filter-group' | translate}}</span>
+          <mat-select [(value)]="groupSelected" style="width: 300px" (selectionChange)="onGroupChange($event.source)">
+              <mat-option *ngFor="let group of groups" [value]="group">
+                  {{ group }}
+              </mat-option>
+          </mat-select>
+      </div>
+      <div class="my-form-field" style="padding-right: 10px;">
+          <span>{{'texts.list-filter' | translate}}</span>
+          <input (keyup)="applyFilter($event.target.value)" style="width: 450px" type="text">
+      </div>
+  </div> -->
+    <div class="container">
+        <mat-table #table [dataSource]="dataSource" matSort class="mat-table">
+            <!-- Checkbox Column -->
+            <ng-container matColumnDef="select">
+                <mat-header-cell *matHeaderCellDef [ngClass]="'selectidthClass'">
+                    <button mat-icon-button (click)="onAddAlarm()" class="remove" [disabled]="importingAlarms">
+                        <mat-icon>add</mat-icon>
+                    </button>
+                </mat-header-cell>
+                <mat-cell *matCellDef="let element" [ngClass]="'selectidthClass'">
+                    <button mat-icon-button (click)="onEditAlarm(element)" class="remove" [disabled]="importingAlarms">
+                        <mat-icon>edit</mat-icon>
+                    </button>
+                </mat-cell>
+            </ng-container>
+
+            <!-- Name Column -->
+            <ng-container matColumnDef="name">
+                <mat-header-cell *matHeaderCellDef mat-sort-header> {{'alarms.list-name' | translate}} </mat-header-cell>
+                <mat-cell *matCellDef="let element"> {{element.name}} </mat-cell>
+            </ng-container>
+            <!-- Device Column -->
+            <ng-container matColumnDef="device">
+                <mat-header-cell *matHeaderCellDef mat-sort-header> {{'alarms.list-device' | translate}} </mat-header-cell>
+                <mat-cell *matCellDef="let element"> {{getVariableLabel(element.property)}}</mat-cell>
+            </ng-container>
+            <!-- HighHigh Column -->
+            <ng-container matColumnDef="highhigh">
+                <mat-header-cell *matHeaderCellDef mat-sort-header> {{'alarms.list-highhigh' | translate}} </mat-header-cell>
+                <mat-cell *matCellDef="let element"> {{getSubProperty(element.highhigh)}} </mat-cell>
+            </ng-container>
+            <!-- High Column -->
+            <ng-container matColumnDef="high">
+                <mat-header-cell *matHeaderCellDef mat-sort-header> {{'alarms.list-high' | translate}} </mat-header-cell>
+                <mat-cell *matCellDef="let element"> {{getSubProperty(element.high)}} </mat-cell>
+            </ng-container>
+            <!-- Low Column -->
+            <ng-container matColumnDef="low">
+                <mat-header-cell *matHeaderCellDef mat-sort-header> {{'alarms.list-low' | translate}} </mat-header-cell>
+                <mat-cell *matCellDef="let element"> {{getSubProperty(element.low)}} </mat-cell>
+            </ng-container>
+            <!-- Info Column -->
+            <ng-container matColumnDef="info">
+                <mat-header-cell *matHeaderCellDef mat-sort-header> {{'alarms.list-info' | translate}} </mat-header-cell>
+                <mat-cell *matCellDef="let element"> {{getSubProperty(element.info)}} </mat-cell>
+            </ng-container>
+            <!-- Action Column -->
+            <ng-container matColumnDef="actions">
+                <mat-header-cell *matHeaderCellDef mat-sort-header> {{'alarms.list-actions' | translate}} </mat-header-cell>
+                <mat-cell *matCellDef="let element"> {{getSubActionsProperty(element.actions)}} </mat-cell>
+            </ng-container>
+
+            <!-- Button remove Column -->
+            <ng-container matColumnDef="remove">
+                <mat-header-cell *matHeaderCellDef>
+                    <button mat-icon-button [matMenuTriggerFor]="optionsgMenu" class="remove">
+                        <mat-icon>more_vert</mat-icon>
+                    </button>
+                    <mat-menu #optionsgMenu [overlapTrigger]="false">
+                        <button mat-menu-item (click)="onImportAlarms()" style="font-size: 14px;" [disabled]="importingAlarms">{{'alarms.import' | translate}}</button>
+                        <button mat-menu-item (click)="onExportAlarms()" style="font-size: 14px;" [disabled]="importingAlarms">{{'alarms.export' | translate}}</button>
+                    </mat-menu>
+                </mat-header-cell>
+                <mat-cell *matCellDef="let element">
+                    <button mat-icon-button (click)="$event.stopPropagation();onCopyAlarm(element)" class="remove" [disabled]="importingAlarms">
+                        <mat-icon>content_copy</mat-icon>
+                    </button>
+                    <button mat-icon-button (click)="$event.stopPropagation();onRemoveAlarm(element)" class="remove" [disabled]="importingAlarms">
+                        <mat-icon>clear</mat-icon>
+                    </button>
+                </mat-cell>
+            </ng-container>
+
+            <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
+            <mat-row *matRowDef="let row; columns: displayedColumns;" class="mat-row"></mat-row>
+        </mat-table>
+    </div>
+    <div *ngIf="importingAlarms" class="spinner-overlay">
+        <mat-spinner style="margin: auto" diameter="40" class="spinner"></mat-spinner>
+    </div>
+    <input type="file" #fileImportInput style="display: none" id="alarmsConfigFileUpload" (change)="onAlarmFileChangeListener($event)" accept=".json" />
+</div>
+<button mat-fab color="primary" (click)="onAddAlarm()" class="fab-add" [disabled]="importingAlarms">
+    <mat-icon class="">add</mat-icon>
+</button>

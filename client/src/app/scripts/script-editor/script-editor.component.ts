@@ -1,0 +1,336 @@
+/* eslint-disable @angular-eslint/component-class-suffix */
+import { Component, OnInit, Inject, ViewChild, OnDestroy } from '@angular/core';
+import { MatDialog as MatDialog, MatDialogRef as MatDialogRef, MAT_DIALOG_DATA as MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { CodemirrorComponent } from '@ctrl/ngx-codemirror';
+import { ChangeDetectorRef } from '@angular/core';
+import { Subject, takeUntil } from 'rxjs';
+
+import { HmiService } from '../../_services/hmi.service';
+import { ScriptService } from '../../_services/script.service';
+import { EditNameComponent } from '../../gui-helpers/edit-name/edit-name.component';
+import { TranslateService } from '@ngx-translate/core';
+import { Utils } from '../../_helpers/utils';
+import { ScriptParamType, Script, ScriptTest, SCRIPT_PREFIX, SystemFunctions, SystemFunction, ScriptParam, ScriptConsoleMessage, TemplatesCode, ScriptMode, ScriptParamFilterType } from '../../_models/script';
+import { DevicesUtils, DeviceType } from '../../_models/device';
+import { DeviceTagSelectionComponent, DeviceTagSelectionData } from '../../device/device-tag-selection/device-tag-selection.component';
+import { ScriptEditorParamComponent } from './script-editor-param/script-editor-param.component';
+import { getJavaScriptSyntaxAnnotations } from './javascript-linter';
+
+@Component({
+    selector: 'app-script-editor',
+    templateUrl: './script-editor.component.html',
+    styleUrls: ['./script-editor.component.scss']
+})
+export class ScriptEditorComponent implements OnInit, OnDestroy {
+    @ViewChild(CodemirrorComponent, {static: false}) CodeMirror: CodemirrorComponent;
+    codeMirrorContent: string;
+    codeMirrorOptions = {
+        lineNumbers: true,
+        theme: 'material',
+        mode: 'javascript',
+        gutters: ['CodeMirror-linenumbers', 'CodeMirror-lint-markers'],
+        lint: false
+    };
+    systemFunctions: SystemFunctions;
+    templatesCode: TemplatesCode;
+
+    checkSystemFnc: string[] = [];
+    parameters: ScriptParam[] = [];
+    testParameters: ScriptParam[] = [];
+    tagParamType = Utils.getEnumKey(ScriptParamType, ScriptParamType.tagid);
+
+    console: string[] = [];
+    script: Script;
+    msgRemoveScript = '';
+    ready = false;
+    private destroy$ = new Subject<void>();
+    private codeMirrorSetupTimer: number;
+    private readonly lintOptions = {
+        getAnnotations: (code: string) => getJavaScriptSyntaxAnnotations(
+            code,
+            this.parameters.map(parameter => parameter.name),
+            !this.script.sync
+        )
+    };
+
+    constructor(public dialogRef: MatDialogRef<ScriptEditorComponent>,
+        public dialog: MatDialog,
+        private changeDetector: ChangeDetectorRef,
+        private translateService: TranslateService,
+        private hmiService: HmiService,
+        private scriptService: ScriptService,
+        @Inject(MAT_DIALOG_DATA) public data: any) {
+            this.script = data.script;
+        this.dialogRef.afterOpened().subscribe(() => setTimeout(() => {this.ready = true; this.setCM();}, 0));
+        this.systemFunctions = new SystemFunctions(this.script.mode);
+        this.templatesCode = new TemplatesCode(this.script.mode);
+        this.checkSystemFnc = this.systemFunctions.functions.map(sf => sf.name);
+    }
+
+    ngOnInit() {
+        if (!this.script) {
+            this.script = new Script(Utils.getGUID(SCRIPT_PREFIX));
+        }
+        this.parameters = this.script.parameters;
+        this.codeMirrorContent = this.script.code;
+        // THE PROOF THAT instant() IS RIGHT HERE IS IN THIS VERY FUNCTION: the next loop already
+        // used instant() for exactly this job, on the same kind of data, at the same point in the
+        // lifecycle. The subscribe() calls were the odd ones out - and their values were empty on
+        // first render, because nothing reads them inside the callback.
+        this.msgRemoveScript = this.translateService.instant('msg.script-remove', { value: this.script.name });
+        this.systemFunctions.functions.forEach(fnc => {
+            fnc.text = this.translateService.instant(fnc.text);
+            fnc.tooltip = this.translateService.instant(fnc.tooltip);
+        });
+        this.templatesCode.functions.forEach(fnc => {
+            fnc.text = this.translateService.instant(fnc.text);
+            fnc.tooltip = this.translateService.instant(fnc.tooltip);
+        });
+        this.hmiService.onScriptConsole.pipe(
+            takeUntil(this.destroy$)
+        ).subscribe((scriptConsole: ScriptConsoleMessage) => {
+            this.console.push(scriptConsole.msg);
+        });
+        this.loadTestParameter();
+    }
+
+    ngOnDestroy() {
+        window.clearTimeout(this.codeMirrorSetupTimer);
+        this.destroy$.next(null);
+        this.destroy$.complete();
+    }
+
+    setCM() {
+        this.changeDetector.detectChanges();
+        const editor = this.CodeMirror?.codeMirror;
+        if (!editor) {
+            this.codeMirrorSetupTimer = window.setTimeout(() => this.setCM(), 50);
+            return;
+        }
+
+        editor.refresh();
+        let spellCheckOverlay = {
+            token: (stream) => {
+                for (let i = 0; i < this.checkSystemFnc.length; i++) {
+                    if (stream.match(this.checkSystemFnc[i])) {
+                        return 'system-function';
+                    }
+                }
+                while (stream.next(null) != null && this.checkSystemFnc.indexOf(stream) !== -1) {}
+                return null;
+            }
+        };
+        editor.addOverlay(spellCheckOverlay);
+        editor.setOption('lint', this.lintOptions);
+        editor.performLint();
+    }
+
+    onNoClick(): void {
+        this.dialogRef.close();
+    }
+
+    onOkClick(): void {
+        this.dialogRef.close(this.script);
+    }
+
+    getParameters() {
+        return '';
+    }
+
+    isValid() {
+        if (this.script && this.script.name) {
+            return true;
+        }
+        return false;
+    }
+
+    onEditScriptName() {
+        const title = this.translateService.instant('dlg.item-title');
+        const label = this.translateService.instant('dlg.item-req-name');
+        const error = this.translateService.instant('dlg.item-name-error');
+        let exist = this.data.scripts.map((s) => s.name);
+        let dialogRef = this.dialog.open(EditNameComponent, {
+            disableClose: true,
+            position: { top: '60px' },
+            data: { name: this.script.name, title: title, label: label, exist: exist, error: error, validator: this.validateName }
+        });
+        dialogRef.afterClosed().subscribe(result => {
+            if (result && result.name && result.name.length > 0) {
+                this.script.name = result.name;
+            }
+        });
+    }
+
+    onAddFunctionParam() {
+        let error = 'dlg.item-name-error';
+        let exist = this.parameters.map(p => p.name);
+        let dialogRef = this.dialog.open(ScriptEditorParamComponent, {
+            disableClose: true,
+            position: { top: '60px' },
+            data: { name: '', exist: exist, error: error, validator: this.validateName  }
+        });
+
+        dialogRef.afterClosed().subscribe(result => {
+            if (result && result.name && result.type) {
+                this.parameters.push(new ScriptParam(result.name, result.type));
+                this.loadTestParameter();
+            }
+        });
+    }
+
+    onRemoveParameter(index) {
+        this.parameters.splice(index, 1);
+        this.loadTestParameter();
+    }
+
+    onEditorContent(event) {
+        this.script.code = this.codeMirrorContent;
+    }
+
+    onAddSystemFunction(sysfnc: SystemFunction) {
+        if (sysfnc.params.filter((value) => value)?.length) {
+            this.onAddSystemFunctionTag(sysfnc);
+        } else {
+            this.insertText(this.getFunctionText(sysfnc));
+        }
+    }
+
+    onAddTemplateCode(tmpfnc: SystemFunction) {
+        if (tmpfnc.code) {
+            this.insertText(tmpfnc.code);
+        }
+    }
+
+    onAddSystemFunctionTag(sysfnc: SystemFunction) {
+        const withMultTagsParam = sysfnc.params?.find(p => p === 'array');
+        let dialogRef = this.dialog.open(DeviceTagSelectionComponent, {
+            disableClose: true,
+            position: { top: '60px' },
+            data: <DeviceTagSelectionData> {
+                variableId: null,
+                multiSelection:  withMultTagsParam ? true : false,
+                deviceFilter: [ this.script.mode === ScriptMode.SERVER ? DeviceType.internal : null ],
+                isHistorical: sysfnc.paramFilter === ScriptParamFilterType.history
+            }
+        });
+
+        dialogRef.afterClosed().subscribe((result) => {
+            if (result) {
+                let text;
+                if (withMultTagsParam && result.variablesId) {
+                    const tags = result.variablesId.map(varId => <ScriptParamCommentType> {
+                        id: varId,
+                        comment: DevicesUtils.getDeviceTagText(this.data.devices, varId)
+                    });
+                    text = this.getTagFunctionText(sysfnc, tags);
+                } else if (result.variableId) {
+                    const tag = { id: result.variableId, comment: DevicesUtils.getDeviceTagText(this.data.devices, result.variableId) };
+                    text = this.getTagFunctionText(sysfnc, [tag]);
+                }
+                this.insertText(text);
+            }
+        });
+    }
+
+    onSetTestTagParam(param: ScriptParam) {
+        let dialogRef = this.dialog.open(DeviceTagSelectionComponent, {
+            disableClose: true,
+            position: { top: '60px' },
+            data: <DeviceTagSelectionData> {
+                variableId: null,
+                multiSelection: false,
+                deviceFilter: [ DeviceType.internal ]
+            }
+        });
+
+        dialogRef.afterClosed().subscribe((result) => {
+            if (result && result.variableId) {
+                param.value = result.variableId;
+            }
+        });
+    }
+
+    onRunTest() {
+        let torun = new ScriptTest(this.script.id, this.script.name);
+        torun.parameters = this.testParameters;
+        torun.mode = this.script.mode;
+        torun.outputId = this.script.id;
+        torun.code = this.script.code;
+        this.scriptService.runScript(torun).subscribe(result => {
+            this.console.push(JSON.stringify(result));
+        }, err => {
+            this.console.push((err.message) ? err.message : err);
+            if (err.error) {
+                this.console.push((err.error.message) ? err.error.message : err.error);
+            }
+        });
+    }
+
+    toggleSync() {
+        this.script.sync = !this.script.sync;
+        this.CodeMirror?.codeMirror?.performLint();
+    }
+
+    onConsoleClear() {
+        this.console = [];
+    }
+
+    private validateName(name: string) {
+        const regex = /^[a-zA-Z_$][0-9a-zA-Z_$]*$/;
+        return regex.test(name);
+    }
+
+    private insertText(text: string) {
+        let doc = this.CodeMirror.codeMirror.getDoc();
+        var cursor = doc.getCursor(); // gets the line number in the cursor position
+        doc.replaceRange(text, cursor);
+    }
+
+    private getTagFunctionText(sysfnc: SystemFunction, params: ScriptParamCommentType[]): string {
+        let paramText = '';
+        for (let i = 0; i < sysfnc.params.length; i++) {
+            if (paramText.length) {     // parameters separator
+                paramText += ', ';
+            }
+            let toAdd = '';
+            if (sysfnc.params[i] && params) {
+                if (sysfnc.params[i] === 'array') {
+                    toAdd = '[' + params.map(param => `'${param.id}' /* ${param.comment} */`).join(', ') + ']';
+                } else if (params[i]) {         // tag ID
+                    toAdd = `'${params[i].id}' /* ${params[i].comment} */`;
+                }
+            } else {
+            }
+            paramText += toAdd;
+        }
+        return `${sysfnc.name}(${paramText});`;
+    }
+
+    private getFunctionText(sysfnc: SystemFunction): string {
+        let paramText = '\'params\'';
+        const fx = this.systemFunctions.functions.find(sf => sf.name === sysfnc.name);
+        if (!fx?.params?.length) {
+            paramText = '';
+        } else if (fx?.paramsText) {
+            paramText = this.translateService.instant(fx.paramsText) || paramText;
+        }
+        return `${sysfnc.name}(${paramText});`;
+    }
+
+    private loadTestParameter() {
+        let params = [];
+        for (let i = 0; i < this.parameters.length; i++) {
+            let p = new ScriptParam(this.parameters[i].name, this.parameters[i].type);
+            if (this.testParameters[i]) {
+                p.value = this.testParameters[i].value;
+            }
+            params.push(p);
+        }
+        this.testParameters = params;
+    }
+}
+
+interface ScriptParamCommentType {
+    id: string;
+    comment: string;
+}

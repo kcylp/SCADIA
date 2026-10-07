@@ -1,0 +1,11 @@
+<div [style.background-color]="backgroudColor" style="height: 100%">
+    <!-- [child]="true": the lab is an editor surface, never the page that owns script scheduling. -->
+    <app-scadia-view *ngIf="labView" class="lab-body" id="lab" [child]="true" [view]="currentView" [hmi]="hmi" [gaugesManager]="gaugesManager"></app-scadia-view>
+    <div *ngIf="!labView">
+        {{'lab.loading' | translate}}
+    </div>
+    <template #messagecontainer>
+    </template>
+    <button mat-mini-fab color="warn" class="fab-btn" (click)="onTest()">{{'lab.test' | translate}}</button>
+    <app-tester #tester></app-tester>
+</div>

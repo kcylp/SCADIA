@@ -1,0 +1,330 @@
+<div class="scada">
+    <header class="sc-topbar">
+        <div class="sc-topbar__brand">
+            <mat-icon>precision_manufacturing</mat-icon>
+            <div>
+                <div class="sc-topbar__title">{{'mes.title' | translate}}</div>
+                <div class="sc-topbar__sub">{{'mes.subtitle' | translate}}</div>
+            </div>
+        </div>
+
+        <div class="sc-topbar__spacer"></div>
+
+        <div class="sc-topbar__meta">
+            <span class="sc-pill sc-pill--info">{{'mes.factory' | translate}}</span>
+            <span class="sc-led-with-label">
+                <i class="sc-led sc-led--ok sc-led--pulse"></i>
+                <span class="sc-mono">{{reportDate}} {{reportTime}}</span>
+            </span>
+            <span class="sc-hint">{{'mes.shift' | translate}}:
+                <b>{{'mes.shift-b' | translate}}</b></span>
+        </div>
+
+        <span class="sc-tag">{{'mes.demo-badge' | translate}}</span>
+    </header>
+
+    <div class="sc-body sc-scroll">
+        <div class="sc-banner sc-banner--info">
+            <mat-icon>info</mat-icon>
+            <span>{{'mes.demo-banner' | translate}}</span>
+        </div>
+
+        <!-- ------------------------------------------------------------- KPI tiles -->
+        <div class="sc-grid sc-grid--kpi">
+            <div class="sc-kpi sc-kpi--ok">
+                <div class="sc-kpi__label">{{'mes.kpi.output' | translate}}</div>
+                <div class="sc-kpi__value">{{dayOutput | number}}
+                    <span class="sc-readout__unit">{{'mes.unit-pcs' | translate}}</span>
+                </div>
+                <div class="sc-kpi__hint">{{'mes.kpi.output-plan' | translate}} {{dayPlan | number}}</div>
+            </div>
+            <div class="sc-kpi" [ngClass]="planAttainment >= planAttainmentTarget ? 'sc-kpi--ok' : 'sc-kpi--warn'">
+                <div class="sc-kpi__label">{{'mes.kpi.completion' | translate}}</div>
+                <div class="sc-kpi__value">{{planAttainment}}<span class="sc-readout__unit">%</span></div>
+                <div class="sc-kpi__hint">{{'mes.target' | translate}} {{planAttainmentTarget}}%</div>
+            </div>
+            <div class="sc-kpi" [ngClass]="oeeAvg >= oeeTarget ? 'sc-kpi--ok' : 'sc-kpi--warn'">
+                <div class="sc-kpi__label">{{'mes.kpi.oee' | translate}}</div>
+                <div class="sc-kpi__value">{{oeeAvg}}<span class="sc-readout__unit">%</span></div>
+                <div class="sc-kpi__hint">{{'mes.avg-oee' | translate}} · {{'mes.target' | translate}} {{oeeTarget}}%</div>
+            </div>
+            <div class="sc-kpi sc-kpi--ok">
+                <div class="sc-kpi__label">{{'mes.kpi.quality' | translate}}</div>
+                <div class="sc-kpi__value">{{qualityRate}}<span class="sc-readout__unit">%</span></div>
+                <div class="sc-kpi__hint">{{'mes.pass-rate' | translate}}</div>
+            </div>
+            <div class="sc-kpi sc-kpi--info">
+                <div class="sc-kpi__label">{{'mes.kpi.active-orders' | translate}}</div>
+                <div class="sc-kpi__value">{{orders.length}}</div>
+                <div class="sc-kpi__hint">
+                    {{'mes.count-running' | translate}} {{runningCount}} ·
+                    {{'mes.count-done' | translate}} {{doneCount}} ·
+                    {{'mes.count-pending' | translate}} {{pendingCount}}
+                </div>
+            </div>
+            <div class="sc-kpi" [ngClass]="cycleToday <= cycleTarget ? 'sc-kpi--ok' : 'sc-kpi--alarm'">
+                <div class="sc-kpi__label">{{'mes.kpi.cycle' | translate}}</div>
+                <div class="sc-kpi__value">{{cycleToday}}<span class="sc-readout__unit">{{'mes.unit-sec' | translate}}</span></div>
+                <div class="sc-kpi__hint">{{'mes.cycle-station' | translate}} {{cycleStation}} ·
+                    {{'mes.cycle-target' | translate}} {{cycleTarget}}{{'mes.unit-sec' | translate}}</div>
+            </div>
+        </div>
+
+        <!-- --------------------------------------------------------------- orders -->
+        <section class="sc-panel">
+            <div class="sc-panel__hd">
+                <mat-icon>assignment</mat-icon>
+                <span>{{'mes.orders' | translate}}</span>
+                <span class="sc-hd-actions sc-hint">
+                    {{'mes.progress' | translate}} {{orderProgress}}% ·
+                    {{orderCompleted | number}} / {{orderTotal | number}}
+                </span>
+            </div>
+            <div class="sc-panel__bd" style="padding:0">
+                <table class="sc-table">
+                    <thead>
+                        <tr>
+                            <th>{{'mes.col-order' | translate}}</th>
+                            <th>{{'mes.col-product' | translate}}</th>
+                            <th>{{'mes.col-operation' | translate}}</th>
+                            <th class="num">{{'mes.col-planned' | translate}}</th>
+                            <th class="num">{{'mes.col-completed' | translate}}</th>
+                            <th style="min-width:150px">{{'mes.col-progress' | translate}}</th>
+                            <th>{{'mes.col-status' | translate}}</th>
+                            <th>{{'mes.col-team' | translate}}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let o of orders">
+                            <td class="sc-mono" style="color:var(--sc-ink);font-weight:600">{{o.order}}</td>
+                            <td>{{o.product | translate}}</td>
+                            <td><span class="sc-tag">{{o.operation | translate}}</span></td>
+                            <td class="num">{{o.planned | number}}</td>
+                            <td class="num">{{o.completed | number}}</td>
+                            <td>
+                                <div class="mes-progress">
+                                    <div class="mes-progress__track">
+                                        <div class="mes-progress__fill"
+                                             [ngClass]="fillClass(o.status)"
+                                             [style.width]="barWidth(o.completed, o.planned)"></div>
+                                    </div>
+                                    <span class="sc-mono mes-progress__pct">{{barWidth(o.completed, o.planned)}}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="sc-pill mes-status" [ngClass]="{
+                                    'sc-pill--ok': o.status === 'mes.status-done',
+                                    'sc-pill--info': o.status === 'mes.status-running',
+                                    'sc-pill--warn': o.status === 'mes.status-qc',
+                                    'sc-pill--alarm': o.status === 'mes.status-blocked',
+                                    'sc-pill--idle': o.status === 'mes.status-pending'
+                                }">{{o.status | translate}}</span>
+                            </td>
+                            <td><span class="sc-mono">{{o.team | translate}}</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ------------------------------------------- routing + output/cycle time -->
+        <div class="sc-split">
+            <div class="sc-col">
+                <section class="sc-panel">
+                    <div class="sc-panel__hd">
+                        <mat-icon>route</mat-icon>
+                        <span>{{'mes.routing' | translate}}</span>
+                        <span class="sc-hd-actions sc-hint">{{'mes.routing-hint' | translate}}</span>
+                    </div>
+                    <div class="sc-panel__bd" style="padding:0">
+                        <table class="sc-table">
+                            <thead>
+                                <tr>
+                                    <th>{{'mes.col-operation' | translate}}</th>
+                                    <th class="num">{{'mes.col-wip' | translate}}</th>
+                                    <th class="num">{{'mes.col-operation-done' | translate}}</th>
+                                    <th style="min-width:170px">{{'mes.col-operation-progress' | translate}}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let p of routing">
+                                    <td>{{p.key | translate}}</td>
+                                    <td class="num">{{p.wip | number}}</td>
+                                    <td class="num">{{p.done | number}}<span class="sc-hint"> / {{p.planned | number}}</span></td>
+                                    <td>
+                                        <div class="mes-progress">
+                                            <div class="mes-progress__track">
+                                                <div class="mes-progress__fill mes-progress__fill--station"
+                                                     [style.width]="barWidth(p.done, routingPeak)"></div>
+                                            </div>
+                                            <span class="sc-mono mes-progress__pct">{{barWidth(p.done, p.planned)}}</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <div class="sc-col">
+                <section class="sc-panel">
+                    <div class="sc-panel__hd">
+                        <mat-icon>bar_chart</mat-icon>
+                        <span>{{'mes.output-trend' | translate}}</span>
+                        <span class="sc-hd-actions sc-hint">{{'mes.day-output-label' | translate}} {{dayOutput | number}}</span>
+                    </div>
+                    <div class="sc-panel__bd">
+                        <div class="mes-bars">
+                            <div class="mes-bars__col" *ngFor="let v of outputHourly; let i = index">
+                                <span class="sc-mono mes-bars__value">{{v}}</span>
+                                <div class="mes-bars__track">
+                                    <div class="mes-bars__fill" [style.height]="barWidth(v, outputPeak)"></div>
+                                </div>
+                                <span class="mes-bars__label">{{outputLabels[i] | translate}}</span>
+                            </div>
+                        </div>
+                        <div class="sc-divider"></div>
+                        <div class="sc-kv">
+                            <span>{{'mes.cycle-station' | translate}}</span>
+                            <span>{{cycleStation}} · {{cycleToday}}{{'mes.unit-sec' | translate}} /
+                                {{'mes.target' | translate}} {{cycleTarget}}{{'mes.unit-sec' | translate}}</span>
+                        </div>
+                        <div class="sc-kv">
+                            <span>{{'mes.cycle-trend' | translate}}</span>
+                            <span>{{cycleBaseline}}{{'mes.unit-sec' | translate}} → {{cycleToday}}{{'mes.unit-sec' | translate}}
+                                <b class="mes-delta--ok">{{'mes.cycle-faster' | translate}}</b></span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="sc-panel">
+                    <div class="sc-panel__hd">
+                        <mat-icon>groups</mat-icon>
+                        <span>{{'mes.team-output' | translate}}</span>
+                        <span class="sc-hd-actions sc-hint">{{'mes.kpi.output' | translate}}</span>
+                    </div>
+                    <div class="sc-panel__bd" style="padding:0">
+                        <table class="sc-table">
+                            <thead>
+                                <tr>
+                                    <th>{{'mes.col-team' | translate}}</th>
+                                    <th class="num">{{'mes.col-plan' | translate}}</th>
+                                    <th class="num">{{'mes.col-output' | translate}}</th>
+                                    <th class="num">{{'mes.col-achievement' | translate}}</th>
+                                    <th style="min-width:120px">{{'mes.col-team-output' | translate}}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let t of teams">
+                                    <td>{{t.key | translate}}</td>
+                                    <td class="num">{{t.plan | number}}</td>
+                                    <td class="num">{{t.output | number}}</td>
+                                    <td class="num"><span class="sc-pill" [ngClass]="band(t.achievement, 100)">{{t.achievement}}%</span></td>
+                                    <td>
+                                        <div class="mes-progress">
+                                            <div class="mes-progress__track">
+                                                <div class="mes-progress__fill mes-progress__fill--station"
+                                                     [style.width]="barWidth(t.output, planMax)"></div>
+                                            </div>
+                                            <span class="sc-mono mes-progress__pct">{{t.oee}}%</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- ------------------------------------------------------------ equipment -->
+        <section class="sc-panel">
+            <div class="sc-panel__hd">
+                <mat-icon>settings_suggest</mat-icon>
+                <span>{{'mes.equipment' | translate}}</span>
+                <span class="sc-hd-actions sc-hint">{{'mes.oee-formula' | translate}} · {{'mes.target' | translate}} {{oeeTarget}}%</span>
+            </div>
+            <div class="sc-panel__bd" style="padding:0">
+                <table class="sc-table">
+                    <thead>
+                        <tr>
+                            <th>{{'mes.col-equipment' | translate}}</th>
+                            <th class="num">{{'mes.col-availability' | translate}}</th>
+                            <th class="num">{{'mes.col-performance' | translate}}</th>
+                            <th class="num">{{'mes.col-quality' | translate}}</th>
+                            <th class="num">{{'mes.col-oee' | translate}}</th>
+                            <th style="min-width:180px">{{'mes.oee' | translate}}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let e of equipment">
+                            <td style="color:var(--sc-ink);font-weight:600">{{e.key | translate}}</td>
+                            <td class="num">{{e.availability}}%</td>
+                            <td class="num">{{e.performance}}%</td>
+                            <td class="num">{{e.quality}}%</td>
+                            <td class="num">
+                                <span class="sc-pill" [ngClass]="band(e.oee, oeeTarget)">{{e.oee}}%</span>
+                            </td>
+                            <td>
+                                <div class="mes-progress">
+                                    <div class="mes-progress__track">
+                                        <div class="mes-progress__fill mes-progress__fill--station"
+                                             [style.width]="barWidth(e.oee, 100)"></div>
+                                    </div>
+                                    <span class="sc-mono mes-progress__pct">{{e.oee}}%</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- -------------------------------------------------------------- quality -->
+        <section class="sc-panel">
+            <div class="sc-panel__hd">
+                <mat-icon>verified</mat-icon>
+                <span>{{'mes.quality' | translate}}</span>
+                <span class="sc-hd-actions sc-hint">
+                    {{'mes.inspected' | translate}} {{inspectedTotal | number}} ·
+                    {{'mes.defective' | translate}} {{defectiveTotal | number}} ·
+                    {{'mes.defect-rate' | translate}}
+                    {{barWidth(defectiveTotal, inspectedTotal)}}
+                </span>
+            </div>
+            <div class="sc-panel__bd" style="padding:0">
+                <table class="sc-table">
+                    <thead>
+                        <tr>
+                            <th>{{'mes.col-defect' | translate}}</th>
+                            <th class="num">{{'mes.col-defect-count' | translate}}</th>
+                            <th class="num">{{'mes.col-inspected' | translate}}</th>
+                            <th class="num">{{'mes.col-defect-rate' | translate}}</th>
+                            <th class="num">{{'mes.col-ppm' | translate}}</th>
+                            <th style="min-width:180px">{{'mes.col-pareto' | translate}}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let d of defects">
+                            <td>{{d.key | translate}}</td>
+                            <td class="num">{{d.count}}</td>
+                            <td class="num">{{d.inspected | number}}</td>
+                            <td class="num">{{d.rate}}%</td>
+                            <td class="num">{{d.ppm | number}}</td>
+                            <td>
+                                <div class="mes-progress">
+                                    <div class="mes-progress__track">
+                                        <div class="mes-progress__fill mes-progress__fill--defect"
+                                             [style.width]="barWidth(d.count, defectPeak)"></div>
+                                    </div>
+                                    <span class="sc-mono mes-progress__pct">{{d.count}}</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>

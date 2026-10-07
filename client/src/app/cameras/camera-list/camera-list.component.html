@@ -1,0 +1,146 @@
+<div class="scada">
+    <header class="sc-topbar">
+        <div class="sc-topbar__brand">
+            <mat-icon>videocam</mat-icon>
+            <div>
+                <div class="sc-topbar__title">{{'camera.title' | translate}}</div>
+                <div class="sc-topbar__sub">{{'camera.subtitle' | translate}}</div>
+            </div>
+        </div>
+
+        <div class="sc-topbar__spacer"></div>
+
+        <div class="sc-topbar__meta" *ngIf="meta">
+            <span class="sc-led-with-label">
+                <i class="sc-led" [ngClass]="mediaHealth && mediaHealth.ok ? 'sc-led--ok' : 'sc-led--idle'"></i>
+                {{'camera.media' | translate}}:
+                {{(meta.mediaServer.enabled ? 'camera.media-on' : 'camera.media-off') | translate}}
+            </span>
+            <span class="sc-led-with-label">
+                <i class="sc-led" [ngClass]="meta.secureEnabled ? 'sc-led--ok' : 'sc-led--warn'"></i>
+                {{(meta.secureEnabled ? 'calibration.secure-on' : 'calibration.secure-off') | translate}}
+            </span>
+        </div>
+
+        <button class="sc-btn sc-btn--icon sc-btn--ghost" title="{{'calibration.refresh' | translate}}" (click)="load()">
+            <mat-icon>refresh</mat-icon>
+        </button>
+        <button class="sc-btn sc-btn--primary" (click)="onAdd()">
+            <mat-icon>add</mat-icon>{{'camera.add' | translate}}
+        </button>
+    </header>
+
+    <div class="sc-body sc-scroll">
+        <div class="sc-grid sc-grid--kpi" style="margin-bottom:16px">
+            <div class="sc-kpi">
+                <div class="sc-kpi__label">{{'camera.kpi.total' | translate}}</div>
+                <div class="sc-kpi__value">{{cameras.length}}</div>
+            </div>
+            <div class="sc-kpi sc-kpi--ok">
+                <div class="sc-kpi__label">{{'camera.kpi.enabled' | translate}}</div>
+                <div class="sc-kpi__value">{{onlineCount}}</div>
+            </div>
+            <div class="sc-kpi sc-kpi--warn">
+                <div class="sc-kpi__label">{{'camera.kpi.ai' | translate}}</div>
+                <div class="sc-kpi__value">{{aiCount}}</div>
+            </div>
+            <div class="sc-kpi" [class.sc-kpi--ok]="mediaHealth && mediaHealth.ok">
+                <div class="sc-kpi__label">{{'camera.kpi.media' | translate}}</div>
+                <div class="sc-readout sc-readout--lg">
+                    {{(mediaHealth && mediaHealth.ok) ? ('camera.ok' | translate) : ('camera.off' | translate)}}
+                </div>
+                <div class="sc-kpi__hint">{{meta?.mediaServer?.type || '—'}}</div>
+            </div>
+        </div>
+
+        <div *ngIf="loading" class="sc-empty">
+            <mat-spinner diameter="34"></mat-spinner>
+        </div>
+
+        <div class="sc-split" *ngIf="!loading">
+            <!-- ------------------------------------------------ left: table -->
+            <div class="sc-col">
+                <section class="sc-panel">
+                    <div class="sc-panel__hd">
+                        <mat-icon>list_alt</mat-icon>
+                        <span>{{'camera.sources' | translate}}</span>
+                        <span class="sc-hd-actions sc-hint">{{cameras.length}}</span>
+                    </div>
+                    <div class="sc-panel__bd" style="padding:0">
+                        <table class="sc-table" *ngIf="cameras.length">
+                            <thead>
+                                <tr>
+                                    <th>{{'camera.name' | translate}}</th>
+                                    <th>{{'camera.vendor' | translate}}</th>
+                                    <th>{{'camera.address' | translate}}</th>
+                                    <th>{{'camera.channel' | translate}}</th>
+                                    <th>{{'camera.status' | translate}}</th>
+                                    <th style="text-align:right">{{'calibration.actions' | translate}}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let c of cameras" class="sc-clickable"
+                                    [class.is-selected]="selected && selected.id === c.id" (click)="onSelect(c)">
+                                    <td style="color:var(--sc-ink);font-weight:600">{{c.name}}</td>
+                                    <td><span class="sc-tag">{{c.endpoints?.vendor || c.vendor}}</span></td>
+                                    <td class="sc-mono" style="font-size:11.5px">{{c.host}}:{{c.port}}</td>
+                                    <td class="sc-mono">{{c.channel}}<span class="sc-hint">/{{c.subtype === 1 ? 'sub' : 'main'}}</span></td>
+                                    <td>
+                                        <span class="sc-led-with-label">
+                                            <i class="sc-led" [ngClass]="c.enabled !== false ? 'sc-led--ok' : 'sc-led--idle'"></i>
+                                            <span class="sc-pill" [ngClass]="c.enabled !== false ? 'sc-pill--ok' : 'sc-pill--idle'">
+                                                {{(c.enabled !== false ? 'camera.enabled' : 'camera.disabled') | translate}}
+                                            </span>
+                                        </span>
+                                    </td>
+                                    <td style="text-align:right;white-space:nowrap" (click)="$event.stopPropagation()">
+                                        <button class="sc-btn sc-btn--icon sc-btn--ghost" title="{{'camera.test' | translate}}"
+                                                (click)="onProbe(c)">
+                                            <mat-icon>network_check</mat-icon>
+                                        </button>
+                                        <button class="sc-btn sc-btn--icon sc-btn--ghost" title="{{'camera.edit' | translate}}"
+                                                (click)="onEdit(c)">
+                                            <mat-icon>edit</mat-icon>
+                                        </button>
+                                        <button class="sc-btn sc-btn--icon sc-btn--ghost" title="{{'general.delete' | translate}}"
+                                                (click)="onRemove(c)">
+                                            <mat-icon>delete_outline</mat-icon>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="sc-empty" *ngIf="!cameras.length">{{'camera.no-cameras' | translate}}</div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- ----------------------------------------------- right: preview -->
+            <div class="sc-col">
+                <section class="sc-panel">
+                    <div class="sc-panel__hd">
+                        <mat-icon>preview</mat-icon>
+                        <span>{{'camera.preview' | translate}}</span>
+                        <span class="sc-hd-actions sc-hint">{{selected ? selected.name : '—'}}</span>
+                    </div>
+                    <div class="sc-panel__bd">
+                        <app-camera-view *ngIf="selected"
+                                         [camera]="selected"
+                                         [mediaEnabled]="!!(meta && meta.mediaServer && meta.mediaServer.enabled)">
+                        </app-camera-view>
+                        <div class="sc-empty" *ngIf="!selected">{{'camera.no-selection' | translate}}</div>
+
+                        <div class="sc-divider" *ngIf="selected"></div>
+                        <ng-container *ngIf="selected">
+                            <div class="sc-kv"><span>{{'camera.endpoint.rtsp' | translate}}</span>
+                                <b class="sc-hex" style="max-width:100%">{{selected.endpoints?.rtsp || '—'}}</b></div>
+                            <div class="sc-kv"><span>{{'camera.endpoint.snapshot' | translate}}</span>
+                                <b class="sc-hex" style="max-width:100%">{{selected.endpoints?.snapshot || '—'}}</b></div>
+                            <div class="sc-kv"><span>{{'camera.auth' | translate}}</span><b>{{selected.endpoints?.auth || '—'}}</b></div>
+                        </ng-container>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</div>

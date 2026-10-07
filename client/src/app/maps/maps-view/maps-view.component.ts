@@ -1,0 +1,591 @@
+import { AfterViewInit, ApplicationRef, Component, ComponentFactoryResolver, ElementRef, EventEmitter, Injector, Input, OnDestroy, Output, ViewChild } from '@angular/core';
+import * as L from 'leaflet';
+import { GaugesManager } from '../../gauges/gauges.component';
+import { ScadiaViewComponent } from '../../scadia-view/scadia-view.component';
+import { ProjectService } from '../../_services/project.service';
+import { MatMenuTrigger as MatMenuTrigger } from '@angular/material/menu';
+import { MatDialog as MatDialog } from '@angular/material/dialog';
+import { GaugeAction, GaugeRangeProperty, Hmi, View, ViewProperty } from '../../_models/hmi';
+import { filter, Subject, takeUntil } from 'rxjs';
+import { MapsLocation, MAPSLOCATION_PREFIX } from '../../_models/maps';
+import { MapsLocationPropertyComponent } from '../maps-location-property/maps-location-property.component';
+import { Utils } from '../../_helpers/utils';
+import { TranslateService } from '@ngx-translate/core';
+import { ToastrService } from 'ngx-toastr';
+import { MapsLocationImportComponent } from '../maps-location-import/maps-location-import.component';
+import { MapsFabButtonMenuComponent } from './maps-fab-button-menu/maps-fab-button-menu.component';
+import { HmiService } from '../../_services/hmi.service';
+
+interface MarkerBinding {
+    nodeIds: string[];
+    domNodes: HTMLElement[];
+    actions: {
+        action: GaugeAction;
+        marker: L.Marker;
+        element?: HTMLElement | null;
+    }[];
+};
+
+@Component({
+    selector: 'app-maps-view',
+    templateUrl: './maps-view.component.html',
+    styleUrls: ['./maps-view.component.scss']
+})
+export class MapsViewComponent implements AfterViewInit, OnDestroy {
+
+    @Input() view: View;
+    @Input() hmi: Hmi;
+    @Input() gaugesManager: GaugesManager;        // gauges.component
+    @Input() editMode: boolean;
+    @Output() onGoTo: EventEmitter<string> = new EventEmitter<string>();
+
+    @ViewChild(MatMenuTrigger) menuTrigger!: MatMenuTrigger;
+    @ViewChild('menuTrigger', { read: ElementRef }) menuTriggerButton!: ElementRef;
+
+    @ViewChild('mapContainer', { static: false }) mapContainer!: ElementRef;
+    private map: L.Map | null = null;
+    private mapInitTimer: ReturnType<typeof setTimeout> | null = null;
+
+    private destroy$ = new Subject<void>();
+    lastClickLatLng!: L.LatLng;
+    lastClickMarker?: L.Marker;
+
+    menuPosition = { x: '0px', y: '0px' };
+    private locations: MapsLocation[] = [];
+    lastClickMapLocation?: MapsLocation;
+    private markerItemsMap = new Map<string, MarkerBinding>();
+
+    private openPopups = [];
+    private currentPopup: L.Popup | null = null;
+
+    constructor(
+        private resolver: ComponentFactoryResolver,
+        private hmiService: HmiService,
+        private injector: Injector,
+        private dialog: MatDialog,
+        private projectService: ProjectService,
+        private appRef: ApplicationRef,
+        private translateService: TranslateService,
+        private toastr: ToastrService
+    ) { }
+
+    ngAfterViewInit(): void {
+        let startLocation: L.LatLngExpression = [46.9466746335407, 7.444236656153662]; // Bern
+        if (this.view.property?.startLocation) {
+            startLocation = [this.view.property.startLocation.latitude, this.view.property.startLocation.longitude];
+        }
+
+        // The handle is kept so ngOnDestroy can cancel it: the map is created 200 ms later, and a
+        // navigation away inside that window used to leave the timer running against a component
+        // that no longer exists.
+        this.mapInitTimer = setTimeout(() => {
+            this.map = L.map('map').setView(startLocation, this.view.property?.startZoom || 13);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; SCADIA'
+            }).addTo(this.map);
+
+            this.loadMapsResources();
+            this.projectService.onLoadHmi.pipe(
+                takeUntil(this.destroy$),
+            ).subscribe(_ => {
+                this.loadMapsResources();
+            });
+
+            this.initMapEvents();
+            this.map.invalidateSize();
+
+            if (!this.editMode) {
+                this.initWatch();
+            }
+            try {
+                this.gaugesManager.emitBindedSignals(this.view.id);
+            } catch (err) {
+                console.error(err);
+            }
+        }, 200);
+    }
+
+    ngOnDestroy() {
+        this.destroy$.next(null);
+        this.destroy$.complete();
+        if (this.mapInitTimer) {
+            clearTimeout(this.mapInitTimer);
+            this.mapInitTimer = null;
+        }
+        // Leaflet attaches its drag/zoom/keyboard listeners to the DOCUMENT, not to the container
+        // element, so removing the element is not enough: without remove() every visit to the map
+        // page left another set of listeners behind. Measured before this fix: no call to
+        // map.remove() existed anywhere in the client.
+        if (this.map) {
+            this.map.remove();
+            this.map = null;
+        }
+    }
+
+    reload() {
+        this.loadMapsResources();
+    }
+
+    initMapEvents() {
+        this.map.on('contextmenu', (event: L.LeafletMouseEvent) => {
+            this.showContextMenu(event);
+        });
+        this.map.on('click', () => {
+            this.menuTrigger.closeMenu();
+        });
+    }
+
+    loadMapsResources() {
+        this.hmi = this.projectService.getHmi();
+        this.locations = this.view?.svgcontent ? this.projectService.getMapsLocations(JSON.parse(this.view.svgcontent)) : [];
+        this.clearMarker();
+        const newIcon = L.icon({
+            iconUrl: 'assets/images/marker-icon.png',
+            shadowUrl: 'assets/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 45],
+            popupAnchor: [0, -34]
+        });
+        this.locations.forEach(loc => {
+            const valueHtmlId = Utils.getShortGUID('m_');
+            const color = loc.markerColor ?? '#000000';
+            const background = loc.markerBackground ?? '#ffffff';
+            const icon = loc.markerIcon ? loc.markerIcon : '';
+            const image = loc.markerImage ? loc.markerImage : '';
+            const nameHtml = loc.showMarkerName
+                                ? `<div class="bubble-text"
+                                        style="color: var(--bubble-fg);">${loc.name}</div>`
+                                : '';
+            const iconHtml = loc.showMarkerIcon
+                                ? image
+                                    ? `<img class="bubble-image" src="${image}" alt="">`
+                                    : `<span class="material-icons bubble-icon"
+                                            style="color: var(--bubble-fg);">${icon}</span>`
+                                : '';
+            const valueHtml = loc.markerTagValueId && loc.showMarkerValue
+                                ? `<div class="bubble-value" id="${valueHtmlId}">##.##</div>`
+                                : '';
+            const markerHtml = `
+            <div class="scadia-bubble-marker"
+                 style="--bubble-color:${color};
+                        --bubble-bg:${background};
+                        --bubble-fg:${color};">
+
+                <div class="bubble-content bubble-column">
+                    ${iconHtml}
+                    ${nameHtml}
+                    ${valueHtml}
+                </div>
+            </div>`;
+            const marker = L.marker([loc.latitude, loc.longitude], {
+                icon: L.divIcon({
+                    className: 'scadia-bubble-icon',
+                    html: markerHtml,
+                    iconSize: undefined,  // lasciamo che si adatti
+                    iconAnchor: [0, 0]    // correggiamo via CSS con transform
+                })
+            }).addTo(this.map);
+            marker['locationId'] = loc.id;
+            if (!iconHtml && !valueHtml && !nameHtml) {
+                this.openMarkerTooltip(marker, loc);
+                marker.setIcon(newIcon);
+            } else if (valueHtml) {
+                this.addMarkerItemId(loc.markerTagValueId!, valueHtmlId);
+            }
+            marker.on('click', () => {
+                this.onClickMarker(loc, marker);
+            });
+            marker.on('contextmenu', (event) => {
+                this.showContextMenu(event, marker);
+            });
+
+            this.collectActionTags(loc.actions, marker);
+        });
+        this.map.on('popupopen', (e) => {
+            this.openPopups.push(e.popup);
+        });
+        this.map.on('popupclose', (e) => {
+            const index = this.openPopups.indexOf(e.popup);
+            if (index > -1) {
+                this.openPopups.splice(index, 1);
+            }
+            e.popup = null;
+        });
+        if (!this.editMode) {
+            this.subscribeMarkerTags();
+        }
+    }
+
+    initWatch() {
+        this.gaugesManager.onchange.pipe(
+            takeUntil(this.destroy$),
+            filter(varTag => this.markerItemsMap.has(varTag.id))
+        ).subscribe(varTag => {
+            this.processValueInMarkerItem(varTag.id, varTag.value);
+        });
+    }
+
+    private processValueInMarkerItem(tagId: string, newValue: any) {
+
+        const entry = this.markerItemsMap.get(tagId);
+        if (!entry) return;
+
+        if (entry.domNodes.length === 0) {
+            entry.domNodes = entry.nodeIds
+                .map(id => document.getElementById(id) as HTMLElement)
+                .filter(el => !!el);
+        }
+
+        if (entry.domNodes.length !== 0) {
+            for (const el of entry.domNodes) {
+                el.innerText = newValue;
+            }
+        }
+        this.processActions(entry, newValue);
+    }
+
+    private addMarkerItemId(variableId: string, nodeId: string) {
+        if (!this.markerItemsMap.has(variableId)) {
+            this.markerItemsMap.set(variableId, { nodeIds: [], domNodes: [], actions: [] });
+        }
+        this.markerItemsMap.get(variableId)!.nodeIds.push(nodeId);
+    }
+
+    private openMarkerTooltip(marker: L.Marker, location: MapsLocation) {
+        marker.bindTooltip(`${location.name}`, {
+            permanent: false,
+            direction: 'top',
+            offset: [2, -35],
+            // className: "marker-label"
+        });
+    }
+
+    closeAllPopups() {
+        this.openPopups.forEach(popup => popup.close());
+        this.openPopups.length = 0;
+    }
+
+    showContextMenu(event: L.LeafletMouseEvent, marker?: L.Marker): void {
+        this.lastClickLatLng = event.latlng;
+        this.lastClickMarker = marker;
+        const mapContainer = this.map.getContainer().getBoundingClientRect();
+        const posX = event.originalEvent.clientX - mapContainer.left;
+        const posY = event.originalEvent.clientY - mapContainer.top;
+        const triggerButton = this.menuTriggerButton.nativeElement;
+        triggerButton.style.left = `${posX}px`;
+        triggerButton.style.top = `${posY}px`;
+        triggerButton.style.position = 'absolute';
+        triggerButton.style.display = 'block';
+        this.menuTrigger.openMenu();
+    }
+
+    onClickMarker(location: MapsLocation, marker: L.Marker) {
+        if (this.currentPopup) {
+            this.currentPopup.on('remove', () => {
+                this.currentPopup = null;
+                this.showPopup(location, marker);
+            });
+            this.map.closePopup(this.currentPopup);
+        } else {
+            this.showPopup(location, marker);
+        }
+    }
+
+    showPopup(location: MapsLocation, marker: L.Marker) {
+        this.lastClickMapLocation = location;
+        if (!this.isToOpenMenu()) {
+            this.createCardPopup(location, marker);
+        } else {
+            this.showFabButton(location, marker);
+        }
+    }
+
+    showFabButton(location: MapsLocation, marker: L.Marker) {
+        const container = document.createElement('div');
+        const factory = this.resolver.resolveComponentFactory(MapsFabButtonMenuComponent);
+        const componentRef = factory.create(this.injector);
+        this.appRef.attachView(componentRef.hostView);
+        container.appendChild((componentRef.hostView as any).rootNodes[0]);
+        container.style.width = '40px';
+        var buttons = [];
+        if (location.viewId) {
+            buttons.push({
+                icon: 'chat_bubble_outline', action: () => {
+                    this.map.closePopup(this.currentPopup);
+                    this.createCardPopup(location, marker);
+                }
+            });
+        }
+        if (location.pageId) {
+            buttons.push({
+                icon: 'arrow_outward', action: () => {
+                    this.map.closePopup(this.currentPopup);
+                    this.onGoTo?.emit(location.pageId);
+                }
+            });
+        }
+        if (location.url) {
+            buttons.push({
+                icon: 'open_in_new', action: () => {
+                    this.map.closePopup(this.currentPopup);
+                    window.open(location.url, '_blank');
+                }
+            });
+        }
+        componentRef.instance.buttons = buttons;
+
+        this.currentPopup = L.popup({
+            closeButton: false,
+            autoClose: false,
+            closeOnClick: true,
+            offset: L.point(0, 0),
+        }).setLatLng([location.latitude, location.longitude])
+            .setContent(container)
+            .openOn(this.map);
+        this.currentPopup.on('remove', () => {
+            this.currentPopup = null;
+        });
+    }
+
+    createCardPopup(location: MapsLocation, marker?: L.Marker) {
+        setTimeout(() => {
+            let viewIdToBind = 'map' + location?.viewId;
+            if (!location?.viewId || document.getElementById(viewIdToBind)) {
+                return;
+            }
+            const container = document.createElement('div');
+            const factory = this.resolver.resolveComponentFactory(ScadiaViewComponent);
+            const componentRef = factory.create(this.injector);
+
+            componentRef.instance.gaugesManager = this.gaugesManager;
+            componentRef.instance.hmi = this.hmi;
+            componentRef.instance.view = this.hmi.views.find(view => view.id === location.viewId);
+            componentRef.instance.child = true;
+            container.setAttribute('id', viewIdToBind);
+            this.appRef.attachView(componentRef.hostView);
+            container.appendChild((componentRef.hostView as any).rootNodes[0]);
+
+            container.style.width = componentRef.instance.view.profile.width + 'px';
+
+            this.currentPopup = L.popup({
+                autoClose: false,
+                closeOnClick: false,
+                offset: L.point(0, -20)
+            }).setLatLng([location.latitude, location.longitude])
+                .setContent(container)
+                .openOn(this.map);
+            this.currentPopup.on('remove', () => {
+                this.appRef.detachView(componentRef.hostView);
+                componentRef.destroy();
+                this.currentPopup = null;
+            });
+        }, 250);
+    }
+
+    onCloseAllPopup() {
+        this.closeAllPopups();
+    }
+
+    onAddLocation() {
+        let location = new MapsLocation(Utils.getGUID(MAPSLOCATION_PREFIX));
+        location.latitude = this.lastClickLatLng.lat;
+        location.longitude = this.lastClickLatLng.lng;
+        this.editLocation(location);
+    }
+
+    onEditLocation() {
+        var location = this.locations.find(loc => loc.id === this.lastClickMarker['locationId']);
+        if (location) {
+            this.editLocation(location);
+        }
+    }
+
+    onRemoveLocation() {
+        if (this.lastClickMarker) {
+            var locationIndex = this.locations.findIndex(loc => loc.id === this.lastClickMarker['locationId']);
+            if (locationIndex !== -1) {
+                this.locations.splice(locationIndex, 1);
+                this.view.svgcontent = JSON.stringify(this.locations.map(loc => loc.id));
+                this.projectService.setViewAsync(this.view).then(() => {
+                    this.map.removeLayer(this.lastClickMarker);
+                    this.lastClickMarker = null;
+                    this.loadMapsResources();
+                });
+            }
+        }
+    }
+
+    onSetStartLocation() {
+        this.view.property ??= new ViewProperty();
+        this.view.property.startLocation = new MapsLocation(Utils.getGUID(MAPSLOCATION_PREFIX));
+        this.view.property.startLocation.latitude = this.lastClickLatLng.lat;
+        this.view.property.startLocation.longitude = this.lastClickLatLng.lng;
+        this.view.property.startZoom = this.map.getZoom();
+        this.projectService.setViewAsync(this.view).then(() => {
+            this.toastr.success(this.translateService.instant('maps.edit-start-location-saved'));
+        });
+    }
+
+    onImportLocation() {
+        let dialogRef = this.dialog.open(MapsLocationImportComponent, {
+            position: { top: '60px' },
+            disableClose: true,
+            data: this.locations,
+        });
+        dialogRef.afterClosed().subscribe(result => {
+            if (result) {
+                this.insertLocations(result);
+            }
+        });
+    }
+
+    isToOpenMenu(): boolean {
+        if (!this.lastClickMapLocation) {
+            return false;
+        }
+        const fields = [this.lastClickMapLocation.pageId, this.lastClickMapLocation.url];
+        const definedCount = fields.filter(field => field !== undefined && field !== null && field !== '').length;
+        return definedCount >= 1;
+    }
+
+    private clearMarker() {
+        this.markerItemsMap.clear();
+        this.map.eachLayer(layer => {
+            if (layer instanceof L.Marker) {
+                this.map.removeLayer(layer);
+            }
+        });
+    }
+
+    private editLocation(location?: MapsLocation) {
+        let dialogRef = this.dialog.open(MapsLocationPropertyComponent, {
+            position: { top: '60px' },
+            disableClose: true,
+            data: location,
+        });
+        dialogRef.afterClosed().subscribe(result => {
+            if (result) {
+                this.projectService.setMapsLocation(result, location).subscribe(() => {
+                    if (!this.locations.find(loc => loc.id === location.id)) {
+                        this.insertLocations(location);
+                    } else {
+                        this.loadMapsResources();
+                    }
+                });
+            }
+        });
+    }
+
+    private insertLocations(location: MapsLocation) {
+        this.locations.push(location);
+        this.view.svgcontent = JSON.stringify(this.locations.map(loc => loc.id));
+        this.projectService.setViewAsync(this.view).then(() => {
+            this.loadMapsResources();
+        });
+    }
+
+    private subscribeMarkerTags() {
+        const tagIds = Array.from(this.markerItemsMap.keys());
+        if (tagIds.length) {
+            this.hmiService.viewsTagsSubscribe(tagIds, true);
+        }
+    }
+
+    private collectActionTags(actions: GaugeAction[] | undefined, marker: L.Marker) {
+        if (!actions?.length) {
+            return;
+        }
+        actions.forEach(action => {
+            if (action.variableId) {
+                if (!this.markerItemsMap.has(action.variableId)) {
+                    this.markerItemsMap.set(action.variableId, { nodeIds: [], domNodes: [], actions: [] });
+                }
+                const entry = this.markerItemsMap.get(action.variableId)!;
+                entry.actions.push({
+                    action,
+                    marker,
+                    element: marker.getElement && marker.getElement()
+                });
+            }
+        });
+    }
+
+    private processActions(binding: MarkerBinding, rawValue: any) {
+        if (!binding.actions.length) {
+            return;
+        }
+        const value = this.toNumber(rawValue);
+        binding.actions.forEach(actBinding => {
+            if (!actBinding.element && actBinding.marker?.getElement) {
+                actBinding.element = actBinding.marker.getElement();
+            }
+            if (!actBinding.element) {
+                return;
+            }
+            const inRange = this.isValueInRange(actBinding.action.range, value);
+            switch (actBinding.action.type) {
+                case 'show':
+                    if (inRange) {
+                        this.setMarkerVisibility(actBinding.element, true);
+                    }
+                    break;
+                case 'hide':
+                    if (inRange) {
+                        this.setMarkerVisibility(actBinding.element, false);
+                    }
+                    break;
+                case 'color':
+                    if (inRange) {
+                        this.applyMarkerColor(actBinding.element, actBinding.action.options);
+                    }
+                    break;
+                default:
+                    break;
+            }
+        });
+    }
+
+    private setMarkerVisibility(element: HTMLElement, visible: boolean) {
+        element.style.display = visible ? '' : 'none';
+    }
+
+    private applyMarkerColor(element: HTMLElement, options: any) {
+        if (!options) {
+            return;
+        }
+        const markerRoot = (element.querySelector('.scadia-bubble-marker') as HTMLElement) ?? element;
+        const target = (element.querySelector('.bubble-content') as HTMLElement)
+            ?? markerRoot;
+
+        if (options.fillA) {
+            target.style.setProperty('--bubble-bg', options.fillA);
+            target.style.backgroundColor = options.fillA;
+            target.style.borderRadius = target.style.borderRadius || '12px';
+            target.style.overflow = 'hidden';
+        }
+        if (options.strokeA) {
+            markerRoot.style.setProperty('--bubble-color', options.strokeA);
+            target.style.setProperty('--bubble-color', options.strokeA);
+            target.style.setProperty('--bubble-fg', options.strokeA);
+            target.style.color = options.strokeA;
+        }
+    }
+
+    private isValueInRange(range: GaugeRangeProperty | undefined, value: number | null): boolean {
+        if (!range || (range.min === undefined && range.max === undefined)) {
+            return true;
+        }
+        if (value === null) {
+            return false;
+        }
+        const min = range.min ?? -Infinity;
+        const max = range.max ?? Infinity;
+        return value >= min && value <= max;
+    }
+
+    private toNumber(value: any): number | null {
+        const num = Number(value);
+        return Number.isFinite(num) ? num : null;
+    }
+}

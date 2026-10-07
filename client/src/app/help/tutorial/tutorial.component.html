@@ -1,0 +1,60 @@
+<div class="tutorial-panel" *ngIf="show" ngDraggable>
+    <style>
+        pre {
+            white-space: pre-line;
+        }
+    </style>
+    <div class="tutorial-header">
+        <div class="tutorial-title">
+            {{'tutorial.title' | translate}}
+        </div>
+        <div class="tutorial-close" (click)="close()">
+            &times;
+        </div>
+    </div>
+    <div class="tutorial-body">
+        <mat-accordion multi="true">
+            <mat-expansion-panel class="my-expansion-panel" expanded="true">
+                <mat-expansion-panel-header class="header" [collapsedHeight]="'40px'" [expandedHeight]="'40px'">
+                    <mat-panel-title>
+                        {{ 'tutorial.editor-keyboard-shortcuts' | translate }}
+                    </mat-panel-title>
+                    <mat-panel-description>
+
+                    </mat-panel-description>
+                </mat-expansion-panel-header>
+                <div class="tutorial-content">
+                    <ul>
+                        <li *ngFor="let shortcut of shortcuts">
+                            {{ shortcut.combo }}: {{ shortcut.description }}
+                        </li>
+                    </ul>
+                </div>
+            </mat-expansion-panel>
+
+            <!-- <mat-expansion-panel class="my-expansion-panel">
+                <mat-expansion-panel-header class="header" [collapsedHeight]="'40px'" [expandedHeight]="'40px'">
+                    <mat-panel-title>
+                        Basic Layout
+                    </mat-panel-title>
+                    <mat-panel-description>
+
+                    </mat-panel-description>
+                </mat-expansion-panel-header>
+                Basic content
+
+            </mat-expansion-panel> -->
+            <!-- <mat-expansion-panel class="my-expansion-panel">
+                <mat-expansion-panel-header class="header" [collapsedHeight]="'40px'" [expandedHeight]="'40px'">
+                    <mat-panel-title>
+                        Device
+                    </mat-panel-title>
+                    <mat-panel-description>
+
+                    </mat-panel-description>
+                </mat-expansion-panel-header>
+                Device content
+            </mat-expansion-panel> -->
+        </mat-accordion>
+    </div>
+</div>

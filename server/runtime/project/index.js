@@ -1,0 +1,1450 @@
+/*
+* Project manager: read, write, add, remove, ... and save
+*/
+
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+const async = require('async');
+
+var events = require('../events');
+var utils = require('../utils');
+const prjstorage = require('./prjstorage');
+const DeviceType = require('../devices/device').DeviceType;
+
+const version = '1.02';
+var settings;                   // Application settings
+var logger;                     // Application logger
+var runtime;
+
+var data = {};                  // Project data
+
+/**
+ * Init Project resource and update project
+ * @param {*} _settings
+ * @param {*} log
+ */
+function init(_settings, log, _runtime) {
+    settings = _settings;
+    logger = log;
+    runtime = _runtime;
+
+    // Init Project database
+    return new Promise(function (resolve, reject) {
+        prjstorage.init(settings, logger).then(result => {
+            logger.info('project.prjstorage-init-successful!', true);
+            if (result) {
+                resolve();
+            } else {
+                prjstorage.setDefault().then(result => {
+                    logger.info('project.prjstorage-set-default-successful!', true);
+                    resolve();
+                }).catch(function (err) {
+                    logger.error(`project.prjstorage-set-default failed! ${err}`);
+                    resolve();
+                });
+            }
+        }).catch(function (err) {
+            logger.error(`project.prjstorage-failed-to-init! ${err}`);
+            reject(err);
+        });
+    });
+}
+
+/**
+ * Load project resource in a local data
+ * Read all storaged sections and fill in local data
+ */
+function load() {
+    return new Promise(function (resolve, reject) {
+        data = { devices: {}, hmi: { views: [] }, texts: [], alarms: [], recipes: [], ar: { enabled: false, markers: [] } };
+        // load general data
+        prjstorage.getSection(prjstorage.TableType.GENERAL).then(grows => {
+            for (var ig = 0; ig < grows.length; ig++) {
+                if (grows[ig].name === ProjectDataCmdType.HmiLayout) {
+                    data.hmi[grows[ig].name] = JSON.parse(grows[ig].value);
+                } else {
+                    data[grows[ig].name] = JSON.parse(grows[ig].value);
+                }
+            }
+            // load views
+            prjstorage.getSection(prjstorage.TableType.VIEWS).then(vrows => {
+                for (var iv = 0; iv < vrows.length; iv++) {
+                    data.hmi.views.push(JSON.parse(vrows[iv].value));
+                }
+                // load devices
+                prjstorage.getSection(prjstorage.TableType.DEVICES).then(drows => {
+                    for (var id = 0; id < drows.length; id++) {
+                        if (drows[id].name === 'server') {
+                            data[drows[id].name] = JSON.parse(drows[id].value);
+                        } else {
+                            data.devices[drows[id].name] = JSON.parse(drows[id].value);
+                        }
+                    }
+                    async.series([
+                        // step 1 get texts
+                        function (callback) {
+                            getTexts().then(texts => {
+                                data.texts = texts;
+                                callback();
+                            }).catch(function (err) {
+                                logger.error(`project.prjstorage-failed-to-load! '${prjstorage.TableType.TEXTS}' ${err}`);
+                                callback(err);
+                            });
+                        },
+                        // step 2 get alarms
+                        function (callback) {
+                            getAlarms().then(alarms => {
+                                data.alarms = alarms;
+                                callback();
+                            }).catch(function (err) {
+                                logger.error(`project.prjstorage-failed-to-load! '${prjstorage.TableType.ALARMS}' ${err}`);
+                                callback(err);
+                            });
+                        },
+                        // step 3 get recipes
+                        function (callback) {
+                            getRecipes().then(recipes => {
+                                data.recipes = recipes || [];
+                                callback();
+                            }).catch(function (err) {
+                                logger.error(`project.prjstorage-failed-to-load! '${prjstorage.TableType.RECIPES}' ${err}`);
+                                callback(err);
+                            });
+                        },
+                        // step 4 get notifications
+                        function (callback) {
+                            getNotifications().then(notifications => {
+                                data.notifications = notifications;
+                                callback();
+                            }).catch(function (err) {
+                                logger.error(`project.prjstorage-failed-to-load! '${prjstorage.TableType.NOTIFICATIONS}' ${err}`);
+                                callback(err);
+                            });
+                        },
+                        // step 5 get scripts
+                        function (callback) {
+                            getScripts().then(scripts => {
+                                data.scripts = scripts;
+                                callback();
+                            }).catch(function (err) {
+                                logger.error(`project.prjstorage-failed-to-load! '${prjstorage.TableType.SCRIPTS}' ${err}`);
+                                callback(err);
+                            });
+                        },
+                        // step 6 get reports
+                        function (callback) {
+                            getReports().then(reports => {
+                                data.reports = reports;
+                                callback();
+                            }).catch(function (err) {
+                                logger.error(`project.prjstorage-failed-to-load! '${prjstorage.TableType.REPORTS}' ${err}`);
+                                callback(err);
+                            });
+                        },
+                        // step 7 get MapsLocations
+                        function (callback) {
+                            getMapsLocations().then(locations => {
+                                data.mapsLocations = locations;
+                                callback();
+                            }).catch(function (err) {
+                                logger.error(`project.prjstorage-failed-to-load! '${prjstorage.TableType.LOCATIONS}' ${err}`);
+                                callback(err);
+                            });
+                        },
+                        // step 8 get AR markers
+                        function (callback) {
+                            getArMarkers().then(markers => {
+                                if (!data.ar) {
+                                    data.ar = { enabled: false, markers: [] };
+                                }
+                                data.ar.markers = markers || [];
+                                data.ar.enabled = data.ar.enabled || data.ar.markers.length > 0;
+                                callback();
+                            }).catch(function (err) {
+                                logger.error(`project.prjstorage-failed-to-load! '${prjstorage.TableType.ARMARKERS}' ${err}`);
+                                callback(err);
+                            });
+                        },
+                        // step 9 get MES models
+                        function (callback) {
+                            prjstorage.getSection(prjstorage.TableType.MES).then(mrows => {
+                                data.mes = mrows || [];
+                                callback();
+                            }).catch(function (err) {
+                                logger.error(`project.prjstorage-failed-to-load! '${prjstorage.TableType.MES}' ${err}`);
+                                callback(err);
+                            });
+                        },
+                        // step 10 get EMS models
+                        function (callback) {
+                            prjstorage.getSection(prjstorage.TableType.EMS).then(erows => {
+                                data.ems = erows || [];
+                                callback();
+                            }).catch(function (err) {
+                                logger.error(`project.prjstorage-failed-to-load! '${prjstorage.TableType.EMS}' ${err}`);
+                                callback(err);
+                            });
+                        }
+                    ],
+                    async function (err) {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            await _mergeDefaultConfig();
+                            resolve();
+                        }
+                    });
+                }).catch(function (err) {
+                    logger.error(`project.prjstorage-failed-to-load! '${prjstorage.TableType.DEVICES}' ${err}`);
+                    reject(err);
+                });
+            }).catch(function (err) {
+                logger.error(`project.prjstorage-failed-to-load! '${prjstorage.TableType.VIEWS}' ${err}`);
+                reject(err);
+            });
+        }).catch(function (err) {
+            logger.error(`project.prjstorage-failed-to-load! '${prjstorage.TableType.GENERAL}' ${err}`);
+            reject(err);
+        });
+    });
+}
+
+/**
+ * Save the value in project storage
+ * First set the value in local data, then save in storage
+ * @param {*} cmd
+ * @param {*} data
+ */
+function setProjectData(cmd, value) {
+    return new Promise(function (resolve, reject) {
+        try {
+            var toremove = false;
+            var section = { table: '', name: '', value: value };
+            if (cmd === ProjectDataCmdType.SetView) {
+                section.table = prjstorage.TableType.VIEWS;
+                section.name = value.id;
+                if (!setView(value)) {
+                    logger.warn(`project.set-view skipped duplicate view name '${value.name}' with id '${value.id}'`);
+                    resolve(true);
+                    return;
+                }
+            } else if (cmd === ProjectDataCmdType.DelView) {
+                section.table = prjstorage.TableType.VIEWS;
+                section.name = value.id;
+                toremove = removeView(value);
+            } else if (cmd === ProjectDataCmdType.HmiLayout) {
+                section.table = prjstorage.TableType.GENERAL;
+                section.name = cmd;
+                setHmiLayout(value);
+            } else if (cmd === ProjectDataCmdType.SetDevice) {
+                section.table = prjstorage.TableType.DEVICES;
+                section.name = value.id;
+                setDevice(value);
+            } else if (cmd === ProjectDataCmdType.DelDevice) {
+                section.table = prjstorage.TableType.DEVICES;
+                section.name = value.id;
+                toremove = removeDevice(value);
+            } else if (cmd === ProjectDataCmdType.Charts) {
+                section.table = prjstorage.TableType.GENERAL;
+                section.name = cmd;
+                setCharts(value);
+            } else if (cmd === ProjectDataCmdType.Languages) {
+                section.table = prjstorage.TableType.GENERAL;
+                section.name = cmd;
+                setLanguages(value);
+            } else if (cmd === ProjectDataCmdType.ClientAccess) {
+                section.table = prjstorage.TableType.GENERAL;
+                section.name = cmd;
+                setClientAccess(value);
+            } else if (cmd === ProjectDataCmdType.Graphs) {
+                section.table = prjstorage.TableType.GENERAL;
+                section.name = cmd;
+                setGraphs(value);
+            } else if (cmd === ProjectDataCmdType.SetText) {
+                section.table = prjstorage.TableType.TEXTS;
+                section.name = value.id;
+                setText(value);
+            } else if (cmd === ProjectDataCmdType.DelText) {
+                section.table = prjstorage.TableType.TEXTS;
+                section.name = value.id;
+                toremove = removeText(value);
+            } else if (cmd === ProjectDataCmdType.SetAlarm) {
+                section.table = prjstorage.TableType.ALARMS;
+                section.name = value.name;
+                setAlarm(value);
+            } else if (cmd === ProjectDataCmdType.DelAlarm) {
+                section.table = prjstorage.TableType.ALARMS;
+                section.name = value.name;
+                toremove = removeAlarm(value);
+            } else if (cmd === ProjectDataCmdType.SetRecipe) {
+                section.table = prjstorage.TableType.RECIPES;
+                section.name = value.id;
+                setRecipe(value);
+            } else if (cmd === ProjectDataCmdType.DelRecipe) {
+                section.table = prjstorage.TableType.RECIPES;
+                section.name = value.id;
+                toremove = removeRecipe(value);
+            } else if (cmd === ProjectDataCmdType.SetNotification) {
+                section.table = prjstorage.TableType.NOTIFICATIONS;
+                section.name = value.id;
+                setNotification(value);
+            } else if (cmd === ProjectDataCmdType.DelNotification) {
+                section.table = prjstorage.TableType.NOTIFICATIONS;
+                section.name = value.id;
+                toremove = removeNotification(value);
+            } else if (cmd === ProjectDataCmdType.SetScript) {
+                section.table = prjstorage.TableType.SCRIPTS;
+                section.name = value.id;
+                setScript(value);
+            } else if (cmd === ProjectDataCmdType.DelScript) {
+                section.table = prjstorage.TableType.SCRIPTS;
+                section.name = value.id;
+                toremove = removeScript(value);
+            } else if (cmd === ProjectDataCmdType.SetReport) {
+                section.table = prjstorage.TableType.REPORTS;
+                section.name = value.id;
+                setReport(value);
+            } else if (cmd === ProjectDataCmdType.DelReport) {
+                section.table = prjstorage.TableType.REPORTS;
+                section.name = value.id;
+                toremove = removeReport(value);
+            } else if (cmd === ProjectDataCmdType.SetMapsLocation) {
+                section.table = prjstorage.TableType.LOCATIONS;
+                section.name = value.id;
+                setMapsLocation(value);
+            } else if (cmd === ProjectDataCmdType.DelMapsLocation) {
+                section.table = prjstorage.TableType.LOCATIONS;
+                section.name = value.id;
+                toremove = removeMapsLocation(value);
+            } else if (cmd === ProjectDataCmdType.SetArMarker) {
+                section.table = prjstorage.TableType.ARMARKERS;
+                section.name = value.id;
+                setArMarker(value);
+            } else if (cmd === ProjectDataCmdType.DelArMarker) {
+                section.table = prjstorage.TableType.ARMARKERS;
+                section.name = value.id;
+                toremove = removeArMarker(value);
+            } else {
+                logger.error(`prjstorage.setdata failed! '${section.table}'`);
+                reject('prjstorage.failed-to-setdata: Command not found!');
+            }
+            if (toremove) {
+                prjstorage.deleteSection(section).then(result => {
+                    resolve(true);
+                }).catch(function (err) {
+                    logger.error(`prjstorage.deletedata failed! '${section.table}'`);
+                    reject(err);
+                });
+            } else {
+                prjstorage.setSection(section).then(result => {
+                    resolve(true);
+                }).catch(function (err) {
+                    logger.error(`prjstorage.setdata failed! '${section.table}'`);
+                    reject(err);
+                });
+            }
+        } catch (err) {
+            reject(err);
+        }
+    });
+}
+
+/**
+ * Set or add if not exist (check with view.id) the View in Project
+ * @param {*} view
+ */
+function setView(view) {
+    var pos = -1;
+    var sameNamePos = -1;
+    for (var i = 0; i < data.hmi.views.length; i++) {
+        if (data.hmi.views[i].id === view.id) {
+            pos = i;
+        } else if (data.hmi.views[i].name === view.name) {
+            sameNamePos = i;
+        }
+    }
+    if (pos >= 0) {
+        data.hmi.views[pos] = view;
+    } else if (sameNamePos >= 0) {
+        return false;
+    } else {
+        data.hmi.views.push(view);
+    }
+    return true;
+}
+
+/**
+ * Remove the View from Project
+ * @param {*} view
+ */
+function removeView(view) {
+    var pos = -1;
+    for (var i = 0; i < data.hmi.views.length; i++) {
+        if (data.hmi.views[i].id === view.id) {
+            data.hmi.views.splice(i, 1);
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Set Device to local data
+ * @param {*} device
+ * @param {*} merge merge with exist (tags)
+ */
+function setDevice(device, merge) {
+    if (merge && data.devices[device.id]) {
+        device.enabled = data.devices[device.id].enabled;
+        data.devices[device.id] = {...data.devices[device.id], ...device};
+    } else {
+        data.devices[device.id] = device;
+    }
+}
+
+/**
+ * Remove Device from local data
+ * @param {*} device
+ */
+function removeDevice(device) {
+    delete data.devices[device.id];
+    return true;
+}
+
+/**
+ * Set HMI Layout to local data
+ * @param {*} layout
+ */
+function setHmiLayout(layout) {
+    data.hmi.layout = layout;
+}
+
+/**
+ * Set Charts
+ * @param {*} charts
+ */
+function setCharts(charts) {
+    data.charts = charts;
+}
+
+/**
+ * Set Graphs
+ * @param {*} graphs
+ */
+ function setGraphs(graphs) {
+    data.graphs = graphs;
+}
+
+/**
+ * Set Languages
+ * @param {*} languages
+ */
+function setLanguages(languages) {
+    data.languages = languages;
+}
+
+/**
+ * Set ClientAccess
+ * @param {*} clientAccess
+ */
+function setClientAccess(clientAccess) {
+    data.clientAccess = clientAccess;
+}
+
+/**
+ * Set or add if not exist (check with taxt.name) the Text in Project
+ * @param {*} text
+ */
+function setText(text) {
+    if (!data.texts) {
+        data.texts = [];
+    }
+    var pos = -1;
+    for (var i = 0; i < data.texts.length; i++) {
+        if (data.texts[i].id === text.id) {
+            pos = i;
+        }
+    }
+    if (pos >= 0) {
+        data.texts[pos] = text;
+    } else {
+        data.texts.push(text);
+    }
+}
+
+/**
+ * Remove the Text from Project
+ * @param {*} text
+ */
+function removeText(text) {
+    if (data.texts) {
+        for (var i = 0; i < data.texts.length; i++) {
+            if (data.texts[i].id === text.id) {
+                data.texts.splice(i, 1);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/**
+ * Set or add if not exist (check with alarm.name) the Alarm in Project
+ * @param {*} alarm
+ */
+function setAlarm(alarm) {
+    if (!data.alarms) {
+        data.alarms = [];
+    }
+    var pos = -1;
+    for (var i = 0; i < data.alarms.length; i++) {
+        if (data.alarms[i].name === alarm.name) {
+            pos = i;
+        }
+    }
+    if (pos >= 0) {
+        data.alarms[pos] = alarm;
+    } else {
+        data.alarms.push(alarm);
+    }
+}
+
+/**
+ * Remove the Alarm from Project
+ * @param {*} alarm
+ */
+function removeAlarm(alarm) {
+    if (data.alarms) {
+        for (var i = 0; i < data.alarms.length; i++) {
+            if (data.alarms[i].name === alarm.name) {
+                data.alarms.splice(i, 1);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/**
+ * Set or add if not exist (check with recipe.id) the Recipe template in Project
+ * @param {*} recipe
+ */
+function setRecipe(recipe) {
+    if (!data.recipes) {
+        data.recipes = [];
+    }
+    var pos = -1;
+    for (var i = 0; i < data.recipes.length; i++) {
+        if (data.recipes[i].id === recipe.id) {
+            pos = i;
+        }
+    }
+    if (pos >= 0) {
+        data.recipes[pos] = recipe;
+    } else {
+        data.recipes.push(recipe);
+    }
+}
+
+/**
+ * Remove the Recipe template from Project
+ * @param {*} recipe
+ */
+function removeRecipe(recipe) {
+    if (data.recipes) {
+        for (var i = 0; i < data.recipes.length; i++) {
+            if (data.recipes[i].id === recipe.id) {
+                data.recipes.splice(i, 1);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/**
+ * Set or add if not exist (check with notification.id) the Notification in Project
+ * @param {*} notification
+ */
+ function setNotification(notification) {
+    if (!data.notifications) {
+        data.notifications = [];
+    }
+    var pos = -1;
+    for (var i = 0; i < data.notifications.length; i++) {
+        if (data.notifications[i].id === notification.id) {
+            pos = i;
+        }
+    }
+    if (pos >= 0) {
+        data.notifications[pos] = notification;
+    } else {
+        data.notifications.push(notification);
+    }
+}
+
+/**
+ * Remove the Notification from Project
+ * @param {*} notification
+ */
+function removeNotification(notification) {
+    if (data.notifications) {
+        for (var i = 0; i < data.notifications.length; i++) {
+            if (data.notifications[i].id === notification.id) {
+                data.notifications.splice(i, 1);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/**
+ * Set or add if not exist (check with script.id) the Script in Project
+ * @param {*} script
+ */
+ function setScript(script) {
+    if (!data.scripts) {
+        data.scripts = [];
+    }
+    var pos = -1;
+    for (var i = 0; i < data.scripts.length; i++) {
+        if (data.scripts[i].id === script.id) {
+            pos = i;
+        }
+    }
+    if (pos >= 0) {
+        data.scripts[pos] = script;
+    } else {
+        data.scripts.push(script);
+    }
+}
+
+/**
+ * Remove the Script from Project
+ * @param {*} script
+ */
+ function removeScript(script) {
+    if (data.scripts) {
+        for (var i = 0; i < data.scripts.length; i++) {
+            if (data.scripts[i].id === script.id) {
+                data.scripts.splice(i, 1);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/**
+ * Set or add if not exist (check with report.id) the Report in Project
+ * @param {*} report
+ */
+ function setReport(report) {
+    if (!data.reports) {
+        data.reports = [];
+    }
+    var pos = -1;
+    for (var i = 0; i < data.reports.length; i++) {
+        if (data.reports[i].id === report.id) {
+            pos = i;
+        }
+    }
+    if (pos >= 0) {
+        data.reports[pos] = report;
+    } else {
+        data.reports.push(report);
+    }
+}
+
+/**
+ * Remove the Report from Project
+ * @param {*} script
+ */
+ function removeReport(report) {
+    if (data.reports) {
+        for (var i = 0; i < data.reports.length; i++) {
+            if (data.reports[i].id === report.id) {
+                data.reports.splice(i, 1);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/**
+ * Set or add if not exist (check with location.id) the MapsLocation in Project
+ * @param {*} location
+ */
+function setMapsLocation(location) {
+    if (!data.mapsLocations) {
+        data.mapsLocations = [];
+    }
+    var pos = -1;
+    for (var i = 0; i < data.mapsLocations.length; i++) {
+        if (data.mapsLocations[i].id === location.id) {
+            pos = i;
+        }
+    }
+    if (pos >= 0) {
+        data.mapsLocations[pos] = location;
+    } else {
+        data.mapsLocations.push(location);
+    }
+}
+
+/**
+ * Remove the Maps Locations from Project
+ * @param {*} location
+ */
+function removeMapsLocation(location) {
+    if (data.mapsLocations) {
+        for (var i = 0; i < data.mapsLocations.length; i++) {
+            if (data.mapsLocations[i].id === location.id) {
+                data.mapsLocations.splice(i, 1);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/**
+ * Set or add if not exist (check with marker.id) the AR marker in Project
+ * @param {*} marker
+ */
+function setArMarker(marker) {
+    if (!data.ar) {
+        data.ar = { enabled: false, markers: [] };
+    }
+    if (!data.ar.markers) {
+        data.ar.markers = [];
+    }
+    data.ar.enabled = true;
+    var pos = -1;
+    for (var i = 0; i < data.ar.markers.length; i++) {
+        if (data.ar.markers[i].id === marker.id) {
+            pos = i;
+        }
+    }
+    if (pos >= 0) {
+        data.ar.markers[pos] = marker;
+    } else {
+        data.ar.markers.push(marker);
+    }
+}
+
+/**
+ * Remove the AR marker from Project
+ * @param {*} marker
+ */
+function removeArMarker(marker) {
+    if (data.ar && data.ar.markers) {
+        for (var i = 0; i < data.ar.markers.length; i++) {
+            if (data.ar.markers[i].id === marker.id) {
+                data.ar.markers.splice(i, 1);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/**
+ * Get the project data in accordance with autorization
+ */
+function getProject(userId, userPermission, options) {
+    return new Promise(function (resolve, reject) {
+        const pdata = _filterProjectPermission(userPermission, options);
+        resolve(pdata);
+    });
+}
+
+function getProjectView(viewId, userPermission) {
+    return new Promise(function (resolve, reject) {
+        const pdata = _filterProjectPermission(userPermission, { viewId: viewId });
+        const view = pdata?.hmi?.views?.[0];
+        if (view) {
+            resolve(view);
+        } else {
+            resolve(null);
+        }
+    });
+}
+
+/**
+ * Site reporting calendar: the production day boundary and the shift table.
+ *
+ * Read synchronously on purpose. A scheduled report is produced by a timer, with no request
+ * and no user, so it cannot go through the permission filtered, promise based getProject.
+ * An unset section means "use the defaults" (08:00 boundary, three shifts), which is a valid
+ * configuration rather than an error.
+ */
+function getReportingSettings() {
+    return (data && data.reporting) || {};
+}
+
+/**
+ * Set the new Project, clear all from database and add the new content
+ * @param {*} prjcontent
+ */
+function setProject(prjcontent) {
+    return new Promise(function (resolve, reject) {
+        try {
+            prjstorage.clearAll().then(result => {
+                var scs = [];
+                Object.keys(prjcontent).forEach((key) => {
+                    if (key === 'devices') {
+                        // devices
+                        var devices = prjcontent[key];
+                        if (devices) {
+                            Object.values(prjcontent[key]).forEach((device) => {
+                                scs.push({ table: prjstorage.TableType.DEVICES, name: device.id, value: device });
+                            });
+                        }
+                    } else if (key === 'hmi') {
+                        // hmi
+                        var hmi = prjcontent[key];
+                        if (hmi) {
+                            Object.keys(hmi).forEach((hk) => {
+                                if (hk === 'views') {
+                                    // views
+                                    if (hmi[hk] && hmi[hk].length > 0) {
+                                        for (var i = 0; i < hmi[hk].length; i++) {
+                                            var view = hmi[hk][i];
+                                            scs.push({ table: prjstorage.TableType.VIEWS, name: view.id, value: view });
+                                        }
+                                    }
+                                } else {
+                                    // layout
+                                    scs.push({ table: prjstorage.TableType.GENERAL, name: hk, value: hmi[hk] });
+                                }
+                            });
+                        }
+                    } else if (key === 'server') {
+                        // server
+                        scs.push({ table: prjstorage.TableType.DEVICES, name: key, value: prjcontent[key] });
+                    } else if (key === 'mes') {
+                        // MES models: work orders, operations, shifts, OEE targets, defect types.
+                        // One row per model, named by its id (see _mesEmsItems).
+                        var mesItems = _mesEmsItems(prjcontent[key]);
+                        for (var im = 0; im < mesItems.length; im++) {
+                            scs.push({ table: prjstorage.TableType.MES, name: mesItems[im].id, value: mesItems[im] });
+                        }
+                    } else if (key === 'ems') {
+                        // EMS models: meters, media, tariff bands, unit-energy targets, carbon factors.
+                        var emsItems = _mesEmsItems(prjcontent[key]);
+                        for (var ie = 0; ie < emsItems.length; ie++) {
+                            scs.push({ table: prjstorage.TableType.EMS, name: emsItems[ie].id, value: emsItems[ie] });
+                        }
+                    } else if (key === 'texts') {
+                        // texts
+                        var texts = prjcontent[key];
+                        if (texts && texts.length) {
+                            for (var i = 0; i < texts.length; i++) {
+                                scs.push({ table: prjstorage.TableType.TEXTS, name: texts[i].name, value: texts[i] });
+                            }
+                        }
+                    } else if (key === 'alarms') {
+                        // alarms
+                        var alarms = prjcontent[key];
+                        if (alarms && alarms.length) {
+                            for (var i = 0; i < alarms.length; i++) {
+                                scs.push({ table: prjstorage.TableType.ALARMS, name: alarms[i].name, value: alarms[i] });
+                            }
+                        }
+                    } else if (key === 'recipes') {
+                        // recipe templates
+                        var recipes = prjcontent[key];
+                        if (recipes && recipes.length) {
+                            for (var i = 0; i < recipes.length; i++) {
+                                scs.push({ table: prjstorage.TableType.RECIPES, name: recipes[i].id, value: recipes[i] });
+                            }
+                        }
+                    } else if (key === 'notifications') {
+                        // notifications
+                        var notifications = prjcontent[key];
+                        if (notifications && notifications.length) {
+                            for (var i = 0; i < notifications.length; i++) {
+                                scs.push({ table: prjstorage.TableType.NOTIFICATIONS, name: notifications[i].id, value: notifications[i] });
+                            }
+                        }
+                    } else if (key === 'scripts') {
+                        // scripts
+                        var scripts = prjcontent[key];
+                        if (scripts && scripts.length) {
+                            for (var i = 0; i < scripts.length; i++) {
+                                scs.push({ table: prjstorage.TableType.SCRIPTS, name: scripts[i].id, value: scripts[i] });
+                            }
+                        }
+                    } else if (key === 'reports') {
+                        // reports
+                        var reports = prjcontent[key];
+                        if (reports && reports.length) {
+                            for (var i = 0; i < reports.length; i++) {
+                                scs.push({ table: prjstorage.TableType.REPORTS, name: reports[i].id, value: reports[i] });
+                            }
+                        }
+                    } else if (key === 'mapsLocations') {
+                        var locations = prjcontent[key];
+                        if (locations && locations.length) {
+                            for (var i = 0; i < locations.length; i++) {
+                                scs.push({ table: prjstorage.TableType.LOCATIONS, name: locations[i].id, value: locations[i] });
+                            }
+                        }
+                    } else if (key === 'ar') {
+                        var arSettings = Object.assign({}, prjcontent[key]);
+                        var markers = arSettings.markers || [];
+                        delete arSettings.markers;
+                        scs.push({ table: prjstorage.TableType.GENERAL, name: key, value: arSettings });
+                        if (markers && markers.length) {
+                            for (var i = 0; i < markers.length; i++) {
+                                scs.push({ table: prjstorage.TableType.ARMARKERS, name: markers[i].id, value: markers[i] });
+                            }
+                        }
+                    } else {
+                        // charts, graphs, version
+                        scs.push({ table: prjstorage.TableType.GENERAL, name: key, value: prjcontent[key] });
+                    }
+                });
+                prjstorage.setSections(scs).then(() => {
+                    logger.info(`project.prjstorage.set-project successfull!`, true);
+                    resolve(true);
+                }).catch(function (err) {
+                    reject(err);
+                });
+            }).catch(function (err) {
+                logger.error(`project.prjstorage.clear failed! '${err}'`);
+                reject(err);
+            });
+        } catch (err) {
+            reject();
+        }
+    });
+}
+
+/**
+ * Return Devices list
+ */
+function getDevices() {
+    return data.devices;
+}
+
+/**
+ * Return internal SCADIA server device
+ */
+function getServer() {
+    return data.devices['0'] || data.server || null;
+}
+
+/**
+ * Return Device from name
+ */
+function getDevice(name) {
+    return Object.values(data.devices).find(device => device.name === name);
+}
+
+/**
+ * Get the device property
+ */
+function getDeviceProperty(query) {
+    return new Promise(function (resolve, reject) {
+        if (query.query === 'security') {
+            prjstorage.getSection(prjstorage.TableType.DEVICESSECURITY, query.name).then(drows => {
+                if (drows.length > 0) {
+                    resolve(drows[0]);
+                } else {
+                    resolve();
+                }
+            }).catch(function (err) {
+                logger.error(`project.prjstorage.getdevice-property failed! '${prjstorage.TableType.DEVICESSECURITY} ${err}'`);
+                reject(err);
+            });
+        } else {
+            reject();
+        }
+    });
+}
+
+/**
+ * Get the texts
+ */
+function getTexts() {
+    return new Promise(function (resolve, reject) {
+        prjstorage.getSection(prjstorage.TableType.TEXTS).then(drows => {
+            if (drows.length > 0) {
+                var texts = [];
+                for (var id = 0; id < drows.length; id++) {
+                    texts.push(JSON.parse(drows[id].value));
+                }
+                resolve(texts);
+            } else {
+                resolve();
+            }
+        }).catch(function (err) {
+            logger.error(`project.prjstorage.get-texts failed! '${prjstorage.TableType.TEXTS} ${err}'`);
+            reject(err);
+        });
+    });
+}
+
+/**
+ * Get the alarms
+ */
+function getAlarms() {
+    return new Promise(function (resolve, reject) {
+        prjstorage.getSection(prjstorage.TableType.ALARMS).then(drows => {
+            if (drows.length > 0) {
+                var alarms = [];
+                for (var id = 0; id < drows.length; id++) {
+                    alarms.push(JSON.parse(drows[id].value));
+                }
+                resolve(alarms);
+            } else {
+                resolve();
+            }
+        }).catch(function (err) {
+            logger.error(`project.prjstorage.get-alarms failed! '${prjstorage.TableType.ALARMS} ${err}'`);
+            reject(err);
+        });
+    });
+}
+
+/**
+ * Get the recipe templates
+ */
+function getRecipes() {
+    return new Promise(function (resolve, reject) {
+        prjstorage.getSection(prjstorage.TableType.RECIPES).then(drows => {
+            if (drows.length > 0) {
+                var recipes = [];
+                for (var id = 0; id < drows.length; id++) {
+                    recipes.push(JSON.parse(drows[id].value));
+                }
+                resolve(recipes);
+            } else {
+                resolve([]);
+            }
+        }).catch(function (err) {
+            logger.error(`project.prjstorage.get-recipes failed! '${prjstorage.TableType.RECIPES} ${err}'`);
+            reject(err);
+        });
+    });
+}
+
+function getRecipe(recipeId) {
+    return (data.recipes || []).find(recipe => recipe.id === recipeId) || null;
+}
+
+function getRecipesData() {
+    return data.recipes || [];
+}
+
+function getRecipesSync() {
+    return data.recipes || [];
+}
+
+/**
+ * Get the notifications
+ */
+ function getNotifications() {
+    return new Promise(function (resolve, reject) {
+        prjstorage.getSection(prjstorage.TableType.NOTIFICATIONS).then(drows => {
+            if (drows.length > 0) {
+                var notifications = [];
+                for (var id = 0; id < drows.length; id++) {
+                    notifications.push(JSON.parse(drows[id].value));
+                }
+                resolve(notifications);
+            } else {
+                resolve();
+            }
+        }).catch(function (err) {
+            logger.error(`project.prjstorage.get-notifications failed! '${prjstorage.TableType.NOTIFICATIONS} ${err}'`);
+            reject(err);
+        });
+    });
+}
+
+/**
+ * Get the scripts
+ */
+ function getScripts() {
+    return new Promise(function (resolve, reject) {
+        prjstorage.getSection(prjstorage.TableType.SCRIPTS).then(drows => {
+            if (drows.length > 0) {
+                var scripts = [];
+                for (var id = 0; id < drows.length; id++) {
+                    scripts.push(JSON.parse(drows[id].value));
+                }
+                resolve(scripts);
+            } else {
+                resolve();
+            }
+        }).catch(function (err) {
+            logger.error(`project.prjstorage.get-scripts failed! '${prjstorage.TableType.SCRIPTS} ${err}'`);
+            reject(err);
+        });
+    });
+}
+
+/**
+ * Get the reports
+ */
+ function getReports() {
+    return new Promise(function (resolve, reject) {
+        prjstorage.getSection(prjstorage.TableType.REPORTS).then(drows => {
+            if (drows.length > 0) {
+                var reports = [];
+                for (var id = 0; id < drows.length; id++) {
+                    reports.push(JSON.parse(drows[id].value));
+                }
+                resolve(reports);
+            } else {
+                resolve();
+            }
+        }).catch(function (err) {
+            logger.error(`project.prjstorage.get-reports failed! '${prjstorage.TableType.REPORTS} ${err}'`);
+            reject(err);
+        });
+    });
+}
+
+/**
+ * Get the Maps Locations
+ */
+function getMapsLocations() {
+    return new Promise(function (resolve, reject) {
+        prjstorage.getSection(prjstorage.TableType.LOCATIONS).then(drows => {
+            if (drows.length > 0) {
+                var locations = [];
+                for (var id = 0; id < drows.length; id++) {
+                    locations.push(JSON.parse(drows[id].value));
+                }
+                resolve(locations);
+            } else {
+                resolve();
+            }
+        }).catch(function (err) {
+            logger.error(`project.prjstorage.get-mapsLocations failed! '${prjstorage.TableType.LOCATIONS} ${err}'`);
+            reject(err);
+        });
+    });
+}
+
+/**
+ * Get the AR markers
+ */
+function getArMarkers() {
+    return new Promise(function (resolve, reject) {
+        prjstorage.getSection(prjstorage.TableType.ARMARKERS).then(drows => {
+            if (drows.length > 0) {
+                var markers = [];
+                for (var id = 0; id < drows.length; id++) {
+                    markers.push(JSON.parse(drows[id].value));
+                }
+                resolve(markers);
+            } else {
+                resolve();
+            }
+        }).catch(function (err) {
+            logger.error(`project.prjstorage.get-arMarkers failed! '${prjstorage.TableType.ARMARKERS} ${err}'`);
+            reject(err);
+        });
+    });
+}
+
+/**
+ * Set the device property
+ */
+function setDeviceProperty(query) {
+    return new Promise(function (resolve, reject) {
+        if (query.query === 'security') {
+            if (!query.value) {
+                resolve();
+                return;
+            }
+            prjstorage.setSection({ table: prjstorage.TableType.DEVICESSECURITY, name: query.name, value: query.value }).then(() => {
+                resolve();
+            }).catch(function (err) {
+                logger.error(`project.prjstorage.setdevice-property failed! '${prjstorage.TableType.DEVICESSECURITY} ${err}'`);
+                reject(err);
+            });
+        } else {
+            reject();
+        }
+    });
+}
+
+/**
+ * Return Project demo from file
+ */
+function getProjectDemo() {
+    var demoProject = path.join(settings.appDir, 'project.demo.scadiap');
+    /**
+     * The shipped demo file starts with a UTF-8 BOM (measured: first code point U+FEFF, 268929 bytes),
+     * and JSON.parse rejects a leading U+FEFF with "Unexpected token '\uFEFF'". This function therefore
+     * threw a SyntaxError on EVERY call: GET /api/projectdemo answered 500, and the "load the demo
+     * project" path could never work (batch 74 found it by importing the demo end to end, which the
+     * hand-off card had recorded as never having been tested).
+     *
+     * The BOM is stripped here rather than removed from the file: the file is data that ships as-is,
+     * and a reader that cannot read what it ships with is the defect. Any other reader of this file
+     * has to do the same - test/project/projectDemoFile.test.js pins both halves.
+     */
+    var text = fs.readFileSync(demoProject, 'utf8').replace(/^\uFEFF/, '');
+    return JSON.parse(text);
+}
+
+function _filterProjectPermission(userPermission, options = {}) {
+    var result = utils.clone(data);// = { devices: {}, hmi: { views: [] } };
+    if (options.viewId && result.hmi?.views) {
+        result.hmi.views = result.hmi.views.filter(view => view.id === options.viewId || view.name === options.viewId);
+    }
+    const projectPermission = runtime.checkPermission(userPermission, false);
+    if (!projectPermission.show || !projectPermission.enabled) {   // is admin or secure disabled
+        // from device remove the not used (no permission)
+        // delete result.devices;
+        delete result.server;
+        if (Array.isArray(result.scripts)) {
+            // Keep only scripts authorised for the current user. For authorised
+            // server-side scripts, retain just the metadata needed for event
+            // bindings and execution requests; do not expose source code.
+            result.scripts = result.scripts.filter(script => {
+                return script && runtime.scriptsMgr.isAuthorised(script, userPermission);
+            }).map(script => {
+                delete script.permission;
+                delete script.permissionRoles;
+                if (script.mode === 'CLIENT') {
+                    return script;
+                }
+                delete script.code;
+                return script;
+            });
+        }
+        // check navigation permission
+        if (result.hmi.layout && result.hmi.layout.navigation.items) {
+            for (var i = result.hmi.layout.navigation.items.length - 1; i >= 0; i--) {
+                const itemPermission = runtime.checkPermission(userPermission, result.hmi.layout.navigation.items[i]);
+                if (!itemPermission.enabled) {
+                    result.hmi.layout.navigation.items.splice(i, 1);
+                }
+            }
+        }
+        // check header permission
+        if (result.hmi.layout && result.hmi.layout.header.items) {
+            for (var i = result.hmi.layout.header.items.length - 1; i >= 0; i--) {
+                const itemPermission = runtime.checkPermission(userPermission, result.hmi.layout.header.items[i].property, true);
+                if (!itemPermission.enabled || !itemPermission.show) {
+                    result.hmi.layout.header.items.splice(i, 1);
+                }
+            }
+        }
+        // check view item permission show / enabled
+        //
+        // The guard is the point (N-2): the two loops above both check the array they walk
+        // (`result.hmi.layout && result.hmi.layout.navigation.items`, and the header one likewise),
+        // and this one did not. It survived only because `load()` initialises `views` - so the day a
+        // project arrives without one (a hand-edited file, an older export, the lazy-view branch
+        // above, or `_filterProjectPermission` itself having just filtered it away), this line threw
+        // and took the WHOLE /api/project response with it. Same guard, same shape as its neighbours.
+        for (var i = 0; Array.isArray(result.hmi.views) && i < result.hmi.views.length; i++) {
+            var view = result.hmi.views[i];
+            if (result.hmi.views[i].items) {
+                Object.values(result.hmi.views[i].items).forEach((item) => {
+                    if (item.property) {
+                        const itemPermission = runtime.checkPermission(userPermission, item.property, false, true);
+                        if (!itemPermission.show) {
+                            // Target the ELEMENT, not a mention of its id (P1). indexOf found the id
+                            // anywhere - most often in a <title>, or inside a longer id - and spliced
+                            // the attribute into that text, so the control stayed visible and the text
+                            // was corrupted. The helper matches the id ATTRIBUTE on an opening tag and
+                            // reports null when there is none, instead of splicing at a guess.
+                            var hidden = utils.domStringSetAttributeOnId(view.svgcontent, item.id, 'visibility="hidden"');
+                            if (hidden === null) {
+                                logger.warn(`project.permission-filter: no element carries id '${item.id}' in view '${view.id}' - nothing hidden`);
+                            } else {
+                                view.svgcontent = hidden;
+                            }
+                        } else if (!itemPermission.enabled) {
+                            item.property.events = [];
+                            // Disable the html controls (select, input, button) INSIDE THE ELEMENT'S OWN
+                            // foreignObject. Anchoring on the id attribute keeps this from disabling a
+                            // neighbouring control when the id was only mentioned in text (P1).
+                            var scope = utils.domStringForeignObjectOfId(view.svgcontent, item.id);
+                            if (scope) {
+                                var disabled = utils.domStringSetAttribute(scope.inner, ['select', 'input', 'button'], 'disabled');
+                                if (disabled !== scope.inner) {
+                                    view.svgcontent = scope.before + scope.tag + disabled + scope.after;
+                                }
+                            } else {
+                                logger.warn(`project.permission-filter: no foreignObject carries id '${item.id}' in view '${view.id}' - nothing disabled`);
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    }
+    if (options.lazyViews && result.hmi?.views) {
+        result.hmi.views = result.hmi.views.map(view => _toLazyView(view));
+    }
+    return result;
+}
+
+function _toLazyView(view) {
+    return {
+        id: view.id,
+        name: view.name,
+        type: view.type,
+        profile: view.profile,
+        lazy: true
+    };
+}
+
+/**
+ * The MES/EMS rows of a project, as one entry per model.
+ *
+ * The frozen shape (see __mes_ems_design/prjstorage-changes.md) is an ARRAY of models, each with
+ * its own id - the same one-row-per-object shape recipes and reports use:
+ *
+ *     "mes": [ { "id": "wo_2026_1005_01", ... }, { "id": "wo_2026_1005_02", ... } ]
+ *
+ * A hand-written project may instead use a keyed OBJECT, optionally with grouping levels above
+ * the keys ({ workOrders: { wo_a: {...} } }) or an array under a grouping key. All are accepted,
+ * because a model that silently collapses is worse than a tolerated shape: passing a grouped
+ * object straight to Object.values() yields the INNER CONTAINER as a single row named undefined,
+ * which is exactly the one-row-named-null collapse 90-K recorded as unexplained. Grouping levels
+ * are therefore flattened until the values stop looking like containers, and entries without an
+ * id are dropped rather than persisted as a row named null.
+ */
+function _mesEmsItems(value) {
+    function flatten(entry) {
+        if (!entry || typeof entry !== 'object') return [];
+        if (Array.isArray(entry)) return entry;
+        var vals = Object.values(entry);
+        var looksGrouped = vals.length > 0 && vals.every(function (v) {
+            return v && typeof v === 'object';
+        });
+        if (looksGrouped) {
+            var out = [];
+            vals.forEach(function (v) { out = out.concat(flatten(v)); });
+            return out;
+        }
+        return [entry];
+    }
+    var list = flatten(value);
+    return list.filter(function (item) {
+        return item && typeof item === 'object' && item.id !== undefined && item.id !== null;
+    });
+}
+
+function _mergeDefaultConfig() {
+    return new Promise(async function (resolve, reject) {
+        try {
+            if (process.env.DEVICES && typeof process.env.DEVICES === 'string') {
+                try {
+                    logger.info('project.merge-config: in progress!');
+                    var devices = JSON.parse(process.env.DEVICES);
+                    devices.forEach(device => {
+                        try {
+                            // check device required
+                            if (!device || !device.id || !device.name || !device.type || !device.configs) {
+                                logger.error(`project.merge-config: DEVICES${JSON.stringify(device)} missing property!`);
+                            } else {
+                                var existDevice = data.devices[device.id];
+                                var deviceToAdd = new Device(device);
+                                if (existDevice) {
+                                    deviceToAdd.tags = existDevice.tags;
+                                }
+                                setDevice(deviceToAdd, true);
+                                logger.info(`project.merge-config: Device ${deviceToAdd.name} added!`);
+                            }
+                        } catch (err) {
+                            logger.error(`project.merge-config: DEVICES${JSON.stringify(device)} failed! ${err}`);
+                            reject();
+                        }
+                    });
+                } catch (err) {
+                    logger.error(`project.merge-config: DEVICES failed! ${err}`);
+                }
+            }
+            resolve();
+        } catch (err) {
+            logger.error(`project.merge-config: failed! ${err}`);
+            reject();
+        }
+    });
+
+    function Device(device, tags) {
+        this.id = device.id;
+        this.name = device.name;
+        this.enabled = true;
+        this.type = device.type;
+        this.polling = 1000 || device.configs.requestIntervalMs;
+        this.tags = tags || {};
+        this.property = device.configs;
+
+        var a = Object.values(DeviceType);
+        if (Object.values(DeviceType).indexOf(device.type) === -1) {
+            throw new Error('DeviceType unknow');
+        }
+    }
+}
+
+const ProjectDataCmdType = {
+    SetDevice: 'set-device',
+    DelDevice: 'del-device',
+    SetView: 'set-view',
+    DelView: 'del-view',
+    HmiLayout: 'layout',
+    Charts: 'charts',
+    Graphs: 'graphs',
+    Languages: 'languages',
+    ClientAccess: 'client-access',
+    SetText: 'set-text',
+    DelText: 'del-text',
+    SetAlarm: 'set-alarm',
+    DelAlarm: 'del-alarm',
+    SetRecipe: 'set-recipe',
+    DelRecipe: 'del-recipe',
+    SetNotification: 'set-notification',
+    DelNotification: 'del-notification',
+    SetScript: 'set-script',
+    DelScript: 'del-script',
+    SetReport: 'set-report',
+    DelReport: 'del-report',
+    SetMapsLocation:'set-maps-location',
+    DelMapsLocation: 'del-maps-location',
+    SetArMarker: 'set-ar-marker',
+    DelArMarker: 'del-ar-marker',
+}
+
+module.exports = {
+    init: init,
+    load: load,
+    getDevices: getDevices,
+    getServer: getServer,
+    getDevice: getDevice,
+    getAlarms: getAlarms,
+    getRecipes: getRecipes,
+    getRecipe: getRecipe,
+    getRecipesData: getRecipesData,
+    getRecipesSync: getRecipesSync,
+    getNotifications: getNotifications,
+    getScripts: getScripts,
+    getReports: getReports,
+    getArMarkers: getArMarkers,
+    getDeviceProperty: getDeviceProperty,
+    setDeviceProperty: setDeviceProperty,
+    setProjectData: setProjectData,
+    getProject: getProject,
+    getReportingSettings: getReportingSettings,
+    getProjectView: getProjectView,
+    setProject: setProject,
+    getProjectDemo: getProjectDemo,
+    ProjectDataCmdType,
+};

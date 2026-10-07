@@ -1,0 +1,50 @@
+<div class="container">
+    <gridster [options]="gridOptions">
+        <gridster-item [item]="item" *ngFor="let item of dashboard; index as i">
+            <div *ngIf="item.content" class="card-content">
+                <div [ngSwitch]="item.card.type"  [style.transform]="'scale(' + item.card.zoom + ')'">
+                    <div *ngSwitchCase="cardType.view">
+                        <ng-container [ngSwitch]="item.content?.type">
+                            <ng-container *ngSwitchCase="mapsViewType">
+                                <app-maps-view [view]="item.content" [hmi]="hmi" [gaugesManager]="gaugesManager" (onGoTo)="onGoToPage($event)"></app-maps-view>
+                            </ng-container>
+                            <ng-container *ngSwitchDefault>
+                                <!-- [child]="true": a card is rendered INSIDE a page that already schedules the project's
+                                     client scripts (scadia-view.component.ts initScheduledScripts).
+                                     Without it the same scheduled script runs once per card. -->
+                                <app-scadia-view class="lab-body" id="scadiaView{{i}}" [child]="true" [view]="item.content" [hmi]="hmi" [gaugesManager]="gaugesManager"></app-scadia-view>
+                            </ng-container>
+                        </ng-container>
+                    </div>
+                    <div *ngSwitchCase="cardType.alarms">
+                        <app-alarm-view #alarmsview [fullview]="true" [showInContainer]="true" [autostart]="true"></app-alarm-view>
+                    </div>
+                    <div *ngSwitchCase="cardType.iframe">
+                        <div *ngIf="edit; else iframe" class="card-iframe-edit">
+                            <span><b>iframe</b> {{ item.card.data }}</span>
+                        </div>
+                        <ng-template #iframe>
+                            <app-iframe [link]="item.card.data" class="iframe-class"></app-iframe>
+                        </ng-template>
+                    </div>
+                </div>
+            </div>
+            <div *ngIf="edit" class="card-tool">
+                <div class="my-form-field">
+                    <span>{{'card.style-zoom' | translate}}</span>
+                    <input numberOnly class="zoom-input"
+                        type="number" min="0.1" max="2" step="0.05"
+                        (mousedown)="$event.stopPropagation()"
+                        [(ngModel)]="item.card.zoom"
+                        (ngModelChange)="onZoomChanged(item, $event)">
+                </div>
+                <button mat-icon-button class="my-button" (click)="onEditCard(item)" (mousedown)="$event.stopPropagation()">
+                    <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-icon-button class="my-button" (click)="onRemoveCard(item)" (mousedown)="$event.stopPropagation()">
+                    <mat-icon>close</mat-icon>
+                </button>
+            </div>
+        </gridster-item>
+    </gridster>
+</div>

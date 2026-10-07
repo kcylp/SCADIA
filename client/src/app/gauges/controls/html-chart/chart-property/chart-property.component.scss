@@ -1,0 +1,146 @@
+:host {
+    .chart-selection {
+        position: absolute;
+        top: 35px;
+        bottom: 0px;
+        overflow: auto;
+        width:calc(100% - 10px);
+        padding-top: 5px;
+    }
+
+    .section-item {
+        width: 100%;
+    }
+
+    .field-block {
+        width: 100%;
+        input, span {
+            width:calc(100% - 15px);
+        }
+        mat-select {
+            width:calc(100% - 8px);
+        }
+    }
+
+    .field-text input {
+        width: 70px;
+    }
+
+    .field-number {
+        width: 60px;
+    }
+
+    .field-number input {
+        width: inherit;
+        text-align: center;
+    }
+
+    .field-number span {
+        width: 65px;
+        text-align: left;
+    }
+
+    .section-inline-margin-s {
+        display: inline-block;
+        width: 5px;
+    }
+
+    .section-inline-color {
+        display: inline-block;
+        width: 60px;
+    }
+
+    .section-inline-color input {
+        width: 60px !important;
+        text-align: center;
+    }
+
+    .section-inline-color span {
+        width: 60px;
+    }
+
+    .section-inline-margin {
+        display: inline-block;
+        width: 12px;
+    }
+
+    .section-inline-margin2 {
+        display: inline-block;
+        width: 16px;
+    }
+
+    .section-newline {
+        height: 8px;
+        display: block;
+    }
+
+    ::ng-deep .slider-field mat-slider {
+        background-color: var(--formSliderBackground);
+        height: 30px;
+        width: 100px;
+    }
+
+    ::ng-deep .mat-tab-label {
+        height: 34px !important;
+        min-width: 110px !important;
+        width: 110px !important;
+    }
+
+    .events-section {
+        display: contents;
+
+        .event-item {
+            margin-top: 5px;
+        }
+        .event-type {
+            width: 120px;
+        }
+        .event-action {
+            width: 120px;
+        }
+        .event-remove {
+            float: right;
+        }
+        .event-action-ext {
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        .event-script {
+            padding-left: 10px;
+            .script-selection {
+                width: calc(100% - 15px);
+            }
+            .event-script-param {
+                width: 120px;
+            }
+            .event-script-value {
+                width: calc(100% - 120px);
+            }
+            .event-script-tag {
+                width: calc(100% - 125px);
+            }
+        }
+    }
+    .events-toolbox {
+        display: block;
+        width: 100%;
+
+        button {
+            margin-left: 10px;
+        }
+    }
+
+    .section-item-block mat-select, input {
+        width:calc(100% - 15px);
+    }
+}
+
+::ng-deep .chart-filter-option  {
+
+    line-height: 28px !important;
+    height: 28px !important;
+
+    span {
+        font-size: 13px;
+    }
+}

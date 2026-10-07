@@ -1,0 +1,76 @@
+<div class="container">
+    <h1 mat-dialog-title class="dialog-title" mat-dialog-draggable>{{'resources.lib-images' | translate}}</h1>
+    <mat-icon (click)="onNoClick()" class="dialog-close-btn">clear</mat-icon>
+    <div mat-dialog-content class="mat-dialog-content">
+        <mat-accordion multi="true">
+            <!-- The built-in library first: a new screen usually starts from artwork the product
+                 already owns, and until now there was no way to find it. Picking one copies it
+                 into this project and hands back the copy - see ResourcesService.useAsset. -->
+            <mat-expansion-panel *ngIf="libraryGroups?.length" class="my-expansion-panel lib-image-panel" [expanded]="true">
+                <mat-expansion-panel-header class="header" [collapsedHeight]="'40px'" [expandedHeight]="'40px'">
+                    <mat-panel-title>
+                        {{'resources.lib-builtin' | translate}}
+                    </mat-panel-title>
+                    <mat-panel-description>
+                        {{'resources.lib-builtin-hint' | translate}}
+                    </mat-panel-description>
+                </mat-expansion-panel-header>
+                <div *ngIf="libraryError" class="lib-library-error">{{libraryError | translate}}</div>
+                <div *ngIf="libraryBusy" class="lib-library-busy">{{'resources.lib-copying' | translate}}</div>
+                <div *ngFor="let grpLibrary of libraryGroups">
+                    <div class="lib-library-group">{{grpLibrary.name}}</div>
+                    <div *ngFor="let itemLibrary of grpLibrary.items"
+                         (click)="onSelectLibrary(itemLibrary)"
+                         class="lib-image-item"
+                         matTooltip="{{itemLibrary.name}}">
+                        <img [src]="itemLibrary.url" [id]="itemLibrary.file">
+                    </div>
+                </div>
+            </mat-expansion-panel>
+            <mat-expansion-panel *ngFor="let grpImages of resImages" class="my-expansion-panel lib-image-panel">
+                <mat-expansion-panel-header class="header" [collapsedHeight]="'40px'" [expandedHeight]="'40px'">
+                    <mat-panel-title>
+                        {{grpImages.name}}
+                    </mat-panel-title>
+                    <mat-panel-description>
+
+                    </mat-panel-description>
+                </mat-expansion-panel-header>
+                <div *ngFor="let
+                     item of grpImages.items"
+                     (click)="onSelect(item.path)"
+                     class="lib-image-item"
+                     matTooltip="{{item.name}}">
+
+                    <ng-container *ngIf="isVideo(item.path); else imageTemplate">
+                        <video width="300" height="auto" controls>
+                            <source [src]="item.path" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </ng-container>
+                    <ng-template #imageTemplate>
+                        <img [src]="item.path" [id]="item.path">
+                    </ng-template>
+                </div>
+
+            </mat-expansion-panel>
+            <!-- <mat-expansion-panel class="my-expansion-panel">
+                <mat-expansion-panel-header class="header" [collapsedHeight]="'40px'" [expandedHeight]="'40px'">
+                    <mat-panel-title>
+                        Page editor
+                    </mat-panel-title>
+                    <mat-panel-description>
+
+                    </mat-panel-description>
+                </mat-expansion-panel-header>
+                Page editor content
+            </mat-expansion-panel> -->
+        </mat-accordion>
+        <div style="display: block;width: 660px; padding-bottom: 20px;">
+
+        </div>
+    </div>
+    <div mat-dialog-actions class="dialog-action">
+        <button mat-raised-button (click)="onNoClick()">{{'dlg.cancel' | translate}}</button>
+    </div>
+</div>

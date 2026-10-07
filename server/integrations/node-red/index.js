@@ -1,0 +1,398 @@
+// server/integrations/node-red/index.js
+// Optional Node-RED integration: mount only if the package is installed.
+
+const fs = require('fs');
+const path = require('path');
+
+const BLOCKED_DEVICE_PROPERTY_KEYS = new Set([
+    '__proto__',
+    'prototype',
+    'constructor',
+    'password',
+    'pass',
+    'secret',
+    'token',
+    'apikey',
+    'api_key',
+    'privatekey',
+    'private_key',
+    'certificate',
+    'cert',
+    'key',
+]);
+
+const READABLE_DEVICE_PROPERTY_KEYS = new Set([
+    'address',
+    'baudRate',
+    'broker',
+    'clientId',
+    'cycle',
+    'dataBits',
+    'endpoint',
+    'namespace',
+    'parity',
+    'polling',
+    'port',
+    'rack',
+    'slot',
+    'station',
+    'stopBits',
+    'timeout',
+    'topic',
+    'unitId',
+]);
+
+const WRITABLE_DEVICE_PROPERTY_KEYS = new Set([
+    'cycle',
+    'polling',
+    'timeout',
+]);
+
+function normalizeDevicePropertyKey(property) {
+    if (typeof property !== 'string') {
+        return null;
+    }
+    const key = property.trim();
+    if (!key || key.includes('.') || key.includes('[') || key.includes(']')) {
+        return null;
+    }
+    return key;
+}
+
+function assertAllowedDeviceProperty(property, allowedKeys, action) {
+    const key = normalizeDevicePropertyKey(property);
+    if (!key || BLOCKED_DEVICE_PROPERTY_KEYS.has(key.toLowerCase()) || !allowedKeys.has(key)) {
+        throw new Error(`Device property '${property}' is not ${action}`);
+    }
+    return key;
+}
+
+function isSafeDevicePropertyValue(value) {
+    return value === null || ['string', 'number', 'boolean'].includes(typeof value);
+}
+
+function createDevicePropertyHelpers(devices) {
+    return {
+        getDeviceProperty(deviceName, property) {
+            const key = assertAllowedDeviceProperty(property, READABLE_DEVICE_PROPERTY_KEYS, 'readable');
+            const deviceProperty = devices.getDeviceProperty(deviceName);
+            if (!deviceProperty || !Object.prototype.hasOwnProperty.call(deviceProperty, key)) {
+                return undefined;
+            }
+            return deviceProperty[key];
+        },
+        setDeviceProperty(deviceName, property, value) {
+            const key = assertAllowedDeviceProperty(property, WRITABLE_DEVICE_PROPERTY_KEYS, 'writable');
+            if (!isSafeDevicePropertyValue(value)) {
+                throw new Error(`Device property '${property}' value must be a scalar`);
+            }
+
+            const deviceProperty = devices.getDeviceProperty(deviceName);
+            if (!deviceProperty) return null;
+
+            deviceProperty[key] = value;
+            return devices.setDeviceProperty(deviceName, deviceProperty);
+        },
+    };
+}
+
+function tryRequireNodeRed(runtime) {
+    try {
+        // Fast check whether the module is resolvable
+        require.resolve('node-red');
+        // Load it only after resolve succeeds
+        // (keeps main process clean when not installed)
+        // eslint-disable-next-line global-require
+        return require('node-red');
+    } catch {
+        try {
+            return runtime.plugins.manager.require('node-red');
+        } catch {
+            return null;
+        }
+    }
+}
+
+const getCookieValue = (req, name) => {
+    const cookieHeader = req.headers.cookie;
+    if (!cookieHeader) return null;
+    const cookies = cookieHeader.split(';');
+    for (const cookie of cookies) {
+        const [key, ...rest] = cookie.trim().split('=');
+        if (key === name) {
+            return rest.join('=');
+        }
+    }
+    return null;
+};
+
+const NODE_RED_AUTH_COOKIE_OPTIONS = {
+    path: '/nodered',
+    sameSite: 'lax',
+};
+
+const verifyApiKey = (runtime, apiKey) => {
+    return runtime.apiKeys.getApiKeys().then(stored => {
+        const now = Date.now();
+        return stored.find(k => {
+            if (!k || k.key !== apiKey || k.enabled === false) {
+                return false;
+            }
+            if (!k.expires) {
+                return true;
+            }
+            const expiresAt = new Date(k.expires).getTime();
+            return !isNaN(expiresAt) && expiresAt > now;
+        });
+    });
+};
+
+function createNodeRedAuthMiddleware({ settings, runtime, logger, authJwt }) {
+    // Allow only dashboard routes as public; require an authenticated user or API key for the editor.
+    return (req, res, next) => {
+        // Public dashboard UI and its HTTP APIs (served from httpNodeRoot/ui.path).
+        // baseUrl comes from Express mount point and is not affected by query/path tricks.
+        if (req.baseUrl === '/dashboard') return next();
+
+        if (!settings.secureEnabled || settings.nodeRedAuthMode === 'legacy-open') {
+            return next();
+        }
+
+        const apiKey = req.headers['x-api-key'];
+        if (apiKey) {
+            return verifyApiKey(runtime, apiKey)
+                .then(validKey => {
+                    if (!validKey) {
+                        return res.status(401).json({ error: "unauthorized_error", message: "Invalid API Key" });
+                    }
+                    return next();
+                })
+                .catch(err => {
+                    logger.error(`api-key validation failed: ${err}`);
+                    return res.status(500).json({ error: "unexpected_error", message: "ApiKey validation failed" });
+                });
+        }
+
+        const headerToken = req.headers['x-access-token'];
+        const queryToken = req.query?.token;
+        const cookieToken = getCookieValue(req, 'nodered_auth');
+        // Prefer explicit tokens over cookie to avoid stale cookie blocking valid logins
+        const token = headerToken || queryToken || cookieToken;
+        if (!token) {
+            return res.status(401).json({ error: "unauthorized_error", message: "Authentication required!" });
+        }
+
+        return authJwt.verifyAndDecode(token)
+            .then(decoded => {
+                if (!decoded?.id || decoded.type === 'refresh' || authJwt.isGuestUser(decoded.id, decoded.groups)) {
+                    return res.status(403).json({ error: "forbidden_error", message: "Authenticated user required!" });
+                }
+                if (queryToken) {
+                    res.cookie('nodered_auth', token, {
+                        ...NODE_RED_AUTH_COOKIE_OPTIONS,
+                        httpOnly: true,
+                        secure: !!settings.https,
+                    });
+                    if (req.method === 'GET') {
+                        const cleanUrl = new URL(req.originalUrl, `http://${req.headers.host}`);
+                        cleanUrl.searchParams.delete('token');
+                        return res.redirect(cleanUrl.pathname + cleanUrl.search);
+                    }
+                }
+                return next();
+            })
+            .catch(() => {
+                if (cookieToken) {
+                    res.clearCookie('nodered_auth', NODE_RED_AUTH_COOKIE_OPTIONS);
+                }
+                return res.status(401).json({ error: "unauthorized_error", message: "Invalid token!" });
+            });
+    };
+}
+
+async function mountNodeRedIfInstalled({ app, server, settings, runtime, logger, authJwt, events }) {
+    const RED = tryRequireNodeRed(runtime);
+    if (!RED) {
+        logger.info('[Node-RED] Package not installed. Skipping Node-RED initialization.');
+        // Do not register any /nodered routes; default 404 is fine.
+        return;
+    }
+
+    // Prepare Node-RED userDir for flows and settings
+    const userDir = path.join(settings.workDir, 'node-red');
+    if (!fs.existsSync(userDir)) {
+        fs.mkdirSync(userDir, { recursive: true });
+    }
+
+    const devices = require(path.join(settings.appDir, 'runtime/devices'));
+    const devicePropertyHelpers = createDevicePropertyHelpers(devices);
+
+    // Minimal Node-RED settings; extend only what is really needed
+    const redSettings = {
+        httpAdminRoot: '/nodered/',
+        // Serve Node-RED HTTP nodes under /dashboard to avoid intercepting SCADIA routes
+        httpNodeRoot: '/dashboard',
+        userDir,
+        nodesDir: [path.join(__dirname, 'node-red-contrib-scadia')],
+        flowFile: 'flows.json',
+        editorTheme: {
+            notifications: { enabled: false },
+            tours: { enabled: false },
+        },
+        // Dashboard will be exposed at /dashboard/...
+        ui: { path: '/' },
+        // Values used by FlowFuse dashboard's ui_base.js for layout saves
+        // These mirror the SCADIA HTTP bind address so Node-RED can call its own /nodered/flows API
+        uiHost: settings.uiHost,
+        uiPort: settings.uiPort,
+        functionGlobalContext: {
+            // Expose essential SCADIA runtime helpers
+            scadia: {
+                runtime,
+                getTag: devices.getTagValue,
+                setTag: devices.setTagValue,
+                getDaq: require(path.join(settings.appDir, 'runtime/storage/daqstorage')).getNodeValues,
+                getTagId: devices.getTagId,
+                getHistoricalTags: devices.getHistoricalTags,
+                getDeviceProperty: devicePropertyHelpers.getDeviceProperty,
+                setDeviceProperty: devicePropertyHelpers.setDeviceProperty,
+                emit: events.emit.bind(events),
+                on: events.on.bind(events),
+                removeListener: events.removeListener.bind(events),
+                sendMessage: async (address, subject, message) =>
+                    await runtime.notificatorMgr.sendMailMessage(null, address, subject, message, null, null),
+                getAlarms: async () => await runtime.alarmsMgr.getAlarmsValues(null, -1),
+                getHistoryAlarms: async (start, end) => {
+                    const query = { start, end };
+                    return runtime.alarmsMgr.getAlarmsHistory(query, -1);
+                },
+                ackAlarm: async (alarmName, types) => {
+                    const utils = require(path.join(settings.appDir, 'runtime/utils'));
+                    const sep = runtime.alarmsMgr.getIdSeparator();
+                    if (alarmName.indexOf(sep) === -1 && !utils.isNullOrUndefined(types)) {
+                        const results = [];
+                        for (const t of types) {
+                            const alarmId = `${alarmName}${sep}${t}`;
+                            results.push(await runtime.alarmsMgr.setAlarmAck(alarmId, null, -1));
+                        }
+                        return results;
+                    }
+                    return runtime.alarmsMgr.setAlarmAck(alarmName, null, -1);
+                },
+                getScripts: async () => {
+                    const scripts = await runtime.project.getScripts();
+                    return scripts ? scripts.map(s => ({ id: s.id, name: s.name })) : [];
+                },
+                runScript: async (scriptName, params) => {
+                    const scripts = await runtime.project.getScripts();
+                    const script = scripts?.find(s => s.name === scriptName);
+                    if (!script) throw new Error(`Script '${scriptName}' not found`);
+                    return runtime.scriptsMgr.runScript(script, null, params);
+                },
+            },
+
+            // Common Node.js stdlib modules handy in flows
+            fs: require('fs').promises,
+            fsSync: require('fs'),
+            path: require('path'),
+            util: require('util'),
+            os: require('os'),
+            http: require('http'),
+            https: require('https'),
+            dgram: require('dgram'),
+            dns: require('dns'),
+            url: require('url'),
+            querystring: require('querystring'),
+            crypto: require('crypto'),
+            zlib: require('zlib'),
+            stream: require('stream'),
+            events: require('events'),
+            buffer: require('buffer'),
+            sqlite3: require('sqlite3'),
+            serialport: require('serialport'),
+            // Dangerous modules are opt-in only (see settings.nodeRedUnsafeModules)
+            ...(settings.nodeRedUnsafeModules ? {
+                child_process: require('child_process'),
+                net: require('net'),
+            } : {}),
+        },
+    };
+
+    // Initialize Node-RED on the existing HTTP server (must be done before server.listen)
+    RED.init(server, redSettings);
+
+    const allowDashboard = createNodeRedAuthMiddleware({ settings, runtime, logger, authJwt });
+
+    // Mount Node-RED admin/editor under /nodered; HTTP nodes (including dashboard)
+    // are served from httpNodeRoot ('/dashboard') so they appear at /dashboard/... etc.
+    app.use('/nodered', allowDashboard, RED.httpAdmin);
+    app.use('/dashboard', allowDashboard, RED.httpNode);
+
+    await RED.start();
+
+    RED.httpAdmin.get('/scadia/devices', function(req, res) {
+        const devices = runtime.project.getDevices();
+        const result = [];
+        for (const id in devices) {
+            const device = devices[id];
+            const tags = [];
+            for (const tagId in device.tags) {
+                tags.push({ id: tagId, name: device.tags[tagId].name });
+            }
+            result.push({ id: device.id, name: device.name, tags });
+        }
+        res.json(result);
+    });
+
+    RED.httpAdmin.get('/scadia/scripts', async function(req, res) {
+        try {
+            const scripts = await runtime.project.getScripts();
+            const result = scripts ? scripts.map(script => ({ id: script.id, name: script.name })) : [];
+            res.json(result);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    RED.httpAdmin.get('/scadia/views', async function(req, res) {
+        try {
+            const project = await runtime.project.getProject();
+            const result = project && project.hmi && project.hmi.views ?
+                project.hmi.views.map(view => ({ id: view.id, name: view.name })) : [];
+            res.json(result);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    RED.httpAdmin.get('/scadia/alarms', async function(req, res) {
+        try {
+            const alarms = await runtime.project.getAlarms();
+            const result = alarms ?
+                alarms.map(alarm => ({ id: alarm.id, name: alarm.name })) : [];
+            res.json(result);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // set api to listen (moved here to avoid rate limiting Node-RED routes)
+    if (settings.disableServer !== false) {
+        // Catch-all route for SPA - serve Angular index.html for client routes
+        // Exclude API routes and static assets
+        app.get('*', (req, res, next) => {
+            // Skip API routes and static assets
+            if (req.path.startsWith('/api/') ||
+                req.path.includes('.') ||
+                req.path.startsWith('/nodered') ||
+                req.path.startsWith('/dashboard')) {
+                return next();
+            }
+            res.sendFile(path.join(settings.httpStatic, 'index.html'));
+        });
+    }
+
+    logger.info('[Node-RED] Started at /nodered');
+}
+
+module.exports = { mountNodeRedIfInstalled, createNodeRedAuthMiddleware, createDevicePropertyHelpers };

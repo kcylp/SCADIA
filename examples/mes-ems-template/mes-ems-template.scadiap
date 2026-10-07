@@ -1,0 +1,3070 @@
+﻿{
+  "version": "1.02",
+  "name": "MES-EMS-Template",
+  "devices": {
+    "MES_Tags": {
+      "id": "dev-mes-tags",
+      "type": "SCADIAServer",
+      "name": "MES 标签表",
+      "enabled": true,
+      "property": {
+        "address": "internal"
+      },
+      "polling": 1000,
+      "tags": {
+        "mes.wo.current": {
+          "id": "mes.wo.current",
+          "name": "当前工单",
+          "type": "String",
+          "daq": {
+            "enabled": true
+          }
+        },
+        "mes.wo.planned": {
+          "id": "mes.wo.planned",
+          "name": "计划产量",
+          "type": "Int16",
+          "daq": {
+            "enabled": true
+          }
+        },
+        "mes.wo.completed": {
+          "id": "mes.wo.completed",
+          "name": "完工数量",
+          "type": "Int16",
+          "daq": {
+            "enabled": true
+          }
+        },
+        "mes.wo.wip": {
+          "id": "mes.wo.wip",
+          "name": "在制品",
+          "type": "Int16",
+          "daq": {
+            "enabled": true
+          }
+        },
+        "mes.wo.status": {
+          "id": "mes.wo.status",
+          "name": "工单状态",
+          "type": "String",
+          "daq": {
+            "enabled": true
+          }
+        },
+        "mes.oee.availability": {
+          "id": "mes.oee.availability",
+          "name": "可用率",
+          "type": "Float",
+          "daq": {
+            "enabled": true
+          }
+        },
+        "mes.oee.performance": {
+          "id": "mes.oee.performance",
+          "name": "性能率",
+          "type": "Float",
+          "daq": {
+            "enabled": true
+          }
+        },
+        "mes.oee.quality": {
+          "id": "mes.oee.quality",
+          "name": "合格率",
+          "type": "Float",
+          "daq": {
+            "enabled": true
+          }
+        },
+        "mes.oee.score": {
+          "id": "mes.oee.score",
+          "name": "OEE",
+          "type": "Float",
+          "daq": {
+            "enabled": true
+          }
+        },
+        "mes.energy.kwh": {
+          "id": "mes.energy.kwh",
+          "name": "今日用电",
+          "type": "Float",
+          "daq": {
+            "enabled": true
+          }
+        },
+        "mes.energy.water": {
+          "id": "mes.energy.water",
+          "name": "今日用水",
+          "type": "Float",
+          "daq": {
+            "enabled": true
+          }
+        },
+        "mes.energy.gas": {
+          "id": "mes.energy.gas",
+          "name": "今日用气",
+          "type": "Float",
+          "daq": {
+            "enabled": true
+          }
+        },
+        "mes.energy.steam": {
+          "id": "mes.energy.steam",
+          "name": "今日用汽",
+          "type": "Float",
+          "daq": {
+            "enabled": true
+          }
+        },
+        "mes.defect.count": {
+          "id": "mes.defect.count",
+          "name": "缺陷数",
+          "type": "Int16",
+          "daq": {
+            "enabled": true
+          }
+        },
+        "mes.defect.inspected": {
+          "id": "mes.defect.inspected",
+          "name": "抽检数",
+          "type": "Int16",
+          "daq": {
+            "enabled": true
+          }
+        },
+        "mes.shift": {
+          "id": "mes.shift",
+          "name": "当前班次",
+          "type": "String",
+          "daq": {
+            "enabled": true
+          }
+        },
+        "mes.wo.rate": {
+          "id": "mes.wo.rate",
+          "name": "达成率",
+          "type": "Float",
+          "daq": {
+            "enabled": true
+          }
+        },
+        "mes.defect.rate": {
+          "id": "mes.defect.rate",
+          "name": "缺陷率",
+          "type": "Float",
+          "daq": {
+            "enabled": true
+          }
+        },
+        "mes.temp.line1": {
+          "id": "mes.temp.line1",
+          "name": "1#线温度",
+          "type": "Float",
+          "daq": {
+            "enabled": true
+          }
+        },
+        "mes.carbon.estimate": {
+          "id": "mes.carbon.estimate",
+          "name": "碳排放估算",
+          "type": "Float",
+          "daq": {
+            "enabled": true
+          }
+        },
+        "mes.energy.cost": {
+          "id": "mes.energy.cost",
+          "name": "电费估算",
+          "type": "Float",
+          "daq": {
+            "enabled": true
+          }
+        },
+        "mes.equipment.mc01.status": {
+          "id": "mes.equipment.mc01.status",
+          "name": "1#加工中心状态",
+          "type": "String",
+          "daq": {
+            "enabled": true
+          }
+        },
+        "mes.equipment.mc02.status": {
+          "id": "mes.equipment.mc02.status",
+          "name": "2#加工中心状态",
+          "type": "String",
+          "daq": {
+            "enabled": true
+          }
+        },
+        "mes.equipment.robot01.status": {
+          "id": "mes.equipment.robot01.status",
+          "name": "搬运机器人状态",
+          "type": "String",
+          "daq": {
+            "enabled": true
+          }
+        },
+        "mes.equipment.assembly01.status": {
+          "id": "mes.equipment.assembly01.status",
+          "name": "装配工位状态",
+          "type": "String",
+          "daq": {
+            "enabled": true
+          }
+        },
+        "mes.equipment.inspect01.status": {
+          "id": "mes.equipment.inspect01.status",
+          "name": "检测工位状态",
+          "type": "String",
+          "daq": {
+            "enabled": true
+          }
+        },
+        "mes.equipment.pack01.status": {
+          "id": "mes.equipment.pack01.status",
+          "name": "包装工位状态",
+          "type": "String",
+          "daq": {
+            "enabled": true
+          }
+        },
+        "mes.recipe.temperature": {
+          "id": "mes.recipe.temperature",
+          "name": "配方温度",
+          "type": "Float",
+          "init": "120"
+        },
+        "mes.recipe.pressure": {
+          "id": "mes.recipe.pressure",
+          "name": "配方压力",
+          "type": "Float",
+          "init": "0.8"
+        },
+        "mes.recipe.cycletime": {
+          "id": "mes.recipe.cycletime",
+          "name": "配方节拍",
+          "type": "Int16",
+          "init": "120"
+        }
+      }
+    },
+    "ProductionLine1": {
+      "id": "dev-pl1",
+      "type": "SiemensS7",
+      "name": "1#生产线",
+      "enabled": false,
+      "property": {
+        "address": "192.168.1.177",
+        "port": 102,
+        "rack": 0,
+        "slot": 2
+      },
+      "polling": 3000,
+      "tags": {
+        "Planned": {
+          "id": "Planned",
+          "name": "计划产量",
+          "type": "Int",
+          "address": "db4.dbw1"
+        },
+        "Actual": {
+          "id": "Actual",
+          "name": "实际产量",
+          "type": "Int",
+          "address": "db4.dbw2"
+        },
+        "Defect": {
+          "id": "Defect",
+          "name": "缺陷计数",
+          "type": "Int",
+          "address": "db4.dbw3"
+        },
+        "Status": {
+          "id": "Status",
+          "name": "设备状态",
+          "type": "Bool",
+          "address": "db1.dbx0.0"
+        }
+      }
+    }
+  },
+  "hmi": {
+    "views": [
+      {
+        "id": "v_mes_dashboard",
+        "name": "MES 制造执行看板",
+        "profile": {
+          "width": 1920,
+          "height": 1080,
+          "bkcolor": "#FFFFFFFF"
+        },
+        "items": {
+          "it_mes_kpi_completed": {
+            "id": "it_mes_kpi_completed",
+            "type": "svg-ext-html_select",
+            "name": "今日产量 KPI",
+            "label": "HtmlSelect",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variable": "mes.wo.completed",
+              "variableSrc": "MES_Tags",
+              "variableId": "mes.wo.completed",
+              "alarmId": "",
+              "alarmSrc": "",
+              "alarm": "",
+              "alarmColor": "",
+              "readonly": true,
+              "ranges": [
+                {
+                  "type": "option",
+                  "min": 31000,
+                  "max": 999999,
+                  "color": "#2E7D32",
+                  "stroke": "#FFFFFF",
+                  "text": "达成"
+                },
+                {
+                  "type": "option",
+                  "min": 28000,
+                  "max": 30999,
+                  "color": "#1565C0",
+                  "stroke": "#FFFFFF",
+                  "text": "正常"
+                },
+                {
+                  "type": "option",
+                  "min": 0,
+                  "max": 27999,
+                  "color": "#C62828",
+                  "stroke": "#FFFFFF",
+                  "text": "预警"
+                }
+              ]
+            }
+          },
+          "it_mes_kpi_planned": {
+            "id": "it_mes_kpi_planned",
+            "type": "svg-ext-html_select",
+            "name": "计划产量 KPI",
+            "label": "HtmlSelect",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variable": "mes.wo.planned",
+              "variableSrc": "MES_Tags",
+              "variableId": "mes.wo.planned",
+              "alarmId": "",
+              "alarmSrc": "",
+              "alarm": "",
+              "alarmColor": "",
+              "readonly": true,
+              "ranges": [
+                {
+                  "type": "option",
+                  "min": 0,
+                  "max": 999999,
+                  "color": "#1565C0",
+                  "stroke": "#FFFFFF",
+                  "text": "计量中"
+                }
+              ]
+            }
+          },
+          "it_mes_kpi_rate": {
+            "id": "it_mes_kpi_rate",
+            "type": "svg-ext-html_select",
+            "name": "达成率 KPI",
+            "label": "HtmlSelect",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variable": "mes.wo.rate",
+              "variableSrc": "MES_Tags",
+              "variableId": "mes.wo.rate",
+              "alarmId": "",
+              "alarmSrc": "",
+              "alarm": "",
+              "alarmColor": "",
+              "readonly": true,
+              "ranges": [
+                {
+                  "type": "option",
+                  "min": 95,
+                  "max": 999999,
+                  "color": "#2E7D32",
+                  "stroke": "#FFFFFF",
+                  "text": "达标"
+                },
+                {
+                  "type": "option",
+                  "min": 85,
+                  "max": 94.99,
+                  "color": "#1565C0",
+                  "stroke": "#FFFFFF",
+                  "text": "正常"
+                },
+                {
+                  "type": "option",
+                  "min": 0,
+                  "max": 84.99,
+                  "color": "#C62828",
+                  "stroke": "#FFFFFF",
+                  "text": "预警"
+                }
+              ]
+            }
+          },
+          "it_mes_kpi_quality": {
+            "id": "it_mes_kpi_quality",
+            "type": "svg-ext-html_select",
+            "name": "良品率 KPI",
+            "label": "HtmlSelect",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variable": "mes.oee.quality",
+              "variableSrc": "MES_Tags",
+              "variableId": "mes.oee.quality",
+              "alarmId": "",
+              "alarmSrc": "",
+              "alarm": "",
+              "alarmColor": "",
+              "readonly": true,
+              "ranges": [
+                {
+                  "type": "option",
+                  "min": 0.85,
+                  "max": 1,
+                  "color": "#2E7D32",
+                  "stroke": "#FFFFFF",
+                  "text": "优秀"
+                },
+                {
+                  "type": "option",
+                  "min": 0.7,
+                  "max": 0.8499,
+                  "color": "#1565C0",
+                  "stroke": "#FFFFFF",
+                  "text": "正常"
+                },
+                {
+                  "type": "option",
+                  "min": 0,
+                  "max": 0.6999,
+                  "color": "#C62828",
+                  "stroke": "#FFFFFF",
+                  "text": "预警"
+                }
+              ]
+            }
+          },
+          "it_mes_kpi_wo": {
+            "id": "it_mes_kpi_wo",
+            "type": "svg-ext-value",
+            "name": "当前工单 KPI",
+            "label": "Value",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variable": "mes.wo.current",
+              "variableSrc": "MES_Tags",
+              "variableId": "mes.wo.current",
+              "alarmId": "",
+              "alarmSrc": "",
+              "alarm": "",
+              "alarmColor": "",
+              "unit": "",
+              "fractionDigits": 0,
+              "ranges": [
+                {
+                  "type": "unit",
+                  "min": 0,
+                  "max": 999999,
+                  "color": "",
+                  "stroke": "",
+                  "text": ""
+                }
+              ]
+            }
+          },
+          "it_mes_oee_a": {
+            "id": "it_mes_oee_a",
+            "type": "svg-ext-html_select",
+            "name": "可用率 KPI",
+            "label": "HtmlSelect",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variable": "mes.oee.availability",
+              "variableSrc": "MES_Tags",
+              "variableId": "mes.oee.availability",
+              "alarmId": "",
+              "alarmSrc": "",
+              "alarm": "",
+              "alarmColor": "",
+              "readonly": true,
+              "ranges": [
+                {
+                  "type": "option",
+                  "min": 0.85,
+                  "max": 1,
+                  "color": "#2E7D32",
+                  "stroke": "#FFFFFF",
+                  "text": "优秀"
+                },
+                {
+                  "type": "option",
+                  "min": 0.7,
+                  "max": 0.8499,
+                  "color": "#1565C0",
+                  "stroke": "#FFFFFF",
+                  "text": "正常"
+                },
+                {
+                  "type": "option",
+                  "min": 0,
+                  "max": 0.6999,
+                  "color": "#C62828",
+                  "stroke": "#FFFFFF",
+                  "text": "预警"
+                }
+              ]
+            }
+          },
+          "it_mes_oee_p": {
+            "id": "it_mes_oee_p",
+            "type": "svg-ext-html_select",
+            "name": "性能率 KPI",
+            "label": "HtmlSelect",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variable": "mes.oee.performance",
+              "variableSrc": "MES_Tags",
+              "variableId": "mes.oee.performance",
+              "alarmId": "",
+              "alarmSrc": "",
+              "alarm": "",
+              "alarmColor": "",
+              "readonly": true,
+              "ranges": [
+                {
+                  "type": "option",
+                  "min": 0.85,
+                  "max": 1,
+                  "color": "#2E7D32",
+                  "stroke": "#FFFFFF",
+                  "text": "优秀"
+                },
+                {
+                  "type": "option",
+                  "min": 0.7,
+                  "max": 0.8499,
+                  "color": "#1565C0",
+                  "stroke": "#FFFFFF",
+                  "text": "正常"
+                },
+                {
+                  "type": "option",
+                  "min": 0,
+                  "max": 0.6999,
+                  "color": "#C62828",
+                  "stroke": "#FFFFFF",
+                  "text": "预警"
+                }
+              ]
+            }
+          },
+          "it_mes_oee_q": {
+            "id": "it_mes_oee_q",
+            "type": "svg-ext-html_select",
+            "name": "合格率 KPI",
+            "label": "HtmlSelect",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variable": "mes.oee.quality",
+              "variableSrc": "MES_Tags",
+              "variableId": "mes.oee.quality",
+              "alarmId": "",
+              "alarmSrc": "",
+              "alarm": "",
+              "alarmColor": "",
+              "readonly": true,
+              "ranges": [
+                {
+                  "type": "option",
+                  "min": 0.85,
+                  "max": 1,
+                  "color": "#2E7D32",
+                  "stroke": "#FFFFFF",
+                  "text": "优秀"
+                },
+                {
+                  "type": "option",
+                  "min": 0.7,
+                  "max": 0.8499,
+                  "color": "#1565C0",
+                  "stroke": "#FFFFFF",
+                  "text": "正常"
+                },
+                {
+                  "type": "option",
+                  "min": 0,
+                  "max": 0.6999,
+                  "color": "#C62828",
+                  "stroke": "#FFFFFF",
+                  "text": "预警"
+                }
+              ]
+            }
+          },
+          "it_mes_oee_score": {
+            "id": "it_mes_oee_score",
+            "type": "svg-ext-html_select",
+            "name": "OEE KPI",
+            "label": "HtmlSelect",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variable": "mes.oee.score",
+              "variableSrc": "MES_Tags",
+              "variableId": "mes.oee.score",
+              "alarmId": "",
+              "alarmSrc": "",
+              "alarm": "",
+              "alarmColor": "",
+              "readonly": true,
+              "ranges": [
+                {
+                  "type": "option",
+                  "min": 0.85,
+                  "max": 1,
+                  "color": "#2E7D32",
+                  "stroke": "#FFFFFF",
+                  "text": "优秀"
+                },
+                {
+                  "type": "option",
+                  "min": 0.7,
+                  "max": 0.8499,
+                  "color": "#1565C0",
+                  "stroke": "#FFFFFF",
+                  "text": "正常"
+                },
+                {
+                  "type": "option",
+                  "min": 0,
+                  "max": 0.6999,
+                  "color": "#C62828",
+                  "stroke": "#FFFFFF",
+                  "text": "预警"
+                }
+              ]
+            }
+          },
+          "it_mes_wo_table": {
+            "id": "it_mes_wo_table",
+            "type": "svg-ext-own_ctrl-table",
+            "name": "工单进度表",
+            "label": "HtmlTable",
+            "property": {
+              "id": "it_mes_wo_table_opt",
+              "type": "data",
+              "events": [],
+              "options": {
+                "paginator": {
+                  "show": false
+                },
+                "filter": {
+                  "show": false
+                },
+                "daterange": {
+                  "show": false
+                },
+                "realtime": true,
+                "lastRange": "table.rangetype-last1d",
+                "gridColor": "#E0E0E0",
+                "header": {
+                  "show": true,
+                  "height": 30,
+                  "fontSize": 14,
+                  "background": "#F0F0F0",
+                  "color": "#757575"
+                },
+                "row": {
+                  "height": 32,
+                  "fontSize": 13,
+                  "background": "#FFFFFF",
+                  "color": "#000000"
+                },
+                "selection": {
+                  "background": "#3059AF",
+                  "color": "#FFFFFF",
+                  "fontBold": true
+                },
+                "columns": [
+                  {
+                    "id": "c_wo_plan",
+                    "label": "计划产量",
+                    "variableId": "mes.wo.planned",
+                    "valueFormat": "",
+                    "bitmask": 0,
+                    "type": "variable",
+                    "align": "left",
+                    "width": 210,
+                    "exname": ""
+                  },
+                  {
+                    "id": "c_wo_done",
+                    "label": "完工数量",
+                    "variableId": "mes.wo.completed",
+                    "valueFormat": "",
+                    "bitmask": 0,
+                    "type": "variable",
+                    "align": "left",
+                    "width": 210,
+                    "exname": ""
+                  },
+                  {
+                    "id": "c_wo_wip",
+                    "label": "在制品",
+                    "variableId": "mes.wo.wip",
+                    "valueFormat": "",
+                    "bitmask": 0,
+                    "type": "variable",
+                    "align": "left",
+                    "width": 210,
+                    "exname": ""
+                  },
+                  {
+                    "id": "c_wo_status",
+                    "label": "工单状态",
+                    "variableId": "mes.wo.status",
+                    "valueFormat": "",
+                    "bitmask": 0,
+                    "type": "variable",
+                    "align": "left",
+                    "width": 220,
+                    "exname": ""
+                  }
+                ],
+                "alarmsColumns": [],
+                "alarmFilter": {
+                  "filterA": [],
+                  "filterB": [],
+                  "filterC": []
+                },
+                "reportsColumns": [],
+                "reportFilter": {
+                  "filterA": []
+                },
+                "rows": []
+              }
+            }
+          },
+          "it_mes_defect": {
+            "id": "it_mes_defect",
+            "type": "svg-ext-html_select",
+            "name": "缺陷数 KPI",
+            "label": "HtmlSelect",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variable": "mes.defect.count",
+              "variableSrc": "MES_Tags",
+              "variableId": "mes.defect.count",
+              "alarmId": "",
+              "alarmSrc": "",
+              "alarm": "",
+              "alarmColor": "",
+              "readonly": true,
+              "ranges": [
+                {
+                  "type": "option",
+                  "min": 0,
+                  "max": 999999,
+                  "color": "#1565C0",
+                  "stroke": "#FFFFFF",
+                  "text": "计量中"
+                }
+              ]
+            }
+          },
+          "it_mes_inspected": {
+            "id": "it_mes_inspected",
+            "type": "svg-ext-html_select",
+            "name": "抽检数 KPI",
+            "label": "HtmlSelect",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variable": "mes.defect.inspected",
+              "variableSrc": "MES_Tags",
+              "variableId": "mes.defect.inspected",
+              "alarmId": "",
+              "alarmSrc": "",
+              "alarm": "",
+              "alarmColor": "",
+              "readonly": true,
+              "ranges": [
+                {
+                  "type": "option",
+                  "min": 0,
+                  "max": 999999,
+                  "color": "#1565C0",
+                  "stroke": "#FFFFFF",
+                  "text": "计量中"
+                }
+              ]
+            }
+          },
+          "it_mes_defrate": {
+            "id": "it_mes_defrate",
+            "type": "svg-ext-html_select",
+            "name": "缺陷率 KPI",
+            "label": "HtmlSelect",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variable": "mes.defect.rate",
+              "variableSrc": "MES_Tags",
+              "variableId": "mes.defect.rate",
+              "alarmId": "",
+              "alarmSrc": "",
+              "alarm": "",
+              "alarmColor": "",
+              "readonly": true,
+              "ranges": [
+                {
+                  "type": "option",
+                  "min": 0.05,
+                  "max": 1,
+                  "color": "#C62828",
+                  "stroke": "#FFFFFF",
+                  "text": "超标"
+                },
+                {
+                  "type": "option",
+                  "min": 0,
+                  "max": 0.0499,
+                  "color": "#1565C0",
+                  "stroke": "#FFFFFF",
+                  "text": "正常"
+                }
+              ]
+            }
+          },
+          "it_mes_alarm_chart": {
+            "id": "it_mes_alarm_chart",
+            "type": "svg-ext-html_chart",
+            "name": "报警列表",
+            "label": "HtmlChart",
+            "property": {
+              "id": "it_mes_alarm_chart_opt",
+              "type": "alarms",
+              "variableIds": [],
+              "events": [],
+              "options": {
+                "title": "实时报警 / 历史报警",
+                "fontFamily": "Roboto-Regular",
+                "legendFontSize": 12,
+                "colorBackground": "rgba(0,0,0,0)",
+                "legendBackground": "rgba(0,0,0,0)",
+                "titleHeight": 18,
+                "axisLabelFontSize": 12,
+                "labelsDivWidth": 0,
+                "axisLineColor": "rgba(0,0,0,1)",
+                "axisLabelColor": "rgba(0,0,0,1)",
+                "legendMode": "always",
+                "series": [],
+                "width": 1208,
+                "height": 265,
+                "decimalsPrecision": 2,
+                "realtime": 0,
+                "refreshInterval": 60000,
+                "range": "last1d",
+                "dateFormat": "MM_DD_YYYY",
+                "timeFormat": "hh_mm_ss_AA",
+                "columns": [
+                  "ontime",
+                  "text",
+                  "type",
+                  "group",
+                  "status",
+                  "ack"
+                ]
+              }
+            }
+          },
+          "it_mes_scheduler": {
+            "id": "it_mes_scheduler",
+            "type": "svg-ext-own_ctrl-scheduler",
+            "name": "调度面板",
+            "label": "HtmlScheduler",
+            "property": {
+              "id": "it_mes_scheduler_opt",
+              "devices": [
+                "MES_Tags"
+              ],
+              "description": "OEE 计算 60s / 能耗汇总 300s / 班次产量汇总 周一~周五 08:00 / 日报 20:00 / 月报 每月1日 08:00",
+              "events": [],
+              "colors": {
+                "background": "#ffffff",
+                "text": "#000000",
+                "accent": "#2196f3",
+                "border": "#cccccc"
+              },
+              "accentColor": "#556e82",
+              "backgroundColor": "#f0f0f0",
+              "textColor": "#505050",
+              "secondaryTextColor": "#ffffff",
+              "borderColor": "#cccccc"
+            }
+          }
+        },
+        "variables": {},
+        "svgcontent": "<svg width=\"1920\" height=\"1080\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns:html=\"http://www.w3.org/1999/xhtml\"><filter height=\"200\" width=\"200\" y=\"-3\" x=\"-3\" id=\"blur-filter\"><feGaussianBlur stdDeviation=\"3\"/></filter><g><title>Layer 1</title><rect x=\"0\" y=\"0\" width=\"1920\" height=\"1080\" fill=\"#FFFFFFFF\" stroke=\"none\" stroke-width=\"1\"/><text x=\"40\" y=\"62\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"34\" fill=\"#1D1D1D\" text-anchor=\"start\" font-weight=\"bold\">MES 制造执行看板</text><text x=\"1880\" y=\"62\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"22\" fill=\"#757575\" text-anchor=\"end\">2026-10-04 14:00</text><rect x=\"40\" y=\"90\" width=\"350\" height=\"140\" fill=\"#FFFFFF\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"56\" y=\"124\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"20\" fill=\"#757575\" text-anchor=\"start\">今日产量</text><g id=\"it_mes_kpi_completed\" type=\"svg-ext-html_select\"><rect x=\"52\" y=\"140\" width=\"326\" height=\"70\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXS_it_mes_kpi_completed\" x=\"52\" y=\"140\" width=\"326\" height=\"70\"><div xmlns=\"http://www.w3.org/1999/xhtml\" style=\"width:100%;height:100%;\"><select id=\"S-HXS_it_mes_kpi_completed\" style=\"width:100%;height:100%;font-family:Microsoft YaHei,Roboto-Regular;font-size:24px;\"></select></div></foreignObject></g><rect x=\"410\" y=\"90\" width=\"350\" height=\"140\" fill=\"#FFFFFF\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"426\" y=\"124\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"20\" fill=\"#757575\" text-anchor=\"start\">计划产量</text><g id=\"it_mes_kpi_planned\" type=\"svg-ext-html_select\"><rect x=\"422\" y=\"140\" width=\"326\" height=\"70\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXS_it_mes_kpi_planned\" x=\"422\" y=\"140\" width=\"326\" height=\"70\"><div xmlns=\"http://www.w3.org/1999/xhtml\" style=\"width:100%;height:100%;\"><select id=\"S-HXS_it_mes_kpi_planned\" style=\"width:100%;height:100%;font-family:Microsoft YaHei,Roboto-Regular;font-size:24px;\"></select></div></foreignObject></g><rect x=\"780\" y=\"90\" width=\"350\" height=\"140\" fill=\"#FFFFFF\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"796\" y=\"124\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"20\" fill=\"#757575\" text-anchor=\"start\">达成率</text><g id=\"it_mes_kpi_rate\" type=\"svg-ext-html_select\"><rect x=\"792\" y=\"140\" width=\"326\" height=\"70\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXS_it_mes_kpi_rate\" x=\"792\" y=\"140\" width=\"326\" height=\"70\"><div xmlns=\"http://www.w3.org/1999/xhtml\" style=\"width:100%;height:100%;\"><select id=\"S-HXS_it_mes_kpi_rate\" style=\"width:100%;height:100%;font-family:Microsoft YaHei,Roboto-Regular;font-size:24px;\"></select></div></foreignObject></g><rect x=\"1150\" y=\"90\" width=\"350\" height=\"140\" fill=\"#FFFFFF\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"1166\" y=\"124\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"20\" fill=\"#757575\" text-anchor=\"start\">良品率</text><g id=\"it_mes_kpi_quality\" type=\"svg-ext-html_select\"><rect x=\"1162\" y=\"140\" width=\"326\" height=\"70\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXS_it_mes_kpi_quality\" x=\"1162\" y=\"140\" width=\"326\" height=\"70\"><div xmlns=\"http://www.w3.org/1999/xhtml\" style=\"width:100%;height:100%;\"><select id=\"S-HXS_it_mes_kpi_quality\" style=\"width:100%;height:100%;font-family:Microsoft YaHei,Roboto-Regular;font-size:24px;\"></select></div></foreignObject></g><rect x=\"1520\" y=\"90\" width=\"350\" height=\"140\" fill=\"#FFFFFF\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"1536\" y=\"124\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"20\" fill=\"#757575\" text-anchor=\"start\">当前工单</text><g id=\"it_mes_kpi_wo\" type=\"svg-ext-value\"><text x=\"1695\" y=\"203\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"46\" fill=\"#0B5CD5\" text-anchor=\"middle\" font-weight=\"bold\">0</text></g><rect x=\"40\" y=\"250\" width=\"1840\" height=\"190\" fill=\"#F4F5F7\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"58\" y=\"284\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"24\" fill=\"#1D1D1D\" text-anchor=\"start\" font-weight=\"bold\">OEE 分析</text><text x=\"1862\" y=\"282\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"16\" fill=\"#757575\" text-anchor=\"end\">可用率 × 性能率 × 合格率 = OEE</text><rect x=\"80\" y=\"300\" width=\"340\" height=\"110\" fill=\"#FFFFFF\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"96\" y=\"334\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"20\" fill=\"#757575\" text-anchor=\"start\">可用率</text><g id=\"it_mes_oee_a\" type=\"svg-ext-html_select\"><rect x=\"92\" y=\"350\" width=\"316\" height=\"52\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXS_it_mes_oee_a\" x=\"92\" y=\"350\" width=\"316\" height=\"52\"><div xmlns=\"http://www.w3.org/1999/xhtml\" style=\"width:100%;height:100%;\"><select id=\"S-HXS_it_mes_oee_a\" style=\"width:100%;height:100%;font-family:Microsoft YaHei,Roboto-Regular;font-size:22px;\"></select></div></foreignObject></g><rect x=\"480\" y=\"300\" width=\"340\" height=\"110\" fill=\"#FFFFFF\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"496\" y=\"334\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"20\" fill=\"#757575\" text-anchor=\"start\">性能率</text><g id=\"it_mes_oee_p\" type=\"svg-ext-html_select\"><rect x=\"492\" y=\"350\" width=\"316\" height=\"52\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXS_it_mes_oee_p\" x=\"492\" y=\"350\" width=\"316\" height=\"52\"><div xmlns=\"http://www.w3.org/1999/xhtml\" style=\"width:100%;height:100%;\"><select id=\"S-HXS_it_mes_oee_p\" style=\"width:100%;height:100%;font-family:Microsoft YaHei,Roboto-Regular;font-size:22px;\"></select></div></foreignObject></g><rect x=\"880\" y=\"300\" width=\"340\" height=\"110\" fill=\"#FFFFFF\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"896\" y=\"334\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"20\" fill=\"#757575\" text-anchor=\"start\">合格率</text><g id=\"it_mes_oee_q\" type=\"svg-ext-html_select\"><rect x=\"892\" y=\"350\" width=\"316\" height=\"52\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXS_it_mes_oee_q\" x=\"892\" y=\"350\" width=\"316\" height=\"52\"><div xmlns=\"http://www.w3.org/1999/xhtml\" style=\"width:100%;height:100%;\"><select id=\"S-HXS_it_mes_oee_q\" style=\"width:100%;height:100%;font-family:Microsoft YaHei,Roboto-Regular;font-size:22px;\"></select></div></foreignObject></g><rect x=\"1380\" y=\"290\" width=\"460\" height=\"130\" fill=\"#FFFFFF\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"1396\" y=\"324\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"20\" fill=\"#757575\" text-anchor=\"start\">OEE 综合</text><g id=\"it_mes_oee_score\" type=\"svg-ext-html_select\"><rect x=\"1392\" y=\"350\" width=\"436\" height=\"62\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXS_it_mes_oee_score\" x=\"1392\" y=\"350\" width=\"436\" height=\"62\"><div xmlns=\"http://www.w3.org/1999/xhtml\" style=\"width:100%;height:100%;\"><select id=\"S-HXS_it_mes_oee_score\" style=\"width:100%;height:100%;font-family:Microsoft YaHei,Roboto-Regular;font-size:26px;\"></select></div></foreignObject></g><rect x=\"40\" y=\"460\" width=\"900\" height=\"240\" fill=\"#F4F5F7\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"58\" y=\"494\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"24\" fill=\"#1D1D1D\" text-anchor=\"start\" font-weight=\"bold\">工单进度</text><g id=\"it_mes_wo_table\" type=\"svg-ext-own_ctrl-table\"><rect x=\"56\" y=\"500\" width=\"868\" height=\"185\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-OXC_it_mes_wo_table\" x=\"56\" y=\"500\" width=\"868\" height=\"185\"><div xmlns=\"http://www.w3.org/1999/xhtml\" id=\"D-OXC_it_mes_wo_table\" style=\"width:100%;height:100%;\"></div></foreignObject></g><rect x=\"980\" y=\"460\" width=\"900\" height=\"240\" fill=\"#F4F5F7\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"998\" y=\"494\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"24\" fill=\"#1D1D1D\" text-anchor=\"start\" font-weight=\"bold\">质量指标</text><text x=\"1862\" y=\"492\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"16\" fill=\"#757575\" text-anchor=\"end\">缺陷率 = 缺陷数 / 抽检数</text><rect x=\"996\" y=\"510\" width=\"270\" height=\"120\" fill=\"#FFFFFF\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"1012\" y=\"544\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"20\" fill=\"#757575\" text-anchor=\"start\">缺陷数</text><g id=\"it_mes_defect\" type=\"svg-ext-html_select\"><rect x=\"1008\" y=\"555\" width=\"246\" height=\"60\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXS_it_mes_defect\" x=\"1008\" y=\"555\" width=\"246\" height=\"60\"><div xmlns=\"http://www.w3.org/1999/xhtml\" style=\"width:100%;height:100%;\"><select id=\"S-HXS_it_mes_defect\" style=\"width:100%;height:100%;font-family:Microsoft YaHei,Roboto-Regular;font-size:22px;\"></select></div></foreignObject></g><rect x=\"1284\" y=\"510\" width=\"270\" height=\"120\" fill=\"#FFFFFF\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"1300\" y=\"544\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"20\" fill=\"#757575\" text-anchor=\"start\">抽检数</text><g id=\"it_mes_inspected\" type=\"svg-ext-html_select\"><rect x=\"1296\" y=\"555\" width=\"246\" height=\"60\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXS_it_mes_inspected\" x=\"1296\" y=\"555\" width=\"246\" height=\"60\"><div xmlns=\"http://www.w3.org/1999/xhtml\" style=\"width:100%;height:100%;\"><select id=\"S-HXS_it_mes_inspected\" style=\"width:100%;height:100%;font-family:Microsoft YaHei,Roboto-Regular;font-size:22px;\"></select></div></foreignObject></g><rect x=\"1572\" y=\"510\" width=\"270\" height=\"120\" fill=\"#FFFFFF\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"1588\" y=\"544\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"20\" fill=\"#757575\" text-anchor=\"start\">缺陷率</text><g id=\"it_mes_defrate\" type=\"svg-ext-html_select\"><rect x=\"1584\" y=\"555\" width=\"246\" height=\"60\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXS_it_mes_defrate\" x=\"1584\" y=\"555\" width=\"246\" height=\"60\"><div xmlns=\"http://www.w3.org/1999/xhtml\" style=\"width:100%;height:100%;\"><select id=\"S-HXS_it_mes_defrate\" style=\"width:100%;height:100%;font-family:Microsoft YaHei,Roboto-Regular;font-size:22px;\"></select></div></foreignObject></g><rect x=\"40\" y=\"720\" width=\"1240\" height=\"320\" fill=\"#F4F5F7\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"58\" y=\"754\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"24\" fill=\"#1D1D1D\" text-anchor=\"start\" font-weight=\"bold\">报警面板</text><text x=\"1262\" y=\"752\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"16\" fill=\"#757575\" text-anchor=\"end\">实时报警 / 历史报警</text><g id=\"it_mes_alarm_chart\" type=\"svg-ext-html_chart\"><rect x=\"56\" y=\"760\" width=\"1208\" height=\"265\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXC_it_mes_alarm_chart\" x=\"56\" y=\"760\" width=\"1208\" height=\"265\"><div xmlns=\"http://www.w3.org/1999/xhtml\" id=\"D-HXC_it_mes_alarm_chart\" style=\"width:100%;height:100%;\"></div></foreignObject></g><rect x=\"1320\" y=\"720\" width=\"560\" height=\"320\" fill=\"#F4F5F7\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"1338\" y=\"754\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"24\" fill=\"#1D1D1D\" text-anchor=\"start\" font-weight=\"bold\">调度 / 计划任务</text><text x=\"1862\" y=\"752\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"16\" fill=\"#757575\" text-anchor=\"end\">附录 B: Scheduler 组件</text><g id=\"it_mes_scheduler\" type=\"svg-ext-own_ctrl-scheduler\"><rect x=\"1336\" y=\"760\" width=\"528\" height=\"265\" fill=\"#F9F9F9\" stroke=\"#cccccc\" stroke-width=\"1\"/><foreignObject id=\"H-OXC_it_mes_scheduler\" x=\"1336\" y=\"760\" width=\"528\" height=\"265\"><div xmlns=\"http://www.w3.org/1999/xhtml\" id=\"D-OXC_it_mes_scheduler\" style=\"width:100%;height:100%;\"></div></foreignObject></g></g></svg>"
+      },
+      {
+        "id": "v_ems_dashboard",
+        "name": "EMS 能源管理看板",
+        "profile": {
+          "width": 1920,
+          "height": 1080,
+          "bkcolor": "#FFFFFFFF"
+        },
+        "items": {
+          "it_ems_kwh": {
+            "id": "it_ems_kwh",
+            "type": "svg-ext-html_select",
+            "name": "今日用电 KPI",
+            "label": "HtmlSelect",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variable": "mes.energy.kwh",
+              "variableSrc": "MES_Tags",
+              "variableId": "mes.energy.kwh",
+              "alarmId": "",
+              "alarmSrc": "",
+              "alarm": "",
+              "alarmColor": "",
+              "readonly": true,
+              "ranges": [
+                {
+                  "type": "option",
+                  "min": 15000,
+                  "max": 999999,
+                  "color": "#C62828",
+                  "stroke": "#FFFFFF",
+                  "text": "超峰"
+                },
+                {
+                  "type": "option",
+                  "min": 0,
+                  "max": 14999,
+                  "color": "#1565C0",
+                  "stroke": "#FFFFFF",
+                  "text": "正常"
+                }
+              ]
+            }
+          },
+          "it_ems_water": {
+            "id": "it_ems_water",
+            "type": "svg-ext-html_select",
+            "name": "今日用水 KPI",
+            "label": "HtmlSelect",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variable": "mes.energy.water",
+              "variableSrc": "MES_Tags",
+              "variableId": "mes.energy.water",
+              "alarmId": "",
+              "alarmSrc": "",
+              "alarm": "",
+              "alarmColor": "",
+              "readonly": true,
+              "ranges": [
+                {
+                  "type": "option",
+                  "min": 0,
+                  "max": 999999,
+                  "color": "#1565C0",
+                  "stroke": "#FFFFFF",
+                  "text": "计量中"
+                }
+              ]
+            }
+          },
+          "it_ems_gas": {
+            "id": "it_ems_gas",
+            "type": "svg-ext-html_select",
+            "name": "今日用气 KPI",
+            "label": "HtmlSelect",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variable": "mes.energy.gas",
+              "variableSrc": "MES_Tags",
+              "variableId": "mes.energy.gas",
+              "alarmId": "",
+              "alarmSrc": "",
+              "alarm": "",
+              "alarmColor": "",
+              "readonly": true,
+              "ranges": [
+                {
+                  "type": "option",
+                  "min": 0,
+                  "max": 999999,
+                  "color": "#1565C0",
+                  "stroke": "#FFFFFF",
+                  "text": "计量中"
+                }
+              ]
+            }
+          },
+          "it_ems_steam": {
+            "id": "it_ems_steam",
+            "type": "svg-ext-html_select",
+            "name": "今日用汽 KPI",
+            "label": "HtmlSelect",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variable": "mes.energy.steam",
+              "variableSrc": "MES_Tags",
+              "variableId": "mes.energy.steam",
+              "alarmId": "",
+              "alarmSrc": "",
+              "alarm": "",
+              "alarmColor": "",
+              "readonly": true,
+              "ranges": [
+                {
+                  "type": "option",
+                  "min": 0,
+                  "max": 999999,
+                  "color": "#1565C0",
+                  "stroke": "#FFFFFF",
+                  "text": "计量中"
+                }
+              ]
+            }
+          },
+          "it_ems_carbon": {
+            "id": "it_ems_carbon",
+            "type": "svg-ext-html_select",
+            "name": "碳排放估算 KPI",
+            "label": "HtmlSelect",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variable": "mes.carbon.estimate",
+              "variableSrc": "MES_Tags",
+              "variableId": "mes.carbon.estimate",
+              "alarmId": "",
+              "alarmSrc": "",
+              "alarm": "",
+              "alarmColor": "",
+              "readonly": true,
+              "ranges": [
+                {
+                  "type": "option",
+                  "min": 0,
+                  "max": 999999,
+                  "color": "#1565C0",
+                  "stroke": "#FFFFFF",
+                  "text": "计量中"
+                }
+              ]
+            }
+          },
+          "it_ems_trend24": {
+            "id": "it_ems_trend24",
+            "type": "svg-ext-html_chart",
+            "name": "24h 能耗曲线",
+            "label": "HtmlChart",
+            "property": {
+              "id": "chart_ems_24h",
+              "type": "history",
+              "variableIds": [
+                "mes.energy.kwh"
+              ],
+              "events": [],
+              "options": {
+                "title": "24h 能耗曲线 (kWh)",
+                "fontFamily": "Roboto-Regular",
+                "legendFontSize": 12,
+                "colorBackground": "rgba(0,0,0,0)",
+                "legendBackground": "rgba(0,0,0,0)",
+                "titleHeight": 18,
+                "axisLabelFontSize": 12,
+                "labelsDivWidth": 0,
+                "axisLineColor": "rgba(0,0,0,1)",
+                "axisLabelColor": "rgba(0,0,0,1)",
+                "legendMode": "always",
+                "series": [],
+                "width": 1808,
+                "height": 250,
+                "decimalsPrecision": 2,
+                "realtime": 0,
+                "refreshInterval": 60000,
+                "range": "last1d",
+                "dateFormat": "MM_DD_YYYY",
+                "timeFormat": "hh_mm_ss_AA"
+              }
+            }
+          },
+          "it_ems_share_table": {
+            "id": "it_ems_share_table",
+            "type": "svg-ext-own_ctrl-table",
+            "name": "分项占比表",
+            "label": "HtmlTable",
+            "property": {
+              "id": "it_ems_share_table_opt",
+              "type": "data",
+              "events": [],
+              "options": {
+                "paginator": {
+                  "show": false
+                },
+                "filter": {
+                  "show": false
+                },
+                "daterange": {
+                  "show": false
+                },
+                "realtime": true,
+                "lastRange": "table.rangetype-last1d",
+                "gridColor": "#E0E0E0",
+                "header": {
+                  "show": true,
+                  "height": 30,
+                  "fontSize": 14,
+                  "background": "#F0F0F0",
+                  "color": "#757575"
+                },
+                "row": {
+                  "height": 32,
+                  "fontSize": 13,
+                  "background": "#FFFFFF",
+                  "color": "#000000"
+                },
+                "selection": {
+                  "background": "#3059AF",
+                  "color": "#FFFFFF",
+                  "fontBold": true
+                },
+                "columns": [
+                  {
+                    "id": "c_en_kwh",
+                    "label": "今日用电 (kWh)",
+                    "variableId": "mes.energy.kwh",
+                    "valueFormat": "",
+                    "bitmask": 0,
+                    "type": "variable",
+                    "align": "left",
+                    "width": 215,
+                    "exname": ""
+                  },
+                  {
+                    "id": "c_en_water",
+                    "label": "今日用水 (m³)",
+                    "variableId": "mes.energy.water",
+                    "valueFormat": "",
+                    "bitmask": 0,
+                    "type": "variable",
+                    "align": "left",
+                    "width": 215,
+                    "exname": ""
+                  },
+                  {
+                    "id": "c_en_gas",
+                    "label": "今日用气 (m³)",
+                    "variableId": "mes.energy.gas",
+                    "valueFormat": "",
+                    "bitmask": 0,
+                    "type": "variable",
+                    "align": "left",
+                    "width": 215,
+                    "exname": ""
+                  },
+                  {
+                    "id": "c_en_steam",
+                    "label": "今日用汽 (kg)",
+                    "variableId": "mes.energy.steam",
+                    "valueFormat": "",
+                    "bitmask": 0,
+                    "type": "variable",
+                    "align": "left",
+                    "width": 215,
+                    "exname": ""
+                  }
+                ],
+                "alarmsColumns": [],
+                "alarmFilter": {
+                  "filterA": [],
+                  "filterB": [],
+                  "filterC": []
+                },
+                "reportsColumns": [],
+                "reportFilter": {
+                  "filterA": []
+                },
+                "rows": []
+              }
+            }
+          },
+          "it_ems_tariff_table": {
+            "id": "it_ems_tariff_table",
+            "type": "svg-ext-own_ctrl-table",
+            "name": "峰谷平统计表",
+            "label": "HtmlTable",
+            "property": {
+              "id": "it_ems_tariff_table_opt",
+              "type": "data",
+              "events": [],
+              "options": {
+                "paginator": {
+                  "show": false
+                },
+                "filter": {
+                  "show": false
+                },
+                "daterange": {
+                  "show": false
+                },
+                "realtime": true,
+                "lastRange": "table.rangetype-last1d",
+                "gridColor": "#E0E0E0",
+                "header": {
+                  "show": true,
+                  "height": 30,
+                  "fontSize": 14,
+                  "background": "#F0F0F0",
+                  "color": "#757575"
+                },
+                "row": {
+                  "height": 32,
+                  "fontSize": 13,
+                  "background": "#FFFFFF",
+                  "color": "#000000"
+                },
+                "selection": {
+                  "background": "#3059AF",
+                  "color": "#FFFFFF",
+                  "fontBold": true
+                },
+                "columns": [
+                  {
+                    "id": "c_tf_kwh",
+                    "label": "今日用电 (kWh)",
+                    "variableId": "mes.energy.kwh",
+                    "valueFormat": "",
+                    "bitmask": 0,
+                    "type": "variable",
+                    "align": "left",
+                    "width": 280,
+                    "exname": ""
+                  },
+                  {
+                    "id": "c_tf_cost",
+                    "label": "电费估算 (元)",
+                    "variableId": "mes.energy.cost",
+                    "valueFormat": "",
+                    "bitmask": 0,
+                    "type": "variable",
+                    "align": "left",
+                    "width": 280,
+                    "exname": ""
+                  },
+                  {
+                    "id": "c_tf_carbon",
+                    "label": "碳排估算 (t)",
+                    "variableId": "mes.carbon.estimate",
+                    "valueFormat": "",
+                    "bitmask": 0,
+                    "type": "variable",
+                    "align": "left",
+                    "width": 300,
+                    "exname": ""
+                  }
+                ],
+                "alarmsColumns": [],
+                "alarmFilter": {
+                  "filterA": [],
+                  "filterB": [],
+                  "filterC": []
+                },
+                "reportsColumns": [],
+                "reportFilter": {
+                  "filterA": []
+                },
+                "rows": []
+              }
+            }
+          }
+        },
+        "variables": {},
+        "svgcontent": "<svg width=\"1920\" height=\"1080\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns:html=\"http://www.w3.org/1999/xhtml\"><filter height=\"200\" width=\"200\" y=\"-3\" x=\"-3\" id=\"blur-filter\"><feGaussianBlur stdDeviation=\"3\"/></filter><g><title>Layer 1</title><rect x=\"0\" y=\"0\" width=\"1920\" height=\"1080\" fill=\"#FFFFFFFF\" stroke=\"none\" stroke-width=\"1\"/><text x=\"40\" y=\"62\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"34\" fill=\"#1D1D1D\" text-anchor=\"start\" font-weight=\"bold\">EMS 能源管理看板</text><text x=\"1880\" y=\"62\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"22\" fill=\"#757575\" text-anchor=\"end\">2026-10-04 14:00</text><rect x=\"40\" y=\"90\" width=\"350\" height=\"140\" fill=\"#FFFFFF\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"56\" y=\"124\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"20\" fill=\"#757575\" text-anchor=\"start\">今日用电</text><g id=\"it_ems_kwh\" type=\"svg-ext-html_select\"><rect x=\"52\" y=\"140\" width=\"326\" height=\"70\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXS_it_ems_kwh\" x=\"52\" y=\"140\" width=\"326\" height=\"70\"><div xmlns=\"http://www.w3.org/1999/xhtml\" style=\"width:100%;height:100%;\"><select id=\"S-HXS_it_ems_kwh\" style=\"width:100%;height:100%;font-family:Microsoft YaHei,Roboto-Regular;font-size:24px;\"></select></div></foreignObject></g><rect x=\"410\" y=\"90\" width=\"350\" height=\"140\" fill=\"#FFFFFF\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"426\" y=\"124\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"20\" fill=\"#757575\" text-anchor=\"start\">今日用水</text><g id=\"it_ems_water\" type=\"svg-ext-html_select\"><rect x=\"422\" y=\"140\" width=\"326\" height=\"70\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXS_it_ems_water\" x=\"422\" y=\"140\" width=\"326\" height=\"70\"><div xmlns=\"http://www.w3.org/1999/xhtml\" style=\"width:100%;height:100%;\"><select id=\"S-HXS_it_ems_water\" style=\"width:100%;height:100%;font-family:Microsoft YaHei,Roboto-Regular;font-size:24px;\"></select></div></foreignObject></g><rect x=\"780\" y=\"90\" width=\"350\" height=\"140\" fill=\"#FFFFFF\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"796\" y=\"124\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"20\" fill=\"#757575\" text-anchor=\"start\">今日用气</text><g id=\"it_ems_gas\" type=\"svg-ext-html_select\"><rect x=\"792\" y=\"140\" width=\"326\" height=\"70\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXS_it_ems_gas\" x=\"792\" y=\"140\" width=\"326\" height=\"70\"><div xmlns=\"http://www.w3.org/1999/xhtml\" style=\"width:100%;height:100%;\"><select id=\"S-HXS_it_ems_gas\" style=\"width:100%;height:100%;font-family:Microsoft YaHei,Roboto-Regular;font-size:24px;\"></select></div></foreignObject></g><rect x=\"1150\" y=\"90\" width=\"350\" height=\"140\" fill=\"#FFFFFF\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"1166\" y=\"124\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"20\" fill=\"#757575\" text-anchor=\"start\">今日用汽</text><g id=\"it_ems_steam\" type=\"svg-ext-html_select\"><rect x=\"1162\" y=\"140\" width=\"326\" height=\"70\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXS_it_ems_steam\" x=\"1162\" y=\"140\" width=\"326\" height=\"70\"><div xmlns=\"http://www.w3.org/1999/xhtml\" style=\"width:100%;height:100%;\"><select id=\"S-HXS_it_ems_steam\" style=\"width:100%;height:100%;font-family:Microsoft YaHei,Roboto-Regular;font-size:24px;\"></select></div></foreignObject></g><rect x=\"1520\" y=\"90\" width=\"350\" height=\"140\" fill=\"#FFFFFF\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"1536\" y=\"124\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"20\" fill=\"#757575\" text-anchor=\"start\">碳排放估算</text><g id=\"it_ems_carbon\" type=\"svg-ext-html_select\"><rect x=\"1532\" y=\"140\" width=\"326\" height=\"70\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXS_it_ems_carbon\" x=\"1532\" y=\"140\" width=\"326\" height=\"70\"><div xmlns=\"http://www.w3.org/1999/xhtml\" style=\"width:100%;height:100%;\"><select id=\"S-HXS_it_ems_carbon\" style=\"width:100%;height:100%;font-family:Microsoft YaHei,Roboto-Regular;font-size:24px;\"></select></div></foreignObject></g><rect x=\"40\" y=\"250\" width=\"1840\" height=\"300\" fill=\"#F4F5F7\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"58\" y=\"284\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"24\" fill=\"#1D1D1D\" text-anchor=\"start\" font-weight=\"bold\">24h 能耗曲线</text><text x=\"1862\" y=\"282\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"16\" fill=\"#757575\" text-anchor=\"end\">附录 B: 历史曲线 = HtmlChart(history)</text><g id=\"it_ems_trend24\" type=\"svg-ext-html_chart\"><rect x=\"56\" y=\"288\" width=\"1808\" height=\"250\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXC_it_ems_trend24\" x=\"56\" y=\"288\" width=\"1808\" height=\"250\"><div xmlns=\"http://www.w3.org/1999/xhtml\" id=\"D-HXC_it_ems_trend24\" style=\"width:100%;height:100%;\"></div></foreignObject></g><rect x=\"40\" y=\"570\" width=\"900\" height=\"230\" fill=\"#F4F5F7\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"58\" y=\"604\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"24\" fill=\"#1D1D1D\" text-anchor=\"start\" font-weight=\"bold\">分项占比</text><text x=\"922\" y=\"602\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"16\" fill=\"#757575\" text-anchor=\"end\">尖峰 / 高峰 / 平段 / 谷电</text><g id=\"it_ems_share_table\" type=\"svg-ext-own_ctrl-table\"><rect x=\"56\" y=\"610\" width=\"868\" height=\"175\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-OXC_it_ems_share_table\" x=\"56\" y=\"610\" width=\"868\" height=\"175\"><div xmlns=\"http://www.w3.org/1999/xhtml\" id=\"D-OXC_it_ems_share_table\" style=\"width:100%;height:100%;\"></div></foreignObject></g><rect x=\"980\" y=\"570\" width=\"900\" height=\"230\" fill=\"#F4F5F7\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"998\" y=\"604\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"24\" fill=\"#1D1D1D\" text-anchor=\"start\" font-weight=\"bold\">峰谷平统计</text><text x=\"1862\" y=\"602\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"16\" fill=\"#757575\" text-anchor=\"end\">峰时 / 平时 / 谷时</text><g id=\"it_ems_tariff_table\" type=\"svg-ext-own_ctrl-table\"><rect x=\"996\" y=\"610\" width=\"868\" height=\"175\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-OXC_it_ems_tariff_table\" x=\"996\" y=\"610\" width=\"868\" height=\"175\"><div xmlns=\"http://www.w3.org/1999/xhtml\" id=\"D-OXC_it_ems_tariff_table\" style=\"width:100%;height:100%;\"></div></foreignObject></g><text x=\"40\" y=\"850\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"18\" fill=\"#757575\" text-anchor=\"start\">电价常量表: 尖峰 0.8924 / 平时 0.6874 / 谷时 0.3646 元·kWh⁻¹   碳排因子 0.58 kg CO₂·kWh⁻¹</text></g></svg>"
+      },
+      {
+        "id": "v_mes_oee",
+        "name": "OEE 分析",
+        "profile": {
+          "width": 1920,
+          "height": 1080,
+          "bkcolor": "#FFFFFFFF"
+        },
+        "items": {
+          "it_oee_a": {
+            "id": "it_oee_a",
+            "type": "svg-ext-html_select",
+            "name": "可用率 大数字",
+            "label": "HtmlSelect",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variable": "mes.oee.availability",
+              "variableSrc": "MES_Tags",
+              "variableId": "mes.oee.availability",
+              "alarmId": "",
+              "alarmSrc": "",
+              "alarm": "",
+              "alarmColor": "",
+              "readonly": true,
+              "ranges": [
+                {
+                  "type": "option",
+                  "min": 0.85,
+                  "max": 1,
+                  "color": "#2E7D32",
+                  "stroke": "#FFFFFF",
+                  "text": "优秀"
+                },
+                {
+                  "type": "option",
+                  "min": 0.7,
+                  "max": 0.8499,
+                  "color": "#1565C0",
+                  "stroke": "#FFFFFF",
+                  "text": "正常"
+                },
+                {
+                  "type": "option",
+                  "min": 0,
+                  "max": 0.6999,
+                  "color": "#C62828",
+                  "stroke": "#FFFFFF",
+                  "text": "预警"
+                }
+              ]
+            }
+          },
+          "it_oee_p": {
+            "id": "it_oee_p",
+            "type": "svg-ext-html_select",
+            "name": "性能率 大数字",
+            "label": "HtmlSelect",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variable": "mes.oee.performance",
+              "variableSrc": "MES_Tags",
+              "variableId": "mes.oee.performance",
+              "alarmId": "",
+              "alarmSrc": "",
+              "alarm": "",
+              "alarmColor": "",
+              "readonly": true,
+              "ranges": [
+                {
+                  "type": "option",
+                  "min": 0.85,
+                  "max": 1,
+                  "color": "#2E7D32",
+                  "stroke": "#FFFFFF",
+                  "text": "优秀"
+                },
+                {
+                  "type": "option",
+                  "min": 0.7,
+                  "max": 0.8499,
+                  "color": "#1565C0",
+                  "stroke": "#FFFFFF",
+                  "text": "正常"
+                },
+                {
+                  "type": "option",
+                  "min": 0,
+                  "max": 0.6999,
+                  "color": "#C62828",
+                  "stroke": "#FFFFFF",
+                  "text": "预警"
+                }
+              ]
+            }
+          },
+          "it_oee_q": {
+            "id": "it_oee_q",
+            "type": "svg-ext-html_select",
+            "name": "合格率 大数字",
+            "label": "HtmlSelect",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variable": "mes.oee.quality",
+              "variableSrc": "MES_Tags",
+              "variableId": "mes.oee.quality",
+              "alarmId": "",
+              "alarmSrc": "",
+              "alarm": "",
+              "alarmColor": "",
+              "readonly": true,
+              "ranges": [
+                {
+                  "type": "option",
+                  "min": 0.85,
+                  "max": 1,
+                  "color": "#2E7D32",
+                  "stroke": "#FFFFFF",
+                  "text": "优秀"
+                },
+                {
+                  "type": "option",
+                  "min": 0.7,
+                  "max": 0.8499,
+                  "color": "#1565C0",
+                  "stroke": "#FFFFFF",
+                  "text": "正常"
+                },
+                {
+                  "type": "option",
+                  "min": 0,
+                  "max": 0.6999,
+                  "color": "#C62828",
+                  "stroke": "#FFFFFF",
+                  "text": "预警"
+                }
+              ]
+            }
+          },
+          "it_oee_score": {
+            "id": "it_oee_score",
+            "type": "svg-ext-html_select",
+            "name": "OEE 大数字",
+            "label": "HtmlSelect",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variable": "mes.oee.score",
+              "variableSrc": "MES_Tags",
+              "variableId": "mes.oee.score",
+              "alarmId": "",
+              "alarmSrc": "",
+              "alarm": "",
+              "alarmColor": "",
+              "readonly": true,
+              "ranges": [
+                {
+                  "type": "option",
+                  "min": 0.85,
+                  "max": 1,
+                  "color": "#2E7D32",
+                  "stroke": "#FFFFFF",
+                  "text": "优秀"
+                },
+                {
+                  "type": "option",
+                  "min": 0.7,
+                  "max": 0.8499,
+                  "color": "#1565C0",
+                  "stroke": "#FFFFFF",
+                  "text": "正常"
+                },
+                {
+                  "type": "option",
+                  "min": 0,
+                  "max": 0.6999,
+                  "color": "#C62828",
+                  "stroke": "#FFFFFF",
+                  "text": "预警"
+                }
+              ]
+            }
+          },
+          "it_oee_trend24": {
+            "id": "it_oee_trend24",
+            "type": "svg-ext-html_chart",
+            "name": "24h OEE 趋势",
+            "label": "HtmlChart",
+            "property": {
+              "id": "chart_oee_24h",
+              "type": "history",
+              "variableIds": [
+                "mes.oee.score"
+              ],
+              "events": [],
+              "options": {
+                "title": "24h OEE 趋势 (0.00 ~ 1.00)",
+                "fontFamily": "Roboto-Regular",
+                "legendFontSize": 12,
+                "colorBackground": "rgba(0,0,0,0)",
+                "legendBackground": "rgba(0,0,0,0)",
+                "titleHeight": 18,
+                "axisLabelFontSize": 12,
+                "labelsDivWidth": 0,
+                "axisLineColor": "rgba(0,0,0,1)",
+                "axisLabelColor": "rgba(0,0,0,1)",
+                "legendMode": "always",
+                "series": [],
+                "width": 1808,
+                "height": 365,
+                "decimalsPrecision": 2,
+                "realtime": 0,
+                "refreshInterval": 60000,
+                "range": "last1d",
+                "dateFormat": "MM_DD_YYYY",
+                "timeFormat": "hh_mm_ss_AA"
+              }
+            }
+          }
+        },
+        "variables": {},
+        "svgcontent": "<svg width=\"1920\" height=\"1080\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns:html=\"http://www.w3.org/1999/xhtml\"><filter height=\"200\" width=\"200\" y=\"-3\" x=\"-3\" id=\"blur-filter\"><feGaussianBlur stdDeviation=\"3\"/></filter><g><title>Layer 1</title><rect x=\"0\" y=\"0\" width=\"1920\" height=\"1080\" fill=\"#FFFFFFFF\" stroke=\"none\" stroke-width=\"1\"/><text x=\"40\" y=\"62\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"34\" fill=\"#1D1D1D\" text-anchor=\"start\" font-weight=\"bold\">OEE 分析</text><text x=\"1880\" y=\"62\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"22\" fill=\"#757575\" text-anchor=\"end\">2026-10-04 14:00</text><text x=\"40\" y=\"110\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"20\" fill=\"#757575\" text-anchor=\"start\">可用率 × 性能率 × 合格率 = OEE</text><rect x=\"100\" y=\"150\" width=\"500\" height=\"200\" fill=\"#FFFFFF\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"116\" y=\"184\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"20\" fill=\"#757575\" text-anchor=\"start\">可用率</text><g id=\"it_oee_a\" type=\"svg-ext-html_select\"><rect x=\"116\" y=\"220\" width=\"468\" height=\"100\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXS_it_oee_a\" x=\"116\" y=\"220\" width=\"468\" height=\"100\"><div xmlns=\"http://www.w3.org/1999/xhtml\" style=\"width:100%;height:100%;\"><select id=\"S-HXS_it_oee_a\" style=\"width:100%;height:100%;font-family:Microsoft YaHei,Roboto-Regular;font-size:30px;\"></select></div></foreignObject></g><rect x=\"710\" y=\"150\" width=\"500\" height=\"200\" fill=\"#FFFFFF\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"726\" y=\"184\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"20\" fill=\"#757575\" text-anchor=\"start\">性能率</text><g id=\"it_oee_p\" type=\"svg-ext-html_select\"><rect x=\"726\" y=\"220\" width=\"468\" height=\"100\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXS_it_oee_p\" x=\"726\" y=\"220\" width=\"468\" height=\"100\"><div xmlns=\"http://www.w3.org/1999/xhtml\" style=\"width:100%;height:100%;\"><select id=\"S-HXS_it_oee_p\" style=\"width:100%;height:100%;font-family:Microsoft YaHei,Roboto-Regular;font-size:30px;\"></select></div></foreignObject></g><rect x=\"1320\" y=\"150\" width=\"500\" height=\"200\" fill=\"#FFFFFF\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"1336\" y=\"184\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"20\" fill=\"#757575\" text-anchor=\"start\">合格率</text><g id=\"it_oee_q\" type=\"svg-ext-html_select\"><rect x=\"1336\" y=\"220\" width=\"468\" height=\"100\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXS_it_oee_q\" x=\"1336\" y=\"220\" width=\"468\" height=\"100\"><div xmlns=\"http://www.w3.org/1999/xhtml\" style=\"width:100%;height:100%;\"><select id=\"S-HXS_it_oee_q\" style=\"width:100%;height:100%;font-family:Microsoft YaHei,Roboto-Regular;font-size:30px;\"></select></div></foreignObject></g><rect x=\"100\" y=\"390\" width=\"1720\" height=\"150\" fill=\"#FFFFFF\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"116\" y=\"424\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"20\" fill=\"#757575\" text-anchor=\"start\">OEE 综合（三要素乘积）</text><g id=\"it_oee_score\" type=\"svg-ext-html_select\"><rect x=\"116\" y=\"450\" width=\"1688\" height=\"74\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXS_it_oee_score\" x=\"116\" y=\"450\" width=\"1688\" height=\"74\"><div xmlns=\"http://www.w3.org/1999/xhtml\" style=\"width:100%;height:100%;\"><select id=\"S-HXS_it_oee_score\" style=\"width:100%;height:100%;font-family:Microsoft YaHei,Roboto-Regular;font-size:32px;\"></select></div></foreignObject></g><rect x=\"40\" y=\"580\" width=\"1840\" height=\"420\" fill=\"#F4F5F7\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"58\" y=\"614\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"24\" fill=\"#1D1D1D\" text-anchor=\"start\" font-weight=\"bold\">24h OEE 趋势</text><text x=\"1862\" y=\"612\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"16\" fill=\"#757575\" text-anchor=\"end\">附录 B: 折线图 = HtmlChart(history)</text><g id=\"it_oee_trend24\" type=\"svg-ext-html_chart\"><rect x=\"56\" y=\"620\" width=\"1808\" height=\"365\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXC_it_oee_trend24\" x=\"56\" y=\"620\" width=\"1808\" height=\"365\"><div xmlns=\"http://www.w3.org/1999/xhtml\" id=\"D-HXC_it_oee_trend24\" style=\"width:100%;height:100%;\"></div></foreignObject></g></g></svg>"
+      },
+      {
+        "id": "v_ems_energy",
+        "name": "能耗趋势",
+        "profile": {
+          "width": 1920,
+          "height": 1080,
+          "bkcolor": "#FFFFFFFF"
+        },
+        "items": {
+          "it_trend_kwh_chart": {
+            "id": "it_trend_kwh_chart",
+            "type": "svg-ext-html_chart",
+            "name": "电 (kWh) 趋势",
+            "label": "HtmlChart",
+            "property": {
+              "id": "chart_tr_kwh",
+              "type": "history",
+              "variableIds": [
+                "mes.energy.kwh"
+              ],
+              "events": [],
+              "options": {
+                "title": "24h 用电趋势 (kWh)",
+                "fontFamily": "Roboto-Regular",
+                "legendFontSize": 12,
+                "colorBackground": "rgba(0,0,0,0)",
+                "legendBackground": "rgba(0,0,0,0)",
+                "titleHeight": 18,
+                "axisLabelFontSize": 12,
+                "labelsDivWidth": 0,
+                "axisLineColor": "rgba(0,0,0,1)",
+                "axisLabelColor": "rgba(0,0,0,1)",
+                "legendMode": "always",
+                "series": [],
+                "width": 868,
+                "height": 375,
+                "decimalsPrecision": 2,
+                "realtime": 0,
+                "refreshInterval": 60000,
+                "range": "last1d",
+                "dateFormat": "MM_DD_YYYY",
+                "timeFormat": "hh_mm_ss_AA"
+              }
+            }
+          },
+          "it_trend_water_chart": {
+            "id": "it_trend_water_chart",
+            "type": "svg-ext-html_chart",
+            "name": "水 (m³) 趋势",
+            "label": "HtmlChart",
+            "property": {
+              "id": "chart_tr_water",
+              "type": "history",
+              "variableIds": [
+                "mes.energy.water"
+              ],
+              "events": [],
+              "options": {
+                "title": "24h 用水趋势 (m³)",
+                "fontFamily": "Roboto-Regular",
+                "legendFontSize": 12,
+                "colorBackground": "rgba(0,0,0,0)",
+                "legendBackground": "rgba(0,0,0,0)",
+                "titleHeight": 18,
+                "axisLabelFontSize": 12,
+                "labelsDivWidth": 0,
+                "axisLineColor": "rgba(0,0,0,1)",
+                "axisLabelColor": "rgba(0,0,0,1)",
+                "legendMode": "always",
+                "series": [],
+                "width": 868,
+                "height": 375,
+                "decimalsPrecision": 2,
+                "realtime": 0,
+                "refreshInterval": 60000,
+                "range": "last1d",
+                "dateFormat": "MM_DD_YYYY",
+                "timeFormat": "hh_mm_ss_AA"
+              }
+            }
+          },
+          "it_trend_gas_chart": {
+            "id": "it_trend_gas_chart",
+            "type": "svg-ext-html_chart",
+            "name": "气 (m³) 趋势",
+            "label": "HtmlChart",
+            "property": {
+              "id": "chart_tr_gas",
+              "type": "history",
+              "variableIds": [
+                "mes.energy.gas"
+              ],
+              "events": [],
+              "options": {
+                "title": "24h 用气趋势 (m³)",
+                "fontFamily": "Roboto-Regular",
+                "legendFontSize": 12,
+                "colorBackground": "rgba(0,0,0,0)",
+                "legendBackground": "rgba(0,0,0,0)",
+                "titleHeight": 18,
+                "axisLabelFontSize": 12,
+                "labelsDivWidth": 0,
+                "axisLineColor": "rgba(0,0,0,1)",
+                "axisLabelColor": "rgba(0,0,0,1)",
+                "legendMode": "always",
+                "series": [],
+                "width": 868,
+                "height": 375,
+                "decimalsPrecision": 2,
+                "realtime": 0,
+                "refreshInterval": 60000,
+                "range": "last1d",
+                "dateFormat": "MM_DD_YYYY",
+                "timeFormat": "hh_mm_ss_AA"
+              }
+            }
+          },
+          "it_trend_steam_chart": {
+            "id": "it_trend_steam_chart",
+            "type": "svg-ext-html_chart",
+            "name": "汽 (kg) 趋势",
+            "label": "HtmlChart",
+            "property": {
+              "id": "chart_tr_steam",
+              "type": "history",
+              "variableIds": [
+                "mes.energy.steam"
+              ],
+              "events": [],
+              "options": {
+                "title": "24h 用汽趋势 (kg)",
+                "fontFamily": "Roboto-Regular",
+                "legendFontSize": 12,
+                "colorBackground": "rgba(0,0,0,0)",
+                "legendBackground": "rgba(0,0,0,0)",
+                "titleHeight": 18,
+                "axisLabelFontSize": 12,
+                "labelsDivWidth": 0,
+                "axisLineColor": "rgba(0,0,0,1)",
+                "axisLabelColor": "rgba(0,0,0,1)",
+                "legendMode": "always",
+                "series": [],
+                "width": 868,
+                "height": 375,
+                "decimalsPrecision": 2,
+                "realtime": 0,
+                "refreshInterval": 60000,
+                "range": "last1d",
+                "dateFormat": "MM_DD_YYYY",
+                "timeFormat": "hh_mm_ss_AA"
+              }
+            }
+          }
+        },
+        "variables": {},
+        "svgcontent": "<svg width=\"1920\" height=\"1080\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns:html=\"http://www.w3.org/1999/xhtml\"><filter height=\"200\" width=\"200\" y=\"-3\" x=\"-3\" id=\"blur-filter\"><feGaussianBlur stdDeviation=\"3\"/></filter><g><title>Layer 1</title><rect x=\"0\" y=\"0\" width=\"1920\" height=\"1080\" fill=\"#FFFFFFFF\" stroke=\"none\" stroke-width=\"1\"/><text x=\"40\" y=\"62\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"34\" fill=\"#1D1D1D\" text-anchor=\"start\" font-weight=\"bold\">能耗趋势</text><text x=\"1880\" y=\"62\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"22\" fill=\"#757575\" text-anchor=\"end\">2026-10-04 14:00</text><rect x=\"40\" y=\"100\" width=\"900\" height=\"440\" fill=\"#F4F5F7\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"58\" y=\"134\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"24\" fill=\"#1D1D1D\" text-anchor=\"start\" font-weight=\"bold\">电 (kWh)</text><text x=\"922\" y=\"132\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"16\" fill=\"#757575\" text-anchor=\"end\">x 轴 24h / y 轴累计值</text><g id=\"it_trend_kwh_chart\" type=\"svg-ext-html_chart\"><rect x=\"56\" y=\"150\" width=\"868\" height=\"375\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXC_it_trend_kwh_chart\" x=\"56\" y=\"150\" width=\"868\" height=\"375\"><div xmlns=\"http://www.w3.org/1999/xhtml\" id=\"D-HXC_it_trend_kwh_chart\" style=\"width:100%;height:100%;\"></div></foreignObject></g><rect x=\"980\" y=\"100\" width=\"900\" height=\"440\" fill=\"#F4F5F7\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"998\" y=\"134\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"24\" fill=\"#1D1D1D\" text-anchor=\"start\" font-weight=\"bold\">水 (m³)</text><text x=\"1862\" y=\"132\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"16\" fill=\"#757575\" text-anchor=\"end\">x 轴 24h / y 轴累计值</text><g id=\"it_trend_water_chart\" type=\"svg-ext-html_chart\"><rect x=\"996\" y=\"150\" width=\"868\" height=\"375\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXC_it_trend_water_chart\" x=\"996\" y=\"150\" width=\"868\" height=\"375\"><div xmlns=\"http://www.w3.org/1999/xhtml\" id=\"D-HXC_it_trend_water_chart\" style=\"width:100%;height:100%;\"></div></foreignObject></g><rect x=\"40\" y=\"560\" width=\"900\" height=\"440\" fill=\"#F4F5F7\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"58\" y=\"594\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"24\" fill=\"#1D1D1D\" text-anchor=\"start\" font-weight=\"bold\">气 (m³)</text><text x=\"922\" y=\"592\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"16\" fill=\"#757575\" text-anchor=\"end\">x 轴 24h / y 轴累计值</text><g id=\"it_trend_gas_chart\" type=\"svg-ext-html_chart\"><rect x=\"56\" y=\"610\" width=\"868\" height=\"375\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXC_it_trend_gas_chart\" x=\"56\" y=\"610\" width=\"868\" height=\"375\"><div xmlns=\"http://www.w3.org/1999/xhtml\" id=\"D-HXC_it_trend_gas_chart\" style=\"width:100%;height:100%;\"></div></foreignObject></g><rect x=\"980\" y=\"560\" width=\"900\" height=\"440\" fill=\"#F4F5F7\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"998\" y=\"594\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"24\" fill=\"#1D1D1D\" text-anchor=\"start\" font-weight=\"bold\">汽 (kg)</text><text x=\"1862\" y=\"592\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"16\" fill=\"#757575\" text-anchor=\"end\">x 轴 24h / y 轴累计值</text><g id=\"it_trend_steam_chart\" type=\"svg-ext-html_chart\"><rect x=\"996\" y=\"610\" width=\"868\" height=\"375\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXC_it_trend_steam_chart\" x=\"996\" y=\"610\" width=\"868\" height=\"375\"><div xmlns=\"http://www.w3.org/1999/xhtml\" id=\"D-HXC_it_trend_steam_chart\" style=\"width:100%;height:100%;\"></div></foreignObject></g></g></svg>"
+      },
+      {
+        "id": "v_production_floor",
+        "name": "现场画面",
+        "profile": {
+          "width": 1920,
+          "height": 1080,
+          "bkcolor": "#FF1A1A1A"
+        },
+        "items": {
+          "it_equip_01": {
+            "id": "it_equip_01",
+            "type": "svg-ext-html_select",
+            "name": "1#加工中心 状态",
+            "label": "HtmlSelect",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variable": "mes.equipment.mc01.status",
+              "variableSrc": "MES_Tags",
+              "variableId": "mes.equipment.mc01.status",
+              "alarmId": "",
+              "alarmSrc": "",
+              "alarm": "",
+              "alarmColor": "",
+              "readonly": false,
+              "ranges": [
+                {
+                  "type": "option",
+                  "min": "运行",
+                  "max": "运行",
+                  "color": "#2E7D32",
+                  "stroke": "#FFFFFF",
+                  "text": "运行"
+                },
+                {
+                  "type": "option",
+                  "min": "待机",
+                  "max": "待机",
+                  "color": "#9E9E9E",
+                  "stroke": "#FFFFFF",
+                  "text": "待机"
+                },
+                {
+                  "type": "option",
+                  "min": "故障",
+                  "max": "故障",
+                  "color": "#C62828",
+                  "stroke": "#FFFFFF",
+                  "text": "故障"
+                },
+                {
+                  "type": "option",
+                  "min": "切换",
+                  "max": "切换",
+                  "color": "#F9A825",
+                  "stroke": "#FFFFFF",
+                  "text": "切换"
+                }
+              ]
+            }
+          },
+          "it_equip_02": {
+            "id": "it_equip_02",
+            "type": "svg-ext-html_select",
+            "name": "2#加工中心 状态",
+            "label": "HtmlSelect",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variable": "mes.equipment.mc02.status",
+              "variableSrc": "MES_Tags",
+              "variableId": "mes.equipment.mc02.status",
+              "alarmId": "",
+              "alarmSrc": "",
+              "alarm": "",
+              "alarmColor": "",
+              "readonly": false,
+              "ranges": [
+                {
+                  "type": "option",
+                  "min": "运行",
+                  "max": "运行",
+                  "color": "#2E7D32",
+                  "stroke": "#FFFFFF",
+                  "text": "运行"
+                },
+                {
+                  "type": "option",
+                  "min": "待机",
+                  "max": "待机",
+                  "color": "#9E9E9E",
+                  "stroke": "#FFFFFF",
+                  "text": "待机"
+                },
+                {
+                  "type": "option",
+                  "min": "故障",
+                  "max": "故障",
+                  "color": "#C62828",
+                  "stroke": "#FFFFFF",
+                  "text": "故障"
+                },
+                {
+                  "type": "option",
+                  "min": "切换",
+                  "max": "切换",
+                  "color": "#F9A825",
+                  "stroke": "#FFFFFF",
+                  "text": "切换"
+                }
+              ]
+            }
+          },
+          "it_equip_03": {
+            "id": "it_equip_03",
+            "type": "svg-ext-html_select",
+            "name": "搬运机器人 状态",
+            "label": "HtmlSelect",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variable": "mes.equipment.robot01.status",
+              "variableSrc": "MES_Tags",
+              "variableId": "mes.equipment.robot01.status",
+              "alarmId": "",
+              "alarmSrc": "",
+              "alarm": "",
+              "alarmColor": "",
+              "readonly": false,
+              "ranges": [
+                {
+                  "type": "option",
+                  "min": "运行",
+                  "max": "运行",
+                  "color": "#2E7D32",
+                  "stroke": "#FFFFFF",
+                  "text": "运行"
+                },
+                {
+                  "type": "option",
+                  "min": "待机",
+                  "max": "待机",
+                  "color": "#9E9E9E",
+                  "stroke": "#FFFFFF",
+                  "text": "待机"
+                },
+                {
+                  "type": "option",
+                  "min": "故障",
+                  "max": "故障",
+                  "color": "#C62828",
+                  "stroke": "#FFFFFF",
+                  "text": "故障"
+                },
+                {
+                  "type": "option",
+                  "min": "切换",
+                  "max": "切换",
+                  "color": "#F9A825",
+                  "stroke": "#FFFFFF",
+                  "text": "切换"
+                }
+              ]
+            }
+          },
+          "it_equip_04": {
+            "id": "it_equip_04",
+            "type": "svg-ext-html_select",
+            "name": "装配工位 状态",
+            "label": "HtmlSelect",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variable": "mes.equipment.assembly01.status",
+              "variableSrc": "MES_Tags",
+              "variableId": "mes.equipment.assembly01.status",
+              "alarmId": "",
+              "alarmSrc": "",
+              "alarm": "",
+              "alarmColor": "",
+              "readonly": false,
+              "ranges": [
+                {
+                  "type": "option",
+                  "min": "运行",
+                  "max": "运行",
+                  "color": "#2E7D32",
+                  "stroke": "#FFFFFF",
+                  "text": "运行"
+                },
+                {
+                  "type": "option",
+                  "min": "待机",
+                  "max": "待机",
+                  "color": "#9E9E9E",
+                  "stroke": "#FFFFFF",
+                  "text": "待机"
+                },
+                {
+                  "type": "option",
+                  "min": "故障",
+                  "max": "故障",
+                  "color": "#C62828",
+                  "stroke": "#FFFFFF",
+                  "text": "故障"
+                },
+                {
+                  "type": "option",
+                  "min": "切换",
+                  "max": "切换",
+                  "color": "#F9A825",
+                  "stroke": "#FFFFFF",
+                  "text": "切换"
+                }
+              ]
+            }
+          },
+          "it_equip_05": {
+            "id": "it_equip_05",
+            "type": "svg-ext-html_select",
+            "name": "检测工位 状态",
+            "label": "HtmlSelect",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variable": "mes.equipment.inspect01.status",
+              "variableSrc": "MES_Tags",
+              "variableId": "mes.equipment.inspect01.status",
+              "alarmId": "",
+              "alarmSrc": "",
+              "alarm": "",
+              "alarmColor": "",
+              "readonly": false,
+              "ranges": [
+                {
+                  "type": "option",
+                  "min": "运行",
+                  "max": "运行",
+                  "color": "#2E7D32",
+                  "stroke": "#FFFFFF",
+                  "text": "运行"
+                },
+                {
+                  "type": "option",
+                  "min": "待机",
+                  "max": "待机",
+                  "color": "#9E9E9E",
+                  "stroke": "#FFFFFF",
+                  "text": "待机"
+                },
+                {
+                  "type": "option",
+                  "min": "故障",
+                  "max": "故障",
+                  "color": "#C62828",
+                  "stroke": "#FFFFFF",
+                  "text": "故障"
+                },
+                {
+                  "type": "option",
+                  "min": "切换",
+                  "max": "切换",
+                  "color": "#F9A825",
+                  "stroke": "#FFFFFF",
+                  "text": "切换"
+                }
+              ]
+            }
+          },
+          "it_equip_06": {
+            "id": "it_equip_06",
+            "type": "svg-ext-html_select",
+            "name": "包装工位 状态",
+            "label": "HtmlSelect",
+            "property": {
+              "events": [],
+              "actions": [],
+              "variable": "mes.equipment.pack01.status",
+              "variableSrc": "MES_Tags",
+              "variableId": "mes.equipment.pack01.status",
+              "alarmId": "",
+              "alarmSrc": "",
+              "alarm": "",
+              "alarmColor": "",
+              "readonly": false,
+              "ranges": [
+                {
+                  "type": "option",
+                  "min": "运行",
+                  "max": "运行",
+                  "color": "#2E7D32",
+                  "stroke": "#FFFFFF",
+                  "text": "运行"
+                },
+                {
+                  "type": "option",
+                  "min": "待机",
+                  "max": "待机",
+                  "color": "#9E9E9E",
+                  "stroke": "#FFFFFF",
+                  "text": "待机"
+                },
+                {
+                  "type": "option",
+                  "min": "故障",
+                  "max": "故障",
+                  "color": "#C62828",
+                  "stroke": "#FFFFFF",
+                  "text": "故障"
+                },
+                {
+                  "type": "option",
+                  "min": "切换",
+                  "max": "切换",
+                  "color": "#F9A825",
+                  "stroke": "#FFFFFF",
+                  "text": "切换"
+                }
+              ]
+            }
+          }
+        },
+        "variables": {},
+        "svgcontent": "<svg width=\"1920\" height=\"1080\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns:html=\"http://www.w3.org/1999/xhtml\"><filter height=\"200\" width=\"200\" y=\"-3\" x=\"-3\" id=\"blur-filter\"><feGaussianBlur stdDeviation=\"3\"/></filter><g><title>Layer 1</title><rect x=\"0\" y=\"0\" width=\"1920\" height=\"1080\" fill=\"#FF1A1A1A\" stroke=\"none\" stroke-width=\"1\"/><text x=\"40\" y=\"62\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"34\" fill=\"#FFFFFF\" text-anchor=\"start\" font-weight=\"bold\">现场画面</text><text x=\"1880\" y=\"62\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"22\" fill=\"#B0B0B0\" text-anchor=\"end\">2026-10-04 14:00</text><rect x=\"100\" y=\"220\" width=\"240\" height=\"220\" fill=\"#242424\" stroke=\"#4A4A4A\" stroke-width=\"1\" rx=\"10\"/><text x=\"220\" y=\"260\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"22\" fill=\"#FFFFFF\" text-anchor=\"middle\" font-weight=\"bold\">1#加工中心</text><text x=\"220\" y=\"288\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"16\" fill=\"#9E9E9E\" text-anchor=\"middle\">mes.equipment.mc01.status</text><g id=\"it_equip_01\" type=\"svg-ext-html_select\"><rect x=\"120\" y=\"320\" width=\"200\" height=\"74\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXS_it_equip_01\" x=\"120\" y=\"320\" width=\"200\" height=\"74\"><div xmlns=\"http://www.w3.org/1999/xhtml\" style=\"width:100%;height:100%;\"><select id=\"S-HXS_it_equip_01\" style=\"width:100%;height:100%;font-family:Microsoft YaHei,Roboto-Regular;font-size:22px;\"></select></div></foreignObject></g><rect x=\"400\" y=\"220\" width=\"240\" height=\"220\" fill=\"#242424\" stroke=\"#4A4A4A\" stroke-width=\"1\" rx=\"10\"/><text x=\"520\" y=\"260\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"22\" fill=\"#FFFFFF\" text-anchor=\"middle\" font-weight=\"bold\">2#加工中心</text><text x=\"520\" y=\"288\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"16\" fill=\"#9E9E9E\" text-anchor=\"middle\">mes.equipment.mc02.status</text><g id=\"it_equip_02\" type=\"svg-ext-html_select\"><rect x=\"420\" y=\"320\" width=\"200\" height=\"74\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXS_it_equip_02\" x=\"420\" y=\"320\" width=\"200\" height=\"74\"><div xmlns=\"http://www.w3.org/1999/xhtml\" style=\"width:100%;height:100%;\"><select id=\"S-HXS_it_equip_02\" style=\"width:100%;height:100%;font-family:Microsoft YaHei,Roboto-Regular;font-size:22px;\"></select></div></foreignObject></g><rect x=\"700\" y=\"220\" width=\"240\" height=\"220\" fill=\"#242424\" stroke=\"#4A4A4A\" stroke-width=\"1\" rx=\"10\"/><text x=\"820\" y=\"260\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"22\" fill=\"#FFFFFF\" text-anchor=\"middle\" font-weight=\"bold\">搬运机器人</text><text x=\"820\" y=\"288\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"16\" fill=\"#9E9E9E\" text-anchor=\"middle\">mes.equipment.robot01.status</text><g id=\"it_equip_03\" type=\"svg-ext-html_select\"><rect x=\"720\" y=\"320\" width=\"200\" height=\"74\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXS_it_equip_03\" x=\"720\" y=\"320\" width=\"200\" height=\"74\"><div xmlns=\"http://www.w3.org/1999/xhtml\" style=\"width:100%;height:100%;\"><select id=\"S-HXS_it_equip_03\" style=\"width:100%;height:100%;font-family:Microsoft YaHei,Roboto-Regular;font-size:22px;\"></select></div></foreignObject></g><rect x=\"1000\" y=\"220\" width=\"240\" height=\"220\" fill=\"#242424\" stroke=\"#4A4A4A\" stroke-width=\"1\" rx=\"10\"/><text x=\"1120\" y=\"260\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"22\" fill=\"#FFFFFF\" text-anchor=\"middle\" font-weight=\"bold\">装配工位</text><text x=\"1120\" y=\"288\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"16\" fill=\"#9E9E9E\" text-anchor=\"middle\">mes.equipment.assembly01.status</text><g id=\"it_equip_04\" type=\"svg-ext-html_select\"><rect x=\"1020\" y=\"320\" width=\"200\" height=\"74\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXS_it_equip_04\" x=\"1020\" y=\"320\" width=\"200\" height=\"74\"><div xmlns=\"http://www.w3.org/1999/xhtml\" style=\"width:100%;height:100%;\"><select id=\"S-HXS_it_equip_04\" style=\"width:100%;height:100%;font-family:Microsoft YaHei,Roboto-Regular;font-size:22px;\"></select></div></foreignObject></g><rect x=\"1300\" y=\"220\" width=\"240\" height=\"220\" fill=\"#242424\" stroke=\"#4A4A4A\" stroke-width=\"1\" rx=\"10\"/><text x=\"1420\" y=\"260\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"22\" fill=\"#FFFFFF\" text-anchor=\"middle\" font-weight=\"bold\">检测工位</text><text x=\"1420\" y=\"288\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"16\" fill=\"#9E9E9E\" text-anchor=\"middle\">mes.equipment.inspect01.status</text><g id=\"it_equip_05\" type=\"svg-ext-html_select\"><rect x=\"1320\" y=\"320\" width=\"200\" height=\"74\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXS_it_equip_05\" x=\"1320\" y=\"320\" width=\"200\" height=\"74\"><div xmlns=\"http://www.w3.org/1999/xhtml\" style=\"width:100%;height:100%;\"><select id=\"S-HXS_it_equip_05\" style=\"width:100%;height:100%;font-family:Microsoft YaHei,Roboto-Regular;font-size:22px;\"></select></div></foreignObject></g><rect x=\"1600\" y=\"220\" width=\"240\" height=\"220\" fill=\"#242424\" stroke=\"#4A4A4A\" stroke-width=\"1\" rx=\"10\"/><text x=\"1720\" y=\"260\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"22\" fill=\"#FFFFFF\" text-anchor=\"middle\" font-weight=\"bold\">包装工位</text><text x=\"1720\" y=\"288\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"16\" fill=\"#9E9E9E\" text-anchor=\"middle\">mes.equipment.pack01.status</text><g id=\"it_equip_06\" type=\"svg-ext-html_select\"><rect x=\"1620\" y=\"320\" width=\"200\" height=\"74\" fill=\"none\" stroke=\"#073984\" stroke-width=\"1\"/><foreignObject id=\"H-HXS_it_equip_06\" x=\"1620\" y=\"320\" width=\"200\" height=\"74\"><div xmlns=\"http://www.w3.org/1999/xhtml\" style=\"width:100%;height:100%;\"><select id=\"S-HXS_it_equip_06\" style=\"width:100%;height:100%;font-family:Microsoft YaHei,Roboto-Regular;font-size:22px;\"></select></div></foreignObject></g><rect x=\"40\" y=\"520\" width=\"1840\" height=\"140\" fill=\"#F4F5F7\" stroke=\"#D0D0D0\" stroke-width=\"1\" rx=\"6\"/><text x=\"58\" y=\"554\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"24\" fill=\"#1D1D1D\" text-anchor=\"start\" font-weight=\"bold\">状态图例</text><text x=\"1862\" y=\"552\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"16\" fill=\"#757575\" text-anchor=\"end\">§4.3.6 设备位号 + 状态颜色</text><rect x=\"80\" y=\"570\" width=\"40\" height=\"40\" fill=\"#2E7D32\" stroke=\"none\" stroke-width=\"1\" rx=\"6\"/><text x=\"138\" y=\"600\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"22\" fill=\"#1D1D1D\" text-anchor=\"start\">绿 = 运行</text><rect x=\"380\" y=\"570\" width=\"40\" height=\"40\" fill=\"#9E9E9E\" stroke=\"none\" stroke-width=\"1\" rx=\"6\"/><text x=\"438\" y=\"600\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"22\" fill=\"#1D1D1D\" text-anchor=\"start\">灰 = 待机</text><rect x=\"680\" y=\"570\" width=\"40\" height=\"40\" fill=\"#C62828\" stroke=\"none\" stroke-width=\"1\" rx=\"6\"/><text x=\"738\" y=\"600\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"22\" fill=\"#1D1D1D\" text-anchor=\"start\">红 = 故障</text><rect x=\"980\" y=\"570\" width=\"40\" height=\"40\" fill=\"#F9A825\" stroke=\"none\" stroke-width=\"1\" rx=\"6\"/><text x=\"1038\" y=\"600\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"22\" fill=\"#1D1D1D\" text-anchor=\"start\">黄 = 切换</text><text x=\"80\" y=\"660\" font-family=\"Microsoft YaHei, Roboto-Regular\" font-size=\"18\" fill=\"#757575\" text-anchor=\"start\">每个设备位为一个 HtmlSelect 组件，绑定 mes.equipment.*.status，实时显示/切换设备状态。</text></g></svg>"
+      }
+    ],
+    "navigation": {
+      "mode": "fix",
+      "type": "inline",
+      "items": [
+        {
+          "id": "nav_01",
+          "icon": "home",
+          "text": "现场画面",
+          "view": "v_production_floor"
+        },
+        {
+          "id": "nav_02",
+          "icon": "dashboard",
+          "text": "驾驶舱",
+          "view": "v_mes_dashboard"
+        },
+        {
+          "id": "nav_03",
+          "icon": "analytics",
+          "text": "OEE分析",
+          "view": "v_mes_oee"
+        },
+        {
+          "id": "nav_04",
+          "icon": "bolt",
+          "text": "能源看板",
+          "view": "v_ems_dashboard"
+        },
+        {
+          "id": "nav_05",
+          "icon": "show_chart",
+          "text": "能耗趋势",
+          "view": "v_ems_energy"
+        },
+        {
+          "id": "nav_06",
+          "icon": "notifications",
+          "text": "实时报警",
+          "view": "[link]", "link": "alarms"
+        },
+        {
+          "id": "nav_07",
+          "icon": "history",
+          "text": "历史报警",
+          "view": "[link]", "link": "messages"
+        },
+        {
+          "id": "nav_08",
+          "icon": "assessment",
+          "text": "报表",
+          "view": "[link]", "link": "reports"
+        },
+        {
+          "id": "nav_09",
+          "icon": "developer_board",
+          "text": "设备管理",
+          "view": "[link]", "link": "device"
+        },
+        {
+          "id": "nav_10",
+          "icon": "videocam",
+          "text": "视频监控",
+          "view": "[link]", "link": "cameras"
+        }
+      ]
+    },
+    "layout": {
+      "start": "v_mes_dashboard",
+      "navigation": {
+        "mode": "fix",
+        "type": "inline",
+        "items": [
+          {
+            "id": "nav_01",
+            "icon": "home",
+            "text": "现场画面",
+            "view": "v_production_floor"
+          },
+          {
+            "id": "nav_02",
+            "icon": "dashboard",
+            "text": "驾驶舱",
+            "view": "v_mes_dashboard"
+          },
+          {
+            "id": "nav_03",
+            "icon": "analytics",
+            "text": "OEE分析",
+            "view": "v_mes_oee"
+          },
+          {
+            "id": "nav_04",
+            "icon": "bolt",
+            "text": "能源看板",
+            "view": "v_ems_dashboard"
+          },
+          {
+            "id": "nav_05",
+            "icon": "show_chart",
+            "text": "能耗趋势",
+            "view": "v_ems_energy"
+          },
+          {
+            "id": "nav_06",
+            "icon": "notifications",
+            "text": "实时报警",
+            "view": "[link]", "link": "alarms"
+          },
+          {
+            "id": "nav_07",
+            "icon": "history",
+            "text": "历史报警",
+            "view": "[link]", "link": "messages"
+          },
+          {
+            "id": "nav_08",
+            "icon": "assessment",
+            "text": "报表",
+            "view": "[link]", "link": "reports"
+          },
+          {
+            "id": "nav_09",
+            "icon": "developer_board",
+            "text": "设备管理",
+            "view": "[link]", "link": "device"
+          },
+          {
+            "id": "nav_10",
+            "icon": "videocam",
+            "text": "视频监控",
+            "view": "[link]", "link": "cameras"
+          }
+        ]
+      },
+      "header": {
+        "title": "MES / EMS 一体化监控平台",
+        "alarms": "fix",
+        "infos": "fix",
+        "bkcolor": "#FFFFFF",
+        "fgcolor": "#000000",
+        "height": 46,
+        "buttonHeight": 36,
+        "fontSize": 13,
+        "items": [],
+        "itemsAnchor": "left",
+        "loginInfo": "nothing",
+        "dateTimeDisplay": "",
+        "language": "nothing"
+      },
+      "autoresize": true,
+      "showdev": true,
+      "zoom": "autoresize",
+      "inputdialog": "false",
+      "hidenavigation": false,
+      "theme": "",
+      "loginonstart": false,
+      "show_connection_error": true,
+      "customStyles": ""
+    }
+  },
+  "charts": {},
+  "server": {
+    "id": "0",
+    "name": "SCADIA Server",
+    "type": "SCADIAServer",
+    "enabled": true,
+    "property": {
+      "address": "0.0.0.0"
+    },
+    "scripts": [
+      {
+        "id": "s_oee_calc",
+        "name": "OEE计算",
+        "mode": "server",
+        "sync": false,
+        "parameters": [],
+        "permission": 0,
+        "permissionRoles": {
+          "enabled": []
+        },
+        "scheduling": {
+          "mode": "interval",
+          "interval": 60000,
+          "schedules": []
+        },
+        "code": "// ===== OEE 计算 =====\n// 命名(附录 A.1): 脚本 id = s_<功能>_<动作> = s_oee_calc; 脚本名 = <功能>计算 = OEE 计算\n// 输入: mes.wo.planned, mes.wo.completed, mes.defect.count, mes.defect.inspected\n// 输出: mes.wo.rate, mes.defect.rate, mes.oee.availability/performance/quality/score\n//\n// 说明: 为满足规格书 C-4（零随机数、两次截图完全一致），本脚本不读取任何系统时间，\n//       班次时长与理论节拍均为固定常量。若现场需要按真实班次计算性能率，\n//       可在二次开发时改用内置函数 $getTag(id)（见手册第 6 章脚本 API）。\n\n// 错误处理(附录 A.2): 用 || 0 防御 null\nconst planned = $getTag('mes.wo.planned') || 0;\nconst completed = $getTag('mes.wo.completed') || 0;\nconst defect = $getTag('mes.defect.count') || 0;\nconst inspected = $getTag('mes.defect.inspected') || 0;\n\n// 错误处理(附录 A.2): 关键量为空时 console.log 后提前 return，避免除零与脏数据\nif (!planned) {\n  console.log('OEE 计算跳过: mes.wo.planned 为空或 0');\n  return;\n}\n\n// 固定常量: 班次时长(秒) 与 理论节拍(秒/件)\nconst SHIFT_SECONDS = 28800;\nconst CYCLE_TIME = 120;\n\n// 达成率 = 完工 / 计划\nconst rate = Math.min(1, completed / planned);\n// 可用率 = 运行时间 / 班次时长（此处用达成率近似，真实场景从设备状态 tag 统计）\nconst availability = rate;\n\n// 性能率 = 理论节拍 / 实际节拍\nconst actualRate = completed > 0 ? SHIFT_SECONDS / completed : CYCLE_TIME;\nconst performance = Math.min(1, CYCLE_TIME / Math.max(CYCLE_TIME, actualRate));\n\n// 合格率 = 1 - 缺陷率\nconst defectRate = inspected > 0 ? defect / inspected : 0;\nconst quality = Math.max(0, 1 - defectRate);\n\n// OEE = 可用率 x 性能率 x 合格率（规格书第 8 节验收口径）\nconst oee = availability * performance * quality;\n\n$setTag('mes.wo.rate', (rate * 100).toFixed(2));\n$setTag('mes.defect.rate', defectRate.toFixed(4));\n$setTag('mes.oee.availability', availability.toFixed(4));\n$setTag('mes.oee.performance', performance.toFixed(4));\n$setTag('mes.oee.quality', quality.toFixed(4));\n$setTag('mes.oee.score', oee.toFixed(4));\n\n// 性能(附录 A.3): DAQ 写入不在任何循环内。调度 interval=60000ms，单次执行 1 次 DAQ 写入\n// -> 稳态 1 次/分钟，正好等于 A.3 上限，不超限。\n\n// 性能(附录 A.3): 本次执行日志 1 行（正常路径）或 1 行（提前返回），远小于 10 行上限。\n// 单次执行耗时: 纯算术 + 6 次 tag 写 + 1 次 DAQ 写，远小于 30 秒超时。\nconsole.log('OEE: A=' + availability.toFixed(4) + ' P=' + performance.toFixed(4) + ' Q=' + quality.toFixed(4) + ' OEE=' + oee.toFixed(4));"
+      },
+      {
+        "id": "s_energy_agg",
+        "name": "能耗汇总",
+        "mode": "server",
+        "sync": false,
+        "parameters": [],
+        "permission": 0,
+        "permissionRoles": {
+          "enabled": []
+        },
+        "scheduling": {
+          "mode": "interval",
+          "interval": 300000,
+          "schedules": []
+        },
+        "code": "// ===== 能耗汇总 =====\n// 命名(附录 A.1): 脚本 id = s_<功能>_<动作> = s_energy_agg; 脚本名沿用规格书第 10 节清单「能耗汇总」\n// 输入: mes.energy.kwh / water / gas / steam\n// 输出: mes.carbon.estimate, mes.energy.cost\n\n// 峰谷平电价常量表（元/kWh）\nconst tariff = {\n  peak:   0.8924,  // 尖峰 14:00-19:00\n  normal: 0.6874,  // 平时 08:00-14:00, 19:00-22:00\n  valley: 0.3646   // 谷时 23:00-07:00\n};\n\n// 碳排因子（kg CO2 / kWh）\nconst CARBON_FACTOR = 0.58;\n\n// 错误处理(附录 A.2): 用 || 0 防御 null\nconst kwh = $getTag('mes.energy.kwh') || 0;\nconst water = $getTag('mes.energy.water') || 0;\nconst gas = $getTag('mes.energy.gas') || 0;\nconst steam = $getTag('mes.energy.steam') || 0;\n\n// 错误处理(附录 A.2): 关键量全为空时 console.log 后提前 return，不写无意义的 0 到历史库\nif (!kwh && !water && !gas && !steam) {\n  console.log('能耗汇总跳过: 四个能耗 tag 均为空');\n  return;\n}\n\n// 碳排 = 电耗 x 碳排因子, kg -> t（规格书第 8 节验收口径）\nconst carbon = kwh * CARBON_FACTOR / 1000;\n$setTag('mes.carbon.estimate', carbon.toFixed(2));\n\n// 电费（简化: 总电量 x 三段电价均值）\nconst avgPrice = (tariff.peak + tariff.normal + tariff.valley) / 3;\nconst elecCost = kwh * avgPrice;\n$setTag('mes.energy.cost', elecCost.toFixed(2));\n\n// 性能(附录 A.3): DAQ 写入全部平铺在函数体，不在任何循环内。\n// 调度 interval=300000ms（5 分钟一次），单次执行 5 次 DAQ 写入 -> 稳态 1 次/分钟，不超限。\n\n// 性能(附录 A.3): 本次执行日志 1 行，远小于 10 行上限；纯算术，远小于 30 秒超时。\nconsole.log('能耗汇总: 电=' + kwh + 'kWh 水=' + water + 'm3 气=' + gas + 'm3 汽=' + steam + 'kg 碳排=' + carbon.toFixed(2) + 't 电费=' + elecCost.toFixed(2) + '元');"
+      },
+      {
+        "id": "s_shift_report",
+        "name": "班次产量汇总",
+        "mode": "server",
+        "sync": false,
+        "parameters": [],
+        "permission": 0,
+        "permissionRoles": {
+          "enabled": []
+        },
+        "scheduling": {
+          "mode": "scheduling",
+          "interval": 0,
+          "schedules": [
+            {
+              "type": 0,
+              "days": [
+                "mon",
+                "tue",
+                "wed",
+                "thu",
+                "fri"
+              ],
+              "time": "08:00",
+              "hour": 8,
+              "minute": 0
+            }
+          ]
+        },
+        "code": "// ===== 班次产量汇总 =====\n// 命名(附录 A.1): 脚本 id = s_<功能>_<动作> = s_shift_report; 脚本名沿用规格书第 10 节清单「班次产量汇总」\n// 调度: 每周一至周五 08:00 触发（早班交接）\n// 输入: mes.wo.completed / planned / wip, mes.defect.count / inspected, mes.shift\n// 输出: 服务器日志（报表引擎按 Reports 配置的 queries 自动采集历史值）\n\n// 错误处理(附录 A.2): 用 || 0 防御 null；字符串量给默认值\nconst completed = $getTag('mes.wo.completed') || 0;\nconst planned = $getTag('mes.wo.planned') || 0;\nconst wip = $getTag('mes.wo.wip') || 0;\nconst defect = $getTag('mes.defect.count') || 0;\nconst inspected = $getTag('mes.defect.inspected') || 0;\nconst shift = $getTag('mes.shift') || '未定义';\n\n// 错误处理(附录 A.2): 计划与完工都为空时 console.log 后提前 return，不产生空报表\nif (!planned && !completed) {\n  console.log('班次报告跳过: mes.wo.planned 与 mes.wo.completed 均为空');\n  return;\n}\n\nconst rate = planned > 0 ? (completed / planned) : 0;\nconst defectRate = inspected > 0 ? (defect / inspected) : 0;\n\n// 性能(附录 A.3): 本脚本为例外调度（每天 1 次），单次执行 1 次 DAQ 写入 -> 1 次/天，远低于 1 次/分钟上限。\n\n// 性能(附录 A.3): 本次执行日志 1 行（正常路径）或 1 行（提前返回），远小于 10 行上限；纯算术，远小于 30 秒超时。\nconsole.log('班次报告[' + shift + ']: 完工=' + completed + ', 计划=' + planned + ', 在制=' + wip\n  + ', 缺陷=' + defect + ', 达成率=' + (rate * 100).toFixed(1) + '%', ' 缺陷率=' + (defectRate * 100).toFixed(2) + '%');\n\n// 报表引擎会自动采集以上 tag 的历史值，见 server.reports: r_000000000100 / r_000000000101"
+      }
+    ],
+    "alarms": [
+      {
+        "name": "产线温度超限",
+        "property": {
+          "variableId": "mes.temp.line1",
+          "permission": 0,
+          "permissionRoles": {
+            "show": [],
+            "enabled": []
+          }
+        },
+        "highhigh": {
+          "checkdelay": 1,
+          "min": 85,
+          "max": 1000,
+          "timedelay": 0,
+          "enabled": false,
+          "text": "产线温度超限（高高限）",
+          "group": "质量",
+          "ackmode": "ackactive",
+          "bkcolor": "#ef0909",
+          "color": "#ef0909"
+        },
+        "high": {
+          "checkdelay": 1,
+          "min": 85,
+          "max": 1000,
+          "timedelay": 0,
+          "enabled": true,
+          "text": "产线温度超限（高限）",
+          "group": "质量",
+          "ackmode": "ackactive",
+          "bkcolor": "#ef7d09",
+          "color": "#ef7d09"
+        },
+        "low": {
+          "checkdelay": 1,
+          "min": 85,
+          "max": 1000,
+          "timedelay": 0,
+          "enabled": false,
+          "text": "产线温度超限（低限）",
+          "group": "质量",
+          "ackmode": "ackactive",
+          "bkcolor": "#09bbef",
+          "color": "#09bbef"
+        },
+        "info": {
+          "checkdelay": 1,
+          "min": 85,
+          "max": 1000,
+          "timedelay": 0,
+          "enabled": false,
+          "text": "产线温度超限（提示）",
+          "group": "质量",
+          "ackmode": "float",
+          "bkcolor": "#09ef5a",
+          "color": "#09ef5a"
+        },
+        "actions": {
+          "enabled": false,
+          "values": []
+        },
+        "value": ""
+      },
+      {
+        "name": "缺陷率超标",
+        "property": {
+          "variableId": "mes.defect.rate",
+          "permission": 0,
+          "permissionRoles": {
+            "show": [],
+            "enabled": []
+          }
+        },
+        "highhigh": {
+          "checkdelay": 1,
+          "min": 0.05,
+          "max": 1,
+          "timedelay": 0,
+          "enabled": false,
+          "text": "缺陷率超标（高高限）",
+          "group": "质量",
+          "ackmode": "ackactive",
+          "bkcolor": "#ef0909",
+          "color": "#ef0909"
+        },
+        "high": {
+          "checkdelay": 1,
+          "min": 0.05,
+          "max": 1,
+          "timedelay": 0,
+          "enabled": true,
+          "text": "缺陷率超标（高限）",
+          "group": "质量",
+          "ackmode": "ackactive",
+          "bkcolor": "#ef7d09",
+          "color": "#ef7d09"
+        },
+        "low": {
+          "checkdelay": 1,
+          "min": 0.05,
+          "max": 1,
+          "timedelay": 0,
+          "enabled": false,
+          "text": "缺陷率超标（低限）",
+          "group": "质量",
+          "ackmode": "ackactive",
+          "bkcolor": "#09bbef",
+          "color": "#09bbef"
+        },
+        "info": {
+          "checkdelay": 1,
+          "min": 0.05,
+          "max": 1,
+          "timedelay": 0,
+          "enabled": false,
+          "text": "缺陷率超标（提示）",
+          "group": "质量",
+          "ackmode": "float",
+          "bkcolor": "#09ef5a",
+          "color": "#09ef5a"
+        },
+        "actions": {
+          "enabled": false,
+          "values": []
+        },
+        "value": ""
+      },
+      {
+        "name": "用电超峰",
+        "property": {
+          "variableId": "mes.energy.kwh",
+          "permission": 0,
+          "permissionRoles": {
+            "show": [],
+            "enabled": []
+          }
+        },
+        "highhigh": {
+          "checkdelay": 1,
+          "min": 15000,
+          "max": 100000,
+          "timedelay": 0,
+          "enabled": false,
+          "text": "用电超峰（高高限）",
+          "group": "能源",
+          "ackmode": "ackactive",
+          "bkcolor": "#ef0909",
+          "color": "#ef0909"
+        },
+        "high": {
+          "checkdelay": 1,
+          "min": 15000,
+          "max": 100000,
+          "timedelay": 0,
+          "enabled": true,
+          "text": "用电超峰（高限）",
+          "group": "能源",
+          "ackmode": "ackactive",
+          "bkcolor": "#ef7d09",
+          "color": "#ef7d09"
+        },
+        "low": {
+          "checkdelay": 1,
+          "min": 15000,
+          "max": 100000,
+          "timedelay": 0,
+          "enabled": false,
+          "text": "用电超峰（低限）",
+          "group": "能源",
+          "ackmode": "ackactive",
+          "bkcolor": "#09bbef",
+          "color": "#09bbef"
+        },
+        "info": {
+          "checkdelay": 1,
+          "min": 15000,
+          "max": 100000,
+          "timedelay": 0,
+          "enabled": false,
+          "text": "用电超峰（提示）",
+          "group": "能源",
+          "ackmode": "float",
+          "bkcolor": "#09ef5a",
+          "color": "#09ef5a"
+        },
+        "actions": {
+          "enabled": false,
+          "values": []
+        },
+        "value": ""
+      }
+    ],
+    "reports": [
+      {
+        "id": "r_000000000100",
+        "name": "日报_产量",
+        "receiver": "demo-report@example.invalid",
+        "scheduling": "day",
+        "docproperty": {
+          "pageSize": "A4",
+          "pageOrientation": "portrait",
+          "pageMargins": [
+            60,
+            40,
+            40,
+            40
+          ],
+          "fontName": "Helvetica"
+        },
+        "content": {
+          "items": [
+            {
+              "type": "text",
+              "text": "日报_产量（MES/EMS 模板）",
+              "size": 16,
+              "align": "center"
+            },
+            {
+              "type": "table",
+              "columns": [
+                {
+                  "type": 1,
+                  "tag": {
+                    "id": "mes.wo.planned",
+                    "name": "计划产量",
+                    "type": "Int16"
+                  },
+                  "label": "计划产量",
+                  "align": "left",
+                  "width": "*",
+                  "function": "sum"
+                },
+                {
+                  "type": 1,
+                  "tag": {
+                    "id": "mes.wo.completed",
+                    "name": "完工数量",
+                    "type": "Int16"
+                  },
+                  "label": "完工数量",
+                  "align": "left",
+                  "width": "*",
+                  "function": "sum"
+                },
+                {
+                  "type": 1,
+                  "tag": {
+                    "id": "mes.oee.score",
+                    "name": "OEE",
+                    "type": "Float"
+                  },
+                  "label": "OEE",
+                  "align": "left",
+                  "width": "*",
+                  "function": "average"
+                }
+              ],
+              "range": "day",
+              "interval": "hour"
+            }
+          ]
+        }
+      },
+      {
+        "id": "r_000000000101",
+        "name": "月报_能耗",
+        "receiver": "demo-report@example.invalid",
+        "scheduling": "month",
+        "docproperty": {
+          "pageSize": "A4",
+          "pageOrientation": "portrait",
+          "pageMargins": [
+            60,
+            40,
+            40,
+            40
+          ],
+          "fontName": "Helvetica"
+        },
+        "content": {
+          "items": [
+            {
+              "type": "text",
+              "text": "月报_能耗（MES/EMS 模板）",
+              "size": 16,
+              "align": "center"
+            },
+            {
+              "type": "table",
+              "columns": [
+                {
+                  "type": 1,
+                  "tag": {
+                    "id": "mes.energy.kwh",
+                    "name": "今日用电",
+                    "type": "Float"
+                  },
+                  "label": "今日用电",
+                  "align": "left",
+                  "width": "*",
+                  "function": "sum"
+                },
+                {
+                  "type": 1,
+                  "tag": {
+                    "id": "mes.energy.water",
+                    "name": "今日用水",
+                    "type": "Float"
+                  },
+                  "label": "今日用水",
+                  "align": "left",
+                  "width": "*",
+                  "function": "sum"
+                },
+                {
+                  "type": 1,
+                  "tag": {
+                    "id": "mes.energy.gas",
+                    "name": "今日用气",
+                    "type": "Float"
+                  },
+                  "label": "今日用气",
+                  "align": "left",
+                  "width": "*",
+                  "function": "sum"
+                },
+                {
+                  "type": 1,
+                  "tag": {
+                    "id": "mes.carbon.estimate",
+                    "name": "碳排放估算",
+                    "type": "Float"
+                  },
+                  "label": "碳排放估算",
+                  "align": "left",
+                  "width": "*",
+                  "function": "average"
+                }
+              ],
+              "range": "month",
+              "interval": "day"
+            }
+          ]
+        }
+      }
+    ],
+    "recipes": [
+      {
+        "id": "r_000000000001",
+        "name": "产品A 标准配方",
+        "description": "产品A 标准工艺参数模板",
+        "entries": [
+          {
+            "id": "e_00000001",
+            "tagId": "mes.recipe.temperature",
+            "tagName": "配方温度",
+            "tagType": "Float",
+            "value": 120
+          },
+          {
+            "id": "e_00000002",
+            "tagId": "mes.recipe.pressure",
+            "tagName": "配方压力",
+            "tagType": "Float",
+            "value": 0.8
+          },
+          {
+            "id": "e_00000003",
+            "tagId": "mes.recipe.cycletime",
+            "tagName": "配方节拍",
+            "tagType": "Int16",
+            "value": 120
+          }
+        ],
+        "permission": 0,
+        "permissionRoles": {
+          "show": [],
+          "enabled": []
+        }
+      }
+    ]
+  },
+  "scripts": [
+    {
+      "id": "s_oee_calc",
+      "name": "OEE计算",
+      "mode": "server",
+      "scheduling": {
+        "mode": "interval",
+        "interval": 60000,
+        "schedules": []
+      },
+      "code": "// ===== OEE 计算 =====\n// 命名(附录 A.1): 脚本 id = s_<功能>_<动作> = s_oee_calc; 脚本名 = <功能>计算 = OEE 计算\n// 输入: mes.wo.planned, mes.wo.completed, mes.defect.count, mes.defect.inspected\n// 输出: mes.wo.rate, mes.defect.rate, mes.oee.availability/performance/quality/score\n//\n// 说明: 为满足规格书 C-4（零随机数、两次截图完全一致），本脚本不读取任何系统时间，\n//       班次时长与理论节拍均为固定常量。若现场需要按真实班次计算性能率，\n//       可在二次开发时改用内置函数 $getTag(id)（见手册第 6 章脚本 API）。\n\n// 错误处理(附录 A.2): 用 || 0 防御 null\nconst planned = $getTag('mes.wo.planned') || 0;\nconst completed = $getTag('mes.wo.completed') || 0;\nconst defect = $getTag('mes.defect.count') || 0;\nconst inspected = $getTag('mes.defect.inspected') || 0;\n\n// 错误处理(附录 A.2): 关键量为空时 console.log 后提前 return，避免除零与脏数据\nif (!planned) {\n  console.log('OEE 计算跳过: mes.wo.planned 为空或 0');\n  return;\n}\n\n// 固定常量: 班次时长(秒) 与 理论节拍(秒/件)\nconst SHIFT_SECONDS = 28800;\nconst CYCLE_TIME = 120;\n\n// 达成率 = 完工 / 计划\nconst rate = Math.min(1, completed / planned);\n// 可用率 = 运行时间 / 班次时长（此处用达成率近似，真实场景从设备状态 tag 统计）\nconst availability = rate;\n\n// 性能率 = 理论节拍 / 实际节拍\nconst actualRate = completed > 0 ? SHIFT_SECONDS / completed : CYCLE_TIME;\nconst performance = Math.min(1, CYCLE_TIME / Math.max(CYCLE_TIME, actualRate));\n\n// 合格率 = 1 - 缺陷率\nconst defectRate = inspected > 0 ? defect / inspected : 0;\nconst quality = Math.max(0, 1 - defectRate);\n\n// OEE = 可用率 x 性能率 x 合格率（规格书第 8 节验收口径）\nconst oee = availability * performance * quality;\n\n$setTag('mes.wo.rate', (rate * 100).toFixed(2));\n$setTag('mes.defect.rate', defectRate.toFixed(4));\n$setTag('mes.oee.availability', availability.toFixed(4));\n$setTag('mes.oee.performance', performance.toFixed(4));\n$setTag('mes.oee.quality', quality.toFixed(4));\n$setTag('mes.oee.score', oee.toFixed(4));\n\n// 性能(附录 A.3): DAQ 写入不在任何循环内。调度 interval=60000ms，单次执行 1 次 DAQ 写入\n// -> 稳态 1 次/分钟，正好等于 A.3 上限，不超限。\n\n// 性能(附录 A.3): 本次执行日志 1 行（正常路径）或 1 行（提前返回），远小于 10 行上限。\n// 单次执行耗时: 纯算术 + 6 次 tag 写 + 1 次 DAQ 写，远小于 30 秒超时。\nconsole.log('OEE: A=' + availability.toFixed(4) + ' P=' + performance.toFixed(4) + ' Q=' + quality.toFixed(4) + ' OEE=' + oee.toFixed(4));"
+    },
+    {
+      "id": "s_energy_agg",
+      "name": "能耗汇总",
+      "mode": "server",
+      "scheduling": {
+        "mode": "interval",
+        "interval": 300000,
+        "schedules": []
+      },
+      "code": "// ===== 能耗汇总 =====\n// 命名(附录 A.1): 脚本 id = s_<功能>_<动作> = s_energy_agg; 脚本名沿用规格书第 10 节清单「能耗汇总」\n// 输入: mes.energy.kwh / water / gas / steam\n// 输出: mes.carbon.estimate, mes.energy.cost\n\n// 峰谷平电价常量表（元/kWh）\nconst tariff = {\n  peak:   0.8924,  // 尖峰 14:00-19:00\n  normal: 0.6874,  // 平时 08:00-14:00, 19:00-22:00\n  valley: 0.3646   // 谷时 23:00-07:00\n};\n\n// 碳排因子（kg CO2 / kWh）\nconst CARBON_FACTOR = 0.58;\n\n// 错误处理(附录 A.2): 用 || 0 防御 null\nconst kwh = $getTag('mes.energy.kwh') || 0;\nconst water = $getTag('mes.energy.water') || 0;\nconst gas = $getTag('mes.energy.gas') || 0;\nconst steam = $getTag('mes.energy.steam') || 0;\n\n// 错误处理(附录 A.2): 关键量全为空时 console.log 后提前 return，不写无意义的 0 到历史库\nif (!kwh && !water && !gas && !steam) {\n  console.log('能耗汇总跳过: 四个能耗 tag 均为空');\n  return;\n}\n\n// 碳排 = 电耗 x 碳排因子, kg -> t（规格书第 8 节验收口径）\nconst carbon = kwh * CARBON_FACTOR / 1000;\n$setTag('mes.carbon.estimate', carbon.toFixed(2));\n\n// 电费（简化: 总电量 x 三段电价均值）\nconst avgPrice = (tariff.peak + tariff.normal + tariff.valley) / 3;\nconst elecCost = kwh * avgPrice;\n$setTag('mes.energy.cost', elecCost.toFixed(2));\n\n// 性能(附录 A.3): DAQ 写入全部平铺在函数体，不在任何循环内。\n// 调度 interval=300000ms（5 分钟一次），单次执行 5 次 DAQ 写入 -> 稳态 1 次/分钟，不超限。\n\n// 性能(附录 A.3): 本次执行日志 1 行，远小于 10 行上限；纯算术，远小于 30 秒超时。\nconsole.log('能耗汇总: 电=' + kwh + 'kWh 水=' + water + 'm3 气=' + gas + 'm3 汽=' + steam + 'kg 碳排=' + carbon.toFixed(2) + 't 电费=' + elecCost.toFixed(2) + '元');"
+    },
+    {
+      "id": "s_shift_report",
+      "name": "班次产量汇总",
+      "mode": "server",
+      "scheduling": {
+        "mode": "scheduling",
+        "interval": 0,
+        "schedules": [
+          {
+            "type": 0,
+            "days": ["mon", "tue", "wed", "thu", "fri"],
+            "time": "08:00",
+            "hour": 8,
+            "minute": 0
+          }
+        ]
+      },
+      "code": "// ===== 班次产量汇总 =====\n// 命名(附录 A.1): 脚本 id = s_<功能>_<动作> = s_shift_report; 脚本名沿用规格书第 10 节清单「班次产量汇总」\n// 调度: 每周一至周五 08:00 触发（早班交接）\n// 输入: mes.wo.completed / planned / wip, mes.defect.count / inspected, mes.shift\n// 输出: 服务器日志（报表引擎按 Reports 配置的 queries 自动采集历史值）\n\n// 错误处理(附录 A.2): 用 || 0 防御 null；字符串量给默认值\nconst completed = $getTag('mes.wo.completed') || 0;\nconst planned = $getTag('mes.wo.planned') || 0;\nconst wip = $getTag('mes.wo.wip') || 0;\nconst defect = $getTag('mes.defect.count') || 0;\nconst inspected = $getTag('mes.defect.inspected') || 0;\nconst shift = $getTag('mes.shift') || '未定义';\n\n// 错误处理(附录 A.2): 计划与完工都为空时 console.log 后提前 return，不产生空报表\nif (!planned && !completed) {\n  console.log('班次报告跳过: mes.wo.planned 与 mes.wo.completed 均为空');\n  return;\n}\n\nconst rate = planned > 0 ? (completed / planned) : 0;\nconst defectRate = inspected > 0 ? (defect / inspected) : 0;\n\n// 性能(附录 A.3): 本脚本为例外调度（每天 1 次），单次执行 1 次 DAQ 写入 -> 1 次/天，远低于 1 次/分钟上限。\n\n// 性能(附录 A.3): 本次执行日志 1 行（正常路径）或 1 行（提前返回），远小于 10 行上限；纯算术，远小于 30 秒超时。\nconsole.log('班次报告[' + shift + ']: 完工=' + completed + ', 计划=' + planned + ', 在制=' + wip\n  + ', 缺陷=' + defect + ', 达成率=' + (rate * 100).toFixed(1) + '%', ' 缺陷率=' + (defectRate * 100).toFixed(2) + '%');\n\n// 报表引擎会自动采集以上 tag 的历史值，见 server.reports: r_000000000100 / r_000000000101"
+    }
+  ],
+  "alarms": [
+    {
+      "name": "产线温度超限",
+      "property": {
+        "variableId": "mes.temp.line1",
+        "permission": 0,
+        "permissionRoles": {
+          "show": [],
+          "enabled": []
+        }
+      },
+      "highhigh": {
+        "checkdelay": 1,
+        "min": 85,
+        "max": 1000,
+        "timedelay": 0,
+        "enabled": false,
+        "text": "产线温度超限（高高限）",
+        "group": "质量",
+        "ackmode": "ackactive",
+        "bkcolor": "#ef0909",
+        "color": "#ef0909"
+      },
+      "high": {
+        "checkdelay": 1,
+        "min": 85,
+        "max": 1000,
+        "timedelay": 0,
+        "enabled": true,
+        "text": "产线温度超限（高限）",
+        "group": "质量",
+        "ackmode": "ackactive",
+        "bkcolor": "#ef7d09",
+        "color": "#ef7d09"
+      },
+      "low": {
+        "checkdelay": 1,
+        "min": 85,
+        "max": 1000,
+        "timedelay": 0,
+        "enabled": false,
+        "text": "产线温度超限（低限）",
+        "group": "质量",
+        "ackmode": "ackactive",
+        "bkcolor": "#09bbef",
+        "color": "#09bbef"
+      },
+      "info": {
+        "checkdelay": 1,
+        "min": 85,
+        "max": 1000,
+        "timedelay": 0,
+        "enabled": false,
+        "text": "产线温度超限（提示）",
+        "group": "质量",
+        "ackmode": "float",
+        "bkcolor": "#09ef5a",
+        "color": "#09ef5a"
+      },
+      "actions": {
+        "enabled": false,
+        "values": []
+      },
+      "value": ""
+    },
+    {
+      "name": "缺陷率超标",
+      "property": {
+        "variableId": "mes.defect.rate",
+        "permission": 0,
+        "permissionRoles": {
+          "show": [],
+          "enabled": []
+        }
+      },
+      "highhigh": {
+        "checkdelay": 1,
+        "min": 0.05,
+        "max": 1,
+        "timedelay": 0,
+        "enabled": false,
+        "text": "缺陷率超标（高高限）",
+        "group": "质量",
+        "ackmode": "ackactive",
+        "bkcolor": "#ef0909",
+        "color": "#ef0909"
+      },
+      "high": {
+        "checkdelay": 1,
+        "min": 0.05,
+        "max": 1,
+        "timedelay": 0,
+        "enabled": true,
+        "text": "缺陷率超标（高限）",
+        "group": "质量",
+        "ackmode": "ackactive",
+        "bkcolor": "#ef7d09",
+        "color": "#ef7d09"
+      },
+      "low": {
+        "checkdelay": 1,
+        "min": 0.05,
+        "max": 1,
+        "timedelay": 0,
+        "enabled": false,
+        "text": "缺陷率超标（低限）",
+        "group": "质量",
+        "ackmode": "ackactive",
+        "bkcolor": "#09bbef",
+        "color": "#09bbef"
+      },
+      "info": {
+        "checkdelay": 1,
+        "min": 0.05,
+        "max": 1,
+        "timedelay": 0,
+        "enabled": false,
+        "text": "缺陷率超标（提示）",
+        "group": "质量",
+        "ackmode": "float",
+        "bkcolor": "#09ef5a",
+        "color": "#09ef5a"
+      },
+      "actions": {
+        "enabled": false,
+        "values": []
+      },
+      "value": ""
+    },
+    {
+      "name": "用电超峰",
+      "property": {
+        "variableId": "mes.energy.kwh",
+        "permission": 0,
+        "permissionRoles": {
+          "show": [],
+          "enabled": []
+        }
+      },
+      "highhigh": {
+        "checkdelay": 1,
+        "min": 15000,
+        "max": 100000,
+        "timedelay": 0,
+        "enabled": false,
+        "text": "用电超峰（高高限）",
+        "group": "能源",
+        "ackmode": "ackactive",
+        "bkcolor": "#ef0909",
+        "color": "#ef0909"
+      },
+      "high": {
+        "checkdelay": 1,
+        "min": 15000,
+        "max": 100000,
+        "timedelay": 0,
+        "enabled": true,
+        "text": "用电超峰（高限）",
+        "group": "能源",
+        "ackmode": "ackactive",
+        "bkcolor": "#ef7d09",
+        "color": "#ef7d09"
+      },
+      "low": {
+        "checkdelay": 1,
+        "min": 15000,
+        "max": 100000,
+        "timedelay": 0,
+        "enabled": false,
+        "text": "用电超峰（低限）",
+        "group": "能源",
+        "ackmode": "ackactive",
+        "bkcolor": "#09bbef",
+        "color": "#09bbef"
+      },
+      "info": {
+        "checkdelay": 1,
+        "min": 15000,
+        "max": 100000,
+        "timedelay": 0,
+        "enabled": false,
+        "text": "用电超峰（提示）",
+        "group": "能源",
+        "ackmode": "float",
+        "bkcolor": "#09ef5a",
+        "color": "#09ef5a"
+      },
+      "actions": {
+        "enabled": false,
+        "values": []
+      },
+      "value": ""
+    }
+  ],
+  "reports": [
+    {
+      "id": "r_000000000100",
+      "name": "日报_产量",
+      "receiver": "demo-report@example.invalid",
+      "scheduling": "day",
+      "docproperty": {
+        "pageSize": "A4",
+        "pageOrientation": "portrait",
+        "pageMargins": [
+          60,
+          40,
+          40,
+          40
+        ],
+        "fontName": "Helvetica"
+      },
+      "content": {
+        "items": [
+          {
+            "type": "text",
+            "text": "日报_产量（MES/EMS 模板）",
+            "size": 16,
+            "align": "center"
+          },
+          {
+            "type": "table",
+            "columns": [
+              {
+                "type": 1,
+                "tag": {
+                  "id": "mes.wo.planned",
+                  "name": "计划产量",
+                  "type": "Int16"
+                },
+                "label": "计划产量",
+                "align": "left",
+                "width": "*",
+                "function": "sum"
+              },
+              {
+                "type": 1,
+                "tag": {
+                  "id": "mes.wo.completed",
+                  "name": "完工数量",
+                  "type": "Int16"
+                },
+                "label": "完工数量",
+                "align": "left",
+                "width": "*",
+                "function": "sum"
+              },
+              {
+                "type": 1,
+                "tag": {
+                  "id": "mes.oee.score",
+                  "name": "OEE",
+                  "type": "Float"
+                },
+                "label": "OEE",
+                "align": "left",
+                "width": "*",
+                "function": "average"
+              }
+            ],
+            "range": "day",
+            "interval": "hour"
+          }
+        ]
+      }
+    },
+    {
+      "id": "r_000000000101",
+      "name": "月报_能耗",
+      "receiver": "demo-report@example.invalid",
+      "scheduling": "month",
+      "docproperty": {
+        "pageSize": "A4",
+        "pageOrientation": "portrait",
+        "pageMargins": [
+          60,
+          40,
+          40,
+          40
+        ],
+        "fontName": "Helvetica"
+      },
+      "content": {
+        "items": [
+          {
+            "type": "text",
+            "text": "月报_能耗（MES/EMS 模板）",
+            "size": 16,
+            "align": "center"
+          },
+          {
+            "type": "table",
+            "columns": [
+              {
+                "type": 1,
+                "tag": {
+                  "id": "mes.energy.kwh",
+                  "name": "今日用电",
+                  "type": "Float"
+                },
+                "label": "今日用电",
+                "align": "left",
+                "width": "*",
+                "function": "sum"
+              },
+              {
+                "type": 1,
+                "tag": {
+                  "id": "mes.energy.water",
+                  "name": "今日用水",
+                  "type": "Float"
+                },
+                "label": "今日用水",
+                "align": "left",
+                "width": "*",
+                "function": "sum"
+              },
+              {
+                "type": 1,
+                "tag": {
+                  "id": "mes.energy.gas",
+                  "name": "今日用气",
+                  "type": "Float"
+                },
+                "label": "今日用气",
+                "align": "left",
+                "width": "*",
+                "function": "sum"
+              },
+              {
+                "type": 1,
+                "tag": {
+                  "id": "mes.carbon.estimate",
+                  "name": "碳排放估算",
+                  "type": "Float"
+                },
+                "label": "碳排放估算",
+                "align": "left",
+                "width": "*",
+                "function": "average"
+              }
+            ],
+            "range": "month",
+            "interval": "day"
+          }
+        ]
+      }
+    }
+  ],
+  "recipes": [
+    {
+      "id": "r_000000000001",
+      "name": "产品A 标准配方",
+      "description": "产品A 标准工艺参数模板",
+      "entries": [
+        {
+          "id": "e_00000001",
+          "tagId": "mes.recipe.temperature",
+          "tagName": "配方温度",
+          "tagType": "Float",
+          "value": 120
+        },
+        {
+          "id": "e_00000002",
+          "tagId": "mes.recipe.pressure",
+          "tagName": "配方压力",
+          "tagType": "Float",
+          "value": 0.8
+        },
+        {
+          "id": "e_00000003",
+          "tagId": "mes.recipe.cycletime",
+          "tagName": "配方节拍",
+          "tagType": "Int16",
+          "value": 120
+        }
+      ],
+      "permission": 0,
+      "permissionRoles": {
+        "show": [],
+        "enabled": []
+      }
+    }
+  ]
+}

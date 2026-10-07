@@ -1,0 +1,114 @@
+{
+  "_readme": [
+    "Frozen public surface of the storage plane (D1 / class 3).",
+    "Regenerate deliberately, never to make a red guard green:",
+    "  ARCH_SNAPSHOT_UPDATE=1 npx mocha test/architecture/interfaceSnapshot.test.js",
+    "A change here is a change to an interface three future backends must implement (D8-D10)."
+  ],
+  "generatedFor": "D1 architecture guard",
+  "modules": {
+    "runtime/storage/sqlite/index.js": {
+      "_private": "object",
+      "checkRetention": "function/4",
+      "create": "function/4"
+    },
+    "runtime/storage/sqlite/currentstorage.js": {
+      "create": "function/2"
+    },
+    "runtime/storage/influxdb/index.js": {
+      "create": "function/4"
+    },
+    "runtime/storage/tdengine/index.js": {
+      "_private": "object",
+      "create": "function/4"
+    },
+    "runtime/storage/questdb/index.js": {
+      "create": "function/4"
+    },
+    "runtime/storage/calculator.js": {
+      "getAverage": "function/5",
+      "getFunctionValues": "function/6",
+      "getMax": "function/4",
+      "getMin": "function/4",
+      "getSum": "function/4"
+    },
+    "runtime/storage/databases.js": {
+      "DOMAIN_DB_FILES": "object",
+      "open": "function/2",
+      "resolveDbFile": "function/3",
+      "stats": "function/0"
+    },
+    "runtime/storage/registry.js": {
+      "BACKENDS": "object",
+      "CONTRACT_VERSION": "number",
+      "DEFAULT_TYPE": "string",
+      "SELECTION_TYPES": "object",
+      "adapterOf": "function/1",
+      "backendById": "function/1",
+      "create": "function/5",
+      "describe": "function/0",
+      "identity": "function/0",
+      "knownTypes": "function/0",
+      "normalise": "function/2",
+      "rollRetention": "function/5",
+      "selectionFor": "function/1"
+    },
+    "runtime/storage/daqstorage.js": {
+      "QUERY_DEFAULTS": "object",
+      "QUERY_STATUS": "object",
+      "addDaqNode": "function/2",
+      "checkRetention": "function/0",
+      "describeTag": "function/1",
+      "getCurrentStorageFnc": "function/0",
+      "getNodeValues": "function/3",
+      "getNodesValues": "function/4",
+      "init": "function/3",
+      "isQueryComplete": "function/1",
+      "querySeries": "function/4",
+      "reset": "function/0"
+    }
+  },
+  "adapters": {
+    "runtime/storage/sqlite/index.js": [
+      "addDaqValue",
+      "addDaqValues",
+      "close",
+      "getDaqMap",
+      "getDaqValue",
+      "setCall"
+    ],
+    "runtime/storage/postgresql/index.js": [
+      "addDaqValues",
+      "close",
+      "getDaqMap",
+      "getDaqValue",
+      "init",
+      "setCall"
+    ],
+    "runtime/storage/influxdb/index.js": [
+      "addDaqValue",
+      "addDaqValues",
+      "close",
+      "getDaqMap",
+      "getDaqValue",
+      "init",
+      "setCall"
+    ],
+    "runtime/storage/tdengine/index.js": [
+      "addDaqValues",
+      "close",
+      "getDaqMap",
+      "getDaqValue",
+      "init",
+      "setCall"
+    ],
+    "runtime/storage/questdb/index.js": [
+      "addDaqValues",
+      "close",
+      "getDaqMap",
+      "getDaqValue",
+      "init",
+      "setCall"
+    ]
+  }
+}

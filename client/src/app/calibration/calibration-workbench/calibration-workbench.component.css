@@ -1,0 +1,124 @@
+:host {
+    display: block;
+    height: 100%;
+    min-height: 0;
+}
+
+/* ------------------------------------------------------------------ layout */
+
+.scada .sc-topbar__meta {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: 60%;
+}
+
+.scada .sc-panel__bd {
+    overflow-x: auto;
+}
+
+.scada .sc-table th:first-child,
+.scada .sc-table td:first-child { padding-left: calc(16px * var(--sc-u, 1)); }
+
+.scada .sc-table th:last-child,
+.scada .sc-table td:last-child { padding-right: calc(16px * var(--sc-u, 1)); }
+
+/* KPI tiles read as instrument readouts: fixed rhythm, no wrap surprises */
+.scada .sc-grid--kpi {
+    grid-template-columns: repeat(auto-fit, minmax(calc(168px * var(--sc-u, 1)), 1fr));
+}
+
+.scada .sc-kpi__value {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ----------------------------------------------------------- chart polish */
+
+/**
+ * The chart colours, in ONE place (N-18).
+ *
+ * These SVGs used to carry their palette as literal hex in the template - fill="#0b1420",
+ * stroke="#ffb020" and eleven more - while .scada already declared exactly the same colours as
+ * tokens (--sc-line is #1f3145, --sc-warn is #ffb020, --sc-ok is #2ecc71, and so on). Two copies of
+ * one palette drift, and an SVG attribute cannot hold a var(), so every literal was also a colour
+ * that the theme could never reach.
+ *
+ * WHY LOCAL NAMES INSTEAD OF var(--sc-*) AT THE USE SITE. Attribute presentation values such as
+ * <rect fill> and <circle stroke> are NOT CSS properties, so var() is invalid there; the colour has
+ * to arrive through a stylesheet rule. CSS rules on SVG also cannot resolve a property name as a
+ * custom property, so the palette is mapped once here onto local names, and the rules below consume
+ * those. --sc-chart-plot and --sc-chart-ink3 are the only two values with no existing .scada token
+ * (they were #0b1420 and #66798f against --sc-bg #0a1017 / --sc-panel #101a26 and --sc-ink-3
+ * #66798f); they are pinned to their MEASURED values rather than "rounded" to a neighbour, because
+ * changing how the chart looks is not this change's job.
+ */
+.scada {
+    --sc-chart-plot: #0b1420;   /* measured: the plot background was #0b1420 */
+    --sc-chart-ink3: #66798f;   /* measured: the tick labels were #66798f, same as --sc-ink-3 */
+    --sc-chart-axis: var(--sc-line-2);
+}
+
+.scada .sc-chart svg {
+    shape-rendering: geometricPrecision;
+}
+
+.scada .sc-chart .sc-plot-bg { fill: var(--sc-chart-plot); stroke: var(--sc-line); }
+.scada .sc-chart .sc-plot-mean { stroke: var(--sc-warn); }
+.scada .sc-chart .sc-plot-line { stroke: var(--sc-accent); }
+.scada .sc-chart .sc-plot-fit { stroke: var(--sc-accent-2); }
+.scada .sc-chart .sc-plot-point { fill: var(--sc-accent); stroke: var(--sc-chart-plot); }
+.scada .sc-chart .sc-dot--ok { fill: var(--sc-ok); }
+.scada .sc-chart .sc-dot--alarm { fill: var(--sc-alarm); }
+.scada .sc-chart .sc-grid-lines line { stroke: var(--sc-chart-axis); }
+.scada .sc-chart text { fill: var(--sc-chart-ink3); }
+
+/* A residual's sign is a signal, so it wears the signal tokens rather than a literal. */
+.scada .sc-residual--alarm { color: var(--sc-alarm); }
+.scada .sc-residual--ok { color: var(--sc-ok); }
+
+/* Legend keys: the same colours the plot uses, so a key cannot disagree with its series. */
+.scada .sc-key--ok { background: var(--sc-ok); }
+.scada .sc-key--alarm { background: var(--sc-alarm); }
+.scada .sc-key--mean { background: var(--sc-warn); }
+.scada .sc-key--point { background: var(--sc-accent); }
+.scada .sc-key--fit { background: var(--sc-accent-2); }
+
+.scada .sc-chart .sc-grid-lines line {
+    opacity: 0.9;
+}
+
+.scada .sc-legend i {
+    border-radius: 50%;
+}
+
+/* ----------------------------------------------------------- live station */
+
+.scada .sc-live {
+    align-items: flex-end;
+}
+
+.scada .sc-live .sc-input {
+    height: calc(34px * var(--sc-u, 1));
+}
+
+/* Dense tables inside scroll regions keep a stable header */
+.scada .sc-scroll table thead th {
+    position: sticky;
+    top: 0;
+    background: var(--sc-panel);
+    z-index: 2;
+}
+
+/* ------------------------------------------------------------- responsive */
+
+@media (max-width: calc(780px * var(--sc-u, 1))) {
+    .scada .sc-topbar {
+        height: auto;
+        flex-wrap: wrap;
+        gap: calc(10px * var(--sc-u, 1));
+        padding: calc(10px * var(--sc-u, 1)) calc(14px * var(--sc-u, 1));
+    }
+    .scada .sc-topbar__meta { max-width: 100%; }
+    .scada .sc-readout--xl { font-size: calc(34px * var(--sc-u, 1)); }
+}

@@ -1,0 +1,69 @@
+.container {
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+
+.container [mat-dialog-content],
+.container .mat-dialog-content,
+.container .mat-mdc-dialog-content {
+    flex: 1 1 auto;
+    overflow: auto;
+}
+
+.container [mat-dialog-actions],
+.container .mat-dialog-actions,
+.container .mat-mdc-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.container .dialog-close-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    float: none !important;
+    margin: 0;
+}
+
+.lib-image-panel {
+    max-width: 900px;
+}
+
+.lib-image-item {
+    display: inline-block;
+    margin: 5px 5px 5px 5px;
+    padding: 2px 2px 2px 2px;
+}
+
+.lib-image-item img:hover {
+    background-color: rgba(182, 182, 182, 0.3);
+}
+
+.lib-image-item img {
+    min-width: 100px;
+    width: 100px;
+    object-fit: cover;
+    cursor: pointer;
+}
+
+/* The built-in library reads as a catalogue, not as one flat wall of thumbnails. */
+.lib-library-group {
+    margin: 10px 2px 2px 2px;
+    font-weight: 600;
+    opacity: 0.75;
+}
+
+.lib-library-error {
+    margin: 8px 2px;
+    padding: 6px 10px;
+    border-left: 3px solid #d32f3f;
+    background-color: rgba(211, 47, 63, 0.08);
+}
+
+.lib-library-busy {
+    margin: 8px 2px;
+    opacity: 0.75;
+}

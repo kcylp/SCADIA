@@ -1,0 +1,57 @@
+<div class="header-panel" *ngIf="editorMode">
+    <button mat-button title="{{'header.save-project' | translate}}" [matMenuTriggerFor]="prjview" #prjviewtrigger="matMenuTrigger" class="main-btn">
+        <mat-icon aria-label="Save Project">save</mat-icon>
+    </button>
+    <mat-menu #prjview="matMenu" class="leftbar-item-menu header-menu" yPosition="below" [overlapTrigger]="false">
+        <button mat-menu-item (click)="onNewProject()">{{'header.new-project' | translate}}</button>
+        <mat-divider class="menu-separator"></mat-divider>
+        <button mat-menu-item (click)="onSaveProject()">{{'header.save-project' | translate}}</button>
+        <button mat-menu-item (click)="onSaveProjectAs()">{{'header.saveas-project' | translate}}</button>
+        <mat-divider class="menu-separator"></mat-divider>
+        <button mat-menu-item (click)="onOpenProject();$event.stopPropagation()">{{'header.open-project' | translate}}</button>
+        <mat-divider class="menu-separator"></mat-divider>
+        <button mat-menu-item (click)="onRenameProject()">{{'header.rename-project' | translate}}</button>
+        <input type="file" #fileImportInput style="display: none" id="projectFileUpload" (change)="onFileChangeListener($event)" accept=".json" />
+    </mat-menu>
+    <button mat-button title="{{'header.edit-project' | translate}}" class="main-btn" (click)="onSetup()">
+        <mat-icon aria-label="Edit Views">settings</mat-icon>
+    </button>
+
+</div>
+
+<div class="header-right" *ngIf="!editorMode">
+    <button mat-button title="{{'wall.title' | translate}}" class="main-btn" (click)="onGoToVideoWall()">
+        <mat-icon aria-label="Video wall">video_settings</mat-icon>
+    </button>
+    <button mat-button title="{{'camera.title' | translate}}" class="main-btn" (click)="onGoToCameras()">
+        <mat-icon aria-label="Cameras">videocam</mat-icon>
+    </button>
+    <button mat-button title="{{'calibration.title' | translate}}" class="main-btn" (click)="onGoToCalibrations()">
+        <mat-icon aria-label="Calibration">tune</mat-icon>
+    </button>
+</div>
+
+<div class="header-right" *ngIf="editorMode">
+    <div class="header-help">
+        <button mat-button title="{{'wall.title' | translate}}" class="main-btn" (click)="onGoToVideoWall()">
+            <mat-icon aria-label="Video wall">video_settings</mat-icon>
+        </button>
+        <button mat-button title="{{'camera.title' | translate}}" class="main-btn" (click)="onGoToCameras()">
+            <mat-icon aria-label="Cameras">videocam</mat-icon>
+        </button>
+        <button mat-button title="{{'calibration.title' | translate}}" class="main-btn" (click)="onGoToCalibrations()">
+            <mat-icon aria-label="Calibration">tune</mat-icon>
+        </button>
+        <button mat-button title="{{'header.help' | translate}}" [matMenuTriggerFor]="helpmenu" class="main-btn">
+            <mat-icon aria-label="HELP">help_outline</mat-icon>
+        </button>
+        <mat-menu #helpmenu="matMenu" class="leftbar-item-menu header-menu" yPosition="below" [overlapTrigger]="false">
+            <button mat-menu-item (click)="onShowHelp('help')">{{'header.help-tutorial' | translate}}</button>
+            <mat-divider class="menu-separator"></mat-divider>
+            <button mat-menu-item (click)="onShowHelp('info')">{{'header.help-info' | translate}}</button>
+            <mat-divider class="menu-separator"></mat-divider>
+            <button mat-menu-item (click)="onChangeTheme()">{{'header.change-thema' | translate}}</button>
+        </mat-menu>
+    </div>
+</div>
+<app-tutorial #tutorial></app-tutorial>

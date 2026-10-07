@@ -1,0 +1,56 @@
+:host {
+    display: block;
+    height: 100%;
+    min-height: 0;
+}
+
+/* Table areas scroll horizontally on narrow consoles */
+.scada .sc-panel__bd {
+    padding: 0;
+    overflow-x: auto;
+}
+
+.scada .sc-table th:first-child,
+.scada .sc-table td:first-child {
+    padding-left: calc(16px * var(--sc-u, 1));
+}
+
+.scada .sc-table th:last-child,
+.scada .sc-table td:last-child {
+    padding-right: calc(16px * var(--sc-u, 1));
+}
+
+.scada .sc-table td.name-cell {
+    color: var(--sc-ink);
+    font-weight: 600;
+}
+
+.scada .sc-table td.mono-cell {
+    font-family: var(--sc-mono);
+    font-variant-numeric: tabular-nums;
+}
+
+.scada .sc-table td.actions-cell {
+    white-space: nowrap;
+    text-align: right;
+}
+
+.scada .sc-link {
+    color: var(--sc-accent);
+    font-family: var(--sc-mono);
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.scada .sc-link:hover {
+    text-decoration: underline;
+}
+
+.scada .row-actions {
+    display: inline-flex;
+    gap: calc(6px * var(--sc-u, 1));
+    justify-content: flex-end;
+}
+
+/* Density: keep the console compact but readable */
+.scada .sc-kpi + .sc-kpi { margin: 0; }

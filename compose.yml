@@ -1,0 +1,11 @@
+services:
+  scadia:
+    image: kcylp/scadia:latest
+    restart: unless-stopped
+    volumes:
+      - './appdata:/usr/src/app/SCADIA/server/_appdata'
+      - './db:/usr/src/app/SCADIA/server/_db'
+      - './logs:/usr/src/app/SCADIA/server/_logs'
+      - './images:/usr/src/app/SCADIA/server/_images'
+    ports:
+      - '1881:1881'

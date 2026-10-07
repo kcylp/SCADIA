@@ -1,0 +1,1111 @@
+import { Injectable, Pipe, PipeTransform } from '@angular/core';
+import { DomSanitizer } from '@angular/platform-browser';
+// Leaf module on purpose: importing _models/hmi here would create a cycle
+// (hmi -> device -> ... -> utils) and break module initialisation order.
+import { PropertyScaleModeType } from '../_models/scale-mode';
+
+declare const numeral: any;
+
+@Injectable()
+export class Utils {
+
+    static normalizeTagValue(value: string | number | boolean): string | number {
+        if (typeof value === 'boolean') {
+            return Number(value);
+        }
+
+        if (typeof value === 'number') {
+            return Number.isFinite(value) ? parseFloat(value.toFixed(5)) : value;
+        }
+
+        const numericValue = parseFloat(value);
+        return Number.isNaN(numericValue) ? value : parseFloat(numericValue.toFixed(5));
+    }
+
+    static _seed = Date.now();
+    static minDate = new Date(1970, 0, 1);
+    static maxDate = new Date(2100, 11, 31);
+
+    static defaultColor = ['#FFFFFF', '#000000', '#EEECE1', '#1F497D', '#4F81BD', '#C0504D', '#9BBB59', '#8064A2', '#4BACC6',
+        '#F79646', '#C00000', '#FF0000', '#FFC000', '#FFD04A', '#FFFF00', '#92D050', '#0AC97D', '#00B050', '#00B0F0', '#4484EF', '#3358C0',
+        '#002060', '#7030A0', '#D8D8D8', '#BFBFBF', '#A5A5A5', '#7F7F7F', '#595959', '#3F3F3F', '#262626'];
+
+    static lineColor = ['#4484ef', '#ef0909', '#00b050', '#ffd04a', '#7030a0', '#a5a5a5', '#c0504d', '#000000'];
+
+    static svgTagToType = ['rect', 'line', 'path', 'circle', 'ellipse', 'text'];
+
+    static walkTree(elem, cbFn) {
+        if (elem && elem.nodeType == 1) {
+            cbFn(elem);
+            var i = elem.childNodes.length;
+            while (i--) {
+                this.walkTree(elem.childNodes.item(i), cbFn);
+            }
+        }
+    }
+
+    static searchTreeStartWith(element, matchingStart) {
+        if (element.id.startsWith(matchingStart)) {
+            return element;
+        } else if (element.children != null) {
+            var i;
+            var result = null;
+            for (i = 0; result == null && i < element.children.length; i++) {
+                result = Utils.searchTreeStartWith(element.children[i], matchingStart);
+            }
+            return result;
+        }
+        return null;
+    }
+
+    static childrenStartWith(element, matchingStart) {
+        let result = [];
+        for (let i = 0; i < element.children?.length; i++) {
+            if (element.children[i].id.startsWith(matchingStart)) {
+                result.push(element.children[i]);
+            }
+        }
+        return result;
+    }
+
+    static searchTreeTagName(element, tagMatching: string) {
+        if (element.tagName === tagMatching) {
+            return element;
+        }
+        if (element.children != null) {
+            var i;
+            var result = null;
+            for (i = 0; result == null && i < element.children.length; i++) {
+                result = Utils.searchTreeTagName(element.children[i], tagMatching);
+            }
+            return result;
+        }
+        return null;
+    }
+
+    static findElementByIdRecursive(root: HTMLElement, id: string): HTMLElement | null {
+        if (!root) {
+            return null;
+        }
+        if (root.id === id) {
+            return root;
+        }
+        for (let i = 0; i < root.children.length; i++) {
+            const child = root.children[i] as HTMLElement;
+            const foundElement = this.findElementByIdRecursive(child, id);
+            if (foundElement) {
+                return foundElement;
+            }
+        }
+        return null;
+    }
+
+    static searchValuesByAttribute(jsonData: any, attributeName: string) {
+        const result: string[] = [];
+        function search(jsonData: any): void {
+            if (Array.isArray(jsonData)) {
+                for (const item of jsonData) {
+                    search(item);
+                }
+            } else if (typeof jsonData === 'object' && jsonData !== null) {
+                if (jsonData.hasOwnProperty(attributeName)) {
+                    result.push(jsonData[attributeName]);
+                }
+                for (const key in jsonData) {
+                    search(jsonData[key]);
+                }
+            }
+        }
+        search(jsonData);
+        return result;
+    }
+
+    static changeAttributeValue(jsonData: any, attributeName: string, srcValue: any, destValue: any) {
+        function change(jsonData: any): void {
+            if (Array.isArray(jsonData)) {
+                for (const item of jsonData) {
+                    change(item);
+                }
+            } else if (typeof jsonData === 'object' && jsonData !== null) {
+                if (jsonData.hasOwnProperty(attributeName) && jsonData[attributeName] === srcValue) {
+                    jsonData[attributeName] = destValue;
+                }
+                for (const key in jsonData) {
+                    change(jsonData[key]);
+                }
+            }
+        }
+        change(jsonData);
+    }
+
+    static replaceStringInObject<T>(obj: T,
+                                 searchKey: string,
+                                 replaceKey: string): T {
+        let jsonString = JSON.stringify(obj);
+        const regex = new RegExp(searchKey, 'g');
+        jsonString = jsonString.replace(regex, replaceKey);
+        const modifiedObject = JSON.parse(jsonString);
+        return modifiedObject;
+    }
+
+    static getInTreeIdAndType(element: Element): any[] {
+        let type = element.getAttribute('type');
+        if (!type && Utils.svgTagToType.includes(element.tagName.toLowerCase())) {
+            type = 'svg-ext-shapes-' + element.tagName.toLowerCase();
+        }
+        let id = element.getAttribute('id');
+        let result = [];
+        if (id && type) {
+            result = [{ id: id, type: type }];
+        }
+        for (var i = 0; i < element.children.length; i++) {
+            const idsAndTypes = Utils.getInTreeIdAndType(element.children[i]);
+            result = [...result, ...idsAndTypes];
+        }
+        return result;
+    }
+
+    static cleanObject(object: any): any {
+        const cleanObject: any = {};
+        for (const key in object) {
+            if (object[key] != null) {
+                cleanObject[key] = object[key];
+            }
+        }
+        return cleanObject;
+    }
+
+    static isNullOrUndefined(ele) {
+        return (ele === null || ele === undefined) ? true : false;
+    }
+
+    // returns keys of enum
+    static enumKeys(p): Array<string> {
+        const keys = Object.keys(p);
+        return keys;
+    }
+
+    // returns values of enum
+    static enumValues(p): Array<string> {
+        const keys = Object.keys(p);
+        return keys.map(el => Object(p)[el]);
+    }
+
+    static getGUID(prefix: string = ''): string {
+        var uuid = '', i, random;
+        for (i = 0; i < 16; i++) {
+            random = Math.random() * 16 | 0;
+            if (i == 8) {
+                uuid += '-';
+            }
+            uuid += (i == 12 ? 4 : (i == 16 ? (random & 3 | 8) : random)).toString(16);
+        }
+        return prefix + uuid;
+    };
+
+    static getShortGUID(prefix: string = '', splitter: string = '-'): string {
+        var uuid = '', i, random;
+        for (i = 0; i < 12; i++) {
+            random = Math.random() * 16 | 0;
+            if (i == 8) {
+                uuid += splitter;
+            }
+            uuid += (i == 4 ? 4 : (i == 6 ? (random & 3 | 8) : random)).toString(12);
+        }
+        return prefix + uuid;
+    }
+
+    static getNextName(prefix: string, inuse: string[]) {
+        let index = 1;
+        let result = prefix + index;
+        while (inuse.indexOf(result) >= 0) {
+            index++;
+            result = prefix + index;
+        }
+        return result;
+    }
+
+    static isObject(value) {
+        return typeof (value) == 'object' && value !== null;
+    }
+
+    static getType(value: any) {
+        return typeof value;
+    }
+
+    static getTextHeight(font) {
+        // re-use canvas object for better performance
+        var canvas = document.createElement('canvas');
+        var context = canvas.getContext('2d');
+        context.font = font;
+        var metrics = context.measureText('M');
+        return metrics.width;
+    }
+
+    static getDomTextHeight(size: number, font: string) {
+        let text = document.createElement('span');
+        document.body.appendChild(text);
+        text.style.font = font;
+        text.style.fontSize = size + 'px';
+        text.style.height = 'auto';
+        text.style.width = 'auto';
+        text.style.position = 'absolute';
+        text.style.whiteSpace = 'no-wrap';
+        text.innerHTML = 'M';
+
+        let height = Math.ceil(text.clientHeight);
+        document.body.removeChild(text);
+        return height;
+    }
+
+    static getEnumKey(etype: any, ekey: any) {
+        return Object.keys(etype).find(key => etype[key] === ekey);
+    }
+
+    static isJson(item) {
+        try {
+            let obj = JSON.parse(item);
+            if (obj && Object.keys(obj).length) {
+                return true;
+            }
+
+        } catch (e) {
+        }
+        return false;
+    }
+
+    static isNumeric(n) {
+        return !isNaN(parseFloat(n)) && isFinite(n);
+    }
+
+    static toFiniteNumber(value: unknown): number | null {
+        if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+        if (typeof value !== 'string') return null;
+
+        const s = value.trim();
+        if (s === '') return null;
+
+        const n = Number(s);
+        return Number.isFinite(n) ? n : null;
+    }
+
+    static Boolify(arg) {
+        var BoolArray = [true, false, 'true', 'false', 1, 0];
+        if (BoolArray.indexOf(arg) === -1) {
+            return null;
+        } else {
+            return (arg == true || arg == 'true' || arg == 1) ? true : false;
+        }
+    }
+
+    /**
+     * check boolean and convert to number
+     * @param value
+     */
+    static toNumber(value: any) {
+        const b = Utils.Boolify(value);
+        if (!Utils.isNullOrUndefined(b)) {
+            return Number(b);
+        }
+        return value;
+    }
+
+    /**
+     * check to convert to float or to number
+     * @param value
+     */
+    static toFloatOrNumber(value: any) {
+        let result = parseFloat(value);
+        if (Utils.isNullOrUndefined(result)) {
+            // maybe boolean
+            result = Number(value);
+        } else {
+            result = parseFloat(result.toFixed(5));
+        }
+        return result;
+    }
+
+
+    static formatValue(value: string, format: string): string {
+        try {
+            if (Utils.isNumeric(value)) {
+                return numeral(value).format(format);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+        return value;
+    }
+
+    static arrayToObject = (array, keyField) => {
+        array.reduce((obj, item) => {
+            obj[item[keyField]] = item;
+            return obj;
+        }, {});
+    };
+
+    static rand(min, max) {
+        min = min || 0;
+        max = max || 0;
+        this._seed = (this._seed * 9301 + 49297) % 233280;
+        return Math.round(min + (this._seed / 233280) * (max - min));
+    }
+
+    static randNumbers(count, min, max) {
+        let result = [];
+        for (let i = 0; i < count; ++i) {
+            result.push(this.rand(min, max));
+        }
+        return result;
+    }
+
+    static formatDate(date, format, utc?) {
+        var MMMM = ['\x00', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        var MMM = ['\x01', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        var dddd = ['\x02', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        var ddd = ['\x03', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+        let ii = (i, len?) => { var s = i + ''; len = len || 2; while (s.length < len) { s = '0' + s; } return s; };
+
+        var y = utc ? date.getUTCFullYear() : date.getFullYear();
+        format = format.replace(/(^|[^\\])yyyy+/g, '$1' + y);
+        format = format.replace(/(^|[^\\])yy/g, '$1' + y.toString().substr(2, 2));
+        format = format.replace(/(^|[^\\])y/g, '$1' + y);
+
+        var M = (utc ? date.getUTCMonth() : date.getMonth()) + 1;
+        format = format.replace(/(^|[^\\])MMMM+/g, '$1' + MMMM[0]);
+        format = format.replace(/(^|[^\\])MMM/g, '$1' + MMM[0]);
+        format = format.replace(/(^|[^\\])MM/g, '$1' + ii(M));
+        format = format.replace(/(^|[^\\])M/g, '$1' + M);
+
+        var d = utc ? date.getUTCDate() : date.getDate();
+        format = format.replace(/(^|[^\\])dddd+/g, '$1' + dddd[0]);
+        format = format.replace(/(^|[^\\])ddd/g, '$1' + ddd[0]);
+        format = format.replace(/(^|[^\\])dd/g, '$1' + ii(d));
+        format = format.replace(/(^|[^\\])d/g, '$1' + d);
+
+        var H = utc ? date.getUTCHours() : date.getHours();
+        format = format.replace(/(^|[^\\])HH+/g, '$1' + ii(H));
+        format = format.replace(/(^|[^\\])H/g, '$1' + H);
+
+        var h = H > 12 ? H - 12 : H == 0 ? 12 : H;
+        format = format.replace(/(^|[^\\])hh+/g, '$1' + ii(h));
+        format = format.replace(/(^|[^\\])h/g, '$1' + h);
+
+        var m = utc ? date.getUTCMinutes() : date.getMinutes();
+        format = format.replace(/(^|[^\\])mm+/g, '$1' + ii(m));
+        format = format.replace(/(^|[^\\])m/g, '$1' + m);
+
+        var s = utc ? date.getUTCSeconds() : date.getSeconds();
+        format = format.replace(/(^|[^\\])ss+/g, '$1' + ii(s));
+        format = format.replace(/(^|[^\\])s/g, '$1' + s);
+
+        var f = utc ? date.getUTCMilliseconds() : date.getMilliseconds();
+        format = format.replace(/(^|[^\\])fff+/g, '$1' + ii(f, 3));
+        f = Math.round(f / 10);
+        format = format.replace(/(^|[^\\])ff/g, '$1' + ii(f));
+        f = Math.round(f / 10);
+        format = format.replace(/(^|[^\\])f/g, '$1' + f);
+
+        var T = H < 12 ? 'AM' : 'PM';
+        format = format.replace(/(^|[^\\])TT+/g, '$1' + T);
+        format = format.replace(/(^|[^\\])T/g, '$1' + T.charAt(0));
+
+        var t = T.toLowerCase();
+        format = format.replace(/(^|[^\\])tt+/g, '$1' + t);
+        format = format.replace(/(^|[^\\])t/g, '$1' + t.charAt(0));
+
+        var tz = -date.getTimezoneOffset();
+        var K = utc || !tz ? 'Z' : tz > 0 ? '+' : '-';
+        if (!utc) {
+            tz = Math.abs(tz);
+            var tzHrs = Math.floor(tz / 60);
+            var tzMin = tz % 60;
+            K += ii(tzHrs) + ':' + ii(tzMin);
+        }
+        format = format.replace(/(^|[^\\])K/g, '$1' + K);
+
+        var day = (utc ? date.getUTCDay() : date.getDay()) + 1;
+        format = format.replace(new RegExp(dddd[0], 'g'), dddd[day]);
+        format = format.replace(new RegExp(ddd[0], 'g'), ddd[day]);
+
+        format = format.replace(new RegExp(MMMM[0], 'g'), MMMM[M]);
+        format = format.replace(new RegExp(MMM[0], 'g'), MMM[M]);
+
+        format = format.replace(/\\(.)/g, '$1');
+
+        return format;
+    };
+
+    static findBitPosition(n) {
+        let result = [];
+        for (let i = 0; i < 32; i++) {
+            if (n & (0x01 << i)) {
+                result.push(i);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * set object values to target
+     * @param target
+     * @param sources
+     * @returns
+     */
+    static assign = (target: { [key: string]: any }, ...sources: object[]) => {
+        sources.forEach((source) => Object.keys(source).forEach((key) => {
+            target[key] = source[key as keyof Object];
+        }));
+        return target;
+    };
+
+    static clone = (obj) => JSON.parse(JSON.stringify(obj));
+
+    static convertArrayToObject = (array, value) => array.reduce((accumulator, key) => ({ ...accumulator, [key]: value }), {});
+
+    static resizeView = (selector) => {
+        document.querySelectorAll(selector).forEach((scaled: any) => {
+            let parent = scaled.parentNode,
+                ratioWidth = (parent.offsetWidth / scaled.offsetWidth),
+                ratioHeight = (parent.offsetHeight / scaled.offsetHeight);
+            scaled.style.transform = 'scale(' + Math.min(ratioWidth, ratioHeight) + ')';
+            scaled.style.transformOrigin = 'top left';
+        });
+    };
+
+    static resizeViewExt = (selector: string, parentId: string, resize?: PropertyScaleModeType) => {
+        const parentElement = document.getElementById(parentId) as HTMLElement;
+        if (!parentElement) {
+            console.error(`resizeViewExt -> Parent element with ID '${parentId}' not found.`);
+            return;
+        }
+        const parentRect: DOMRect = parentElement.getBoundingClientRect();
+        const resizeType = resize ?? PropertyScaleModeType.none;
+        parentElement.querySelectorAll(selector).forEach((scaled: any) => {
+            const ratioWidth = (parentRect?.width / scaled.offsetWidth);
+            const ratioHeight = (parentRect?.height / scaled.offsetHeight);
+            if (resizeType === PropertyScaleModeType.contain) {
+                scaled.style.transform = 'scale(' + Math.min(ratioWidth, ratioHeight) + ')';
+            } else if (resizeType === PropertyScaleModeType.cover) {
+                scaled.style.transform = 'scale(' + Math.max(ratioWidth, ratioHeight) + ')';
+            } else if (resizeType === PropertyScaleModeType.width) {
+                scaled.style.transform = 'scale(' + ratioWidth + ')';
+            } else if (resizeType === PropertyScaleModeType.stretch) {
+                scaled.style.transform = 'scale(' + ratioWidth + ', ' + ratioHeight + ')';
+            } else if (resizeType === PropertyScaleModeType.none) {
+                scaled.style.transform = 'scale(1)';
+                scaled.style.transformOrigin = 'top left';
+            }
+            scaled.style.transformOrigin = 'top left';
+        });
+    };
+
+    static resizeViewRev = (original: string | HTMLElement, destination: string | HTMLElement, resize?: 'contain' | 'stretch' | 'none') => {
+        function transform(origRect: HTMLElement, destRect: DOMRect, resizeType: 'contain' | 'stretch' | 'none') {
+            const ratioWidth = (destRect?.width / origRect.clientWidth);
+            const ratioHeight = (destRect?.height / origRect.clientHeight);
+            if (resizeType === 'contain') {
+                origRect.style.transform = 'scale(' + Math.min(ratioWidth, ratioHeight) + ')';
+                origRect.parentElement.style.margin = 'unset';
+            } else if (resizeType === 'stretch') {
+                origRect.style.transform = 'scale(' + ratioWidth + ', ' + ratioHeight + ')';
+                origRect.parentElement.style.margin = 'unset';
+            } else if (resizeType === 'none') {
+                origRect.style.transform = 'scale(1)';
+            }
+            origRect.style.top = 'unset';
+            origRect.style.left = 'unset';
+            origRect.style.transformOrigin = 'top left';
+        };
+
+        const parentElement = typeof destination === 'string' ? document.getElementById(destination) as HTMLElement : destination;
+        if (!parentElement) {
+            console.error(`resizeViewExt -> Parent element with ID '${destination}' not found.`);
+            return;
+        }
+        const parentRect: DOMRect = parentElement.getBoundingClientRect();
+        if (typeof original === 'string') {
+            parentElement.querySelectorAll(original).forEach((scaled: any) => {
+                transform(scaled, parentRect, resize ?? 'none');
+            });
+        } else if (!!original) {
+            transform(original, parentRect, resize ?? 'none');
+        }
+    };
+
+    /**
+     * Size of a fixed drawing canvas, in design pixels.
+     *
+     * The SVG payload carries the authoritative size (View.profile mirrors it), and
+     * offsetWidth/offsetHeight is layout size, so neither is affected by an already
+     * applied transform. That makes measuring idempotent.
+     */
+    static measureCanvas(target: HTMLElement): { width: number; height: number } {
+        if (!target) {
+            return { width: 0, height: 0 };
+        }
+        const svg = target.querySelector('svg');
+        if (svg) {
+            const w = parseFloat(svg.getAttribute('width'));
+            const h = parseFloat(svg.getAttribute('height'));
+            if (w > 0 && h > 0) {
+                return { width: w, height: h };
+            }
+        }
+        return { width: target.offsetWidth, height: target.offsetHeight };
+    }
+
+    /** Usable size of a container. clientWidth first, rect as fallback for SVG parents. */
+    static containerSize(container: Element): { width: number; height: number } {
+        if (!container) {
+            return { width: 0, height: 0 };
+        }
+        const el = container as HTMLElement;
+        if (el.clientWidth > 0 && el.clientHeight > 0) {
+            return { width: el.clientWidth, height: el.clientHeight };
+        }
+        const rect = container.getBoundingClientRect();
+        return { width: rect.width, height: rect.height };
+    }
+
+    /** Marks the <image> we hid, so the next fit can put it back exactly as it was. */
+    private static readonly BACKDROP_FLAG = 'data-scadia-backdrop';
+
+    /**
+     * The screen's full-canvas backdrop image, or null when it has none.
+     *
+     * A backdrop is an <image> pinned to the origin and at least as large as the canvas - the
+     * picture a 展厅 screen is drawn on. Recognising it is what lets a screen fill a display of
+     * any shape: the picture can be cropped, the controls on top of it cannot.
+     */
+    static findBackdrop(target: HTMLElement, canvasWidth: number, canvasHeight: number): SVGImageElement {
+        if (!target || !(canvasWidth > 0) || !(canvasHeight > 0)) {
+            return null;
+        }
+        const images = target.querySelectorAll('image');
+        for (let i = 0; i < images.length; i++) {
+            const img = images[i] as SVGImageElement;
+            const x = Number(img.getAttribute('x') || 0);
+            const y = Number(img.getAttribute('y') || 0);
+            const w = Number(img.getAttribute('width'));
+            const h = Number(img.getAttribute('height'));
+            if (x <= 1 && y <= 1 && w >= canvasWidth * 0.98 && h >= canvasHeight * 0.98) {
+                return img;
+            }
+        }
+        return null;
+    }
+
+    /** True when this screen is drawn on a full-canvas backdrop, so it can use the fill mode. */
+    static hasFullCanvasBackdrop(target: HTMLElement, canvasWidth: number, canvasHeight: number): boolean {
+        return Utils.findBackdrop(target, canvasWidth, canvasHeight) !== null;
+    }
+
+    /**
+     * Paint the backdrop behind the canvas, and hide the copy inside it.
+     *
+     * Both copies must not be visible at once: the container scales the picture to COVER while
+     * the canvas scales it to CONTAIN, so the two would disagree and leave a visible seam.
+     */
+    static applyBackdrop(container: HTMLElement, target: HTMLElement, canvasWidth: number, canvasHeight: number): void {
+        const img = Utils.findBackdrop(target, canvasWidth, canvasHeight);
+        const href = img
+            ? (img.getAttribute('href') || img.getAttributeNS('http://www.w3.org/1999/xlink', 'href'))
+            : null;
+        if (!container || !img || !href) {
+            Utils.clearBackdrop(container, target);
+            return;
+        }
+        if (img.getAttribute(Utils.BACKDROP_FLAG) !== 'hidden') {
+            // Remember what the author had, instead of assuming it was visible.
+            img.setAttribute('data-scadia-backdrop-was', img.style.visibility || '');
+            img.setAttribute(Utils.BACKDROP_FLAG, 'hidden');
+        }
+        img.style.visibility = 'hidden';
+        container.style.backgroundImage = 'url("' + href + '")';
+        container.style.backgroundSize = 'cover';
+        container.style.backgroundPosition = 'center center';
+        container.style.backgroundRepeat = 'no-repeat';
+    }
+
+    /** Undo applyBackdrop, leaving the container and the artwork as they were. */
+    static clearBackdrop(container: HTMLElement, target: HTMLElement): void {
+        if (container) {
+            container.style.backgroundImage = '';
+            container.style.backgroundSize = '';
+            container.style.backgroundPosition = '';
+            container.style.backgroundRepeat = '';
+        }
+        if (!target) {
+            return;
+        }
+        const hidden = target.querySelector('image[' + Utils.BACKDROP_FLAG + ']');
+        if (hidden) {
+            (hidden as SVGImageElement).style.visibility = hidden.getAttribute('data-scadia-backdrop-was') || '';
+            hidden.removeAttribute(Utils.BACKDROP_FLAG);
+            hidden.removeAttribute('data-scadia-backdrop-was');
+        }
+    }
+
+    /**
+     * Fit a fixed-size canvas into the space available for it.
+     *
+     * This is the one place that answers "the drawing does not match the screen".
+     * The canvas keeps its design pixel size - every child stays laid out in design
+     * coordinates - and the whole block is mapped onto the container with a CSS transform.
+     * A transform is used on purpose: it scales SVG artwork and HTML gauges uniformly,
+     * keeps vector content crisp at any zoom, and does not reflow the canvas.
+     *
+     * The scale is derived from the *current viewport*, never from screen.width, so a
+     * project behaves correctly when the same window is dragged between monitors or when
+     * two screens each show their own window (the control room wall case).
+     *
+     * Returns the applied mapping, or null when the container is not measurable yet
+     * (hidden tab, collapsed panel). Callers are expected to retry later.
+     */
+    static fitView(target: HTMLElement, container: HTMLElement, options: ViewFitOptions): ViewFitResult {
+        if (!target || !container) {
+            return null;
+        }
+        const canvasWidth = Number(options?.width);
+        const canvasHeight = Number(options?.height);
+        if (!(canvasWidth > 0) || !(canvasHeight > 0)) {
+            return null;
+        }
+        const padding = options?.padding > 0 ? options.padding : 0;
+        const size = Utils.containerSize(container);
+        const availableWidth = size.width - padding * 2;
+        const availableHeight = size.height - padding * 2;
+        if (!(availableWidth > 0) || !(availableHeight > 0)) {
+            return null;
+        }
+
+        const mode = options?.mode ?? PropertyScaleModeType.contain;
+        const ratioWidth = availableWidth / canvasWidth;
+        const ratioHeight = availableHeight / canvasHeight;
+        let scaleX = 1;
+        let scaleY = 1;
+        switch (mode) {
+            case PropertyScaleModeType.stretch:
+                scaleX = ratioWidth;
+                scaleY = ratioHeight;
+                break;
+            case PropertyScaleModeType.cover:
+                scaleX = scaleY = Math.max(ratioWidth, ratioHeight);
+                break;
+            case PropertyScaleModeType.width:
+                scaleX = scaleY = ratioWidth;
+                break;
+            case PropertyScaleModeType.none:
+                scaleX = 1;
+                scaleY = 1;
+                break;
+            case PropertyScaleModeType.fill:
+            case PropertyScaleModeType.contain:
+            default:
+                // fill keeps the CANVAS contained and lets the backdrop do the filling, so
+                // no control is ever cropped; the two modes differ only in what is painted
+                // outside the canvas (see applyBackdrop).
+                scaleX = scaleY = Math.min(ratioWidth, ratioHeight);
+                break;
+        }
+        if (options?.maxScale > 0) {
+            scaleX = Math.min(scaleX, options.maxScale);
+            scaleY = Math.min(scaleY, options.maxScale);
+        }
+        if (options?.minScale > 0) {
+            scaleX = Math.max(scaleX, options.minScale);
+            scaleY = Math.max(scaleY, options.minScale);
+        }
+        if (!isFinite(scaleX) || !isFinite(scaleY) || scaleX <= 0 || scaleY <= 0) {
+            return null;
+        }
+
+        const scaledWidth = canvasWidth * scaleX;
+        const scaledHeight = canvasHeight * scaleY;
+        // Center the canvas, except when it is meant to be read from the top-left and
+        // scrolled (none/width) - centering there would hide the beginning of the drawing.
+        const centerX = mode !== PropertyScaleModeType.none && mode !== PropertyScaleModeType.width;
+        const centerY = mode === PropertyScaleModeType.contain
+            || mode === PropertyScaleModeType.fill
+            || mode === PropertyScaleModeType.cover
+            || mode === PropertyScaleModeType.stretch;
+        const offsetX = padding + (centerX ? (availableWidth - scaledWidth) / 2 : 0);
+        const offsetY = padding + (centerY ? (availableHeight - scaledHeight) / 2 : 0);
+
+        target.style.position = 'absolute';
+        target.style.left = '0px';
+        target.style.top = '0px';
+        target.style.margin = '0px';
+        target.style.width = canvasWidth + 'px';
+        target.style.height = canvasHeight + 'px';
+        // The canvas holds an inline-level <svg>. Left as a table/inline formatting context it
+        // grows a few pixels past its declared height from the text baseline, which is enough
+        // to make a fitted wall overflow by a hair and show a scrollbar. Pin the box instead.
+        target.style.display = 'block';
+        target.style.lineHeight = '0';
+        target.style.overflow = 'hidden';
+        target.style.transformOrigin = '0 0';
+        target.style.transform = 'translate(' + Utils.round(offsetX) + 'px, ' + Utils.round(offsetY)
+            + 'px) scale(' + Utils.round(scaleX, 6) + ', ' + Utils.round(scaleY, 6) + ')';
+        // Scrolling containers show scrollbars; a fitted wall must never show one, but a
+        // 1:1 or width-only canvas is explicitly meant to be scrolled.
+        container.style.overflow = (mode === PropertyScaleModeType.none || mode === PropertyScaleModeType.width)
+            ? 'auto' : 'hidden';
+
+        // fill puts the screen's own artwork BEHIND the canvas, scaled to cover, so the
+        // display is filled without the canvas - and therefore without a single control -
+        // being cropped. Every other mode leaves the container as it found it.
+        if (mode === PropertyScaleModeType.fill) {
+            Utils.applyBackdrop(container, target, canvasWidth, canvasHeight);
+        } else {
+            Utils.clearBackdrop(container, target);
+        }
+
+        return {
+            mode: mode,
+            scaleX: scaleX,
+            scaleY: scaleY,
+            scaledWidth: scaledWidth,
+            scaledHeight: scaledHeight,
+            offsetX: offsetX,
+            offsetY: offsetY,
+            canvasWidth: canvasWidth,
+            canvasHeight: canvasHeight
+        };
+    }
+
+    /** Undo fitView, restoring the element to normal document flow. */
+    static clearFitView(target: HTMLElement): void {
+        if (!target) {
+            return;
+        }
+        target.style.position = '';
+        target.style.left = '';
+        target.style.top = '';
+        target.style.margin = '';
+        target.style.width = '';
+        target.style.height = '';
+        target.style.display = '';
+        target.style.lineHeight = '';
+        target.style.overflow = '';
+        target.style.transform = '';
+        target.style.transformOrigin = '';
+    }
+
+    static round(value: number, digits = 3): number {
+        if (!isFinite(value)) {
+            return value;
+        }
+        const factor = Math.pow(10, digits);
+        return Math.round(value * factor) / factor;
+    }
+
+    /** Merge of array of object, the next overwrite the last */
+    static mergeDeep(...objArray) {
+        const result = {};
+        objArray.forEach((obj) => {
+            if (obj) {
+                Object.keys(obj).forEach((key) => {
+                    if (obj[key] && typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
+                        result[key] = Utils.mergeDeep(result[key], obj[key]);
+                    } else if (Array.isArray(obj[key])) {
+                        if (!Array.isArray(result[key])) {
+                            result[key] = [];
+                        }
+                        result[key] = result[key].concat(obj[key]);
+                    } else {
+                        result[key] = obj[key];
+                    }
+                });
+            }
+        });
+        return result;
+    };
+
+    static mergeArray(arrArray: any[][], key: string): any[] {
+        const mergedMap = new Map<string, any>();
+        if (arrArray) {
+            for (const arr of arrArray) {
+                if (arr) {
+                    for (const obj of arr) {
+                        const keyValue = obj[key];
+
+                        if (keyValue) {
+                            // Se la chiave esiste già, sovrascrivi l'oggetto esistente
+                            mergedMap.set(keyValue, { ...mergedMap.get(keyValue), ...obj });
+                        } else {
+                            console.warn(`L'oggetto ${JSON.stringify(obj)} non ha la chiave ${key}`);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Converte la mappa in un array
+        return Array.from(mergedMap.values());
+    }
+
+    /**
+     * Merges two arrays of objects into one, ensuring uniqueness based on a specified object key.
+     * @template T - The type of objects in the arrays.
+     * @param {T[] | null | undefined} base - The base array to start from. Can be null or undefined.
+     * @param {T[] | null | undefined} toAdd - The array of elements to add, if they are not already present.
+     * @param {keyof T} key - The object key used to determine uniqueness.
+     * @returns {T[]} A new array containing all unique elements from both arrays based on the specified key.
+     * @example
+     * const base = [{ id: 1, name: 'A' }];
+     * const toAdd = [{ id: 2, name: 'B' }, { id: 1, name: 'A' }];
+     * const result = Utils.mergeUniqueBy(base, toAdd, 'id');
+     * // result: [{ id: 1, name: 'A' }, { id: 2, name: 'B' }]
+     */
+    static mergeUniqueBy<T>(base: T[] | null | undefined, toAdd: T[] | null | undefined, key: keyof T): T[] | null {
+        if ((!base || base.length === 0) && (!toAdd || toAdd.length === 0)) {
+            return null;
+        }
+
+        const result: T[] = base ? [...base] : [];
+        const existingKeys = new Set(result.map(item => item[key]));
+        let added = false;
+
+        if (toAdd) {
+            toAdd.forEach(item => {
+                if (!existingKeys.has(item[key])) {
+                    result.push(item);
+                    existingKeys.add(item[key]);
+                    added = true;
+                }
+            });
+        }
+
+        if (!added) {
+            return base ?? null;
+        }
+
+        return result;
+    }
+
+    static copyToClipboard(text) {
+        // Create a temporary textarea element
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        // Make the textarea hidden
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        // Append the textarea to the document
+        document.body.appendChild(textarea);
+        // Select and copy the text from the textarea
+        textarea.select();
+        document.execCommand('copy');
+        // Remove the textarea from the document
+        document.body.removeChild(textarea);
+    }
+
+    static millisecondsToTime(milliseconds: number): { hours: number; minutes: number; seconds: number; milliseconds: number } {
+        const hours = Math.floor(milliseconds / 3600000);
+        milliseconds %= 3600000;
+
+        const minutes = Math.floor(milliseconds / 60000);
+        milliseconds %= 60000;
+
+        const seconds = Math.floor(milliseconds / 1000); // 1 secondo = 1000 millisecondi
+        milliseconds %= 1000;
+
+        return { hours, minutes, seconds, milliseconds };
+    }
+
+    static timeToString(time: { hours: number; minutes: number; seconds: number; milliseconds: number }, format: number): string {
+        function formatNumberWithLeadingZeros(number, length) {
+            return number.toString().padStart(length, '0');
+        }
+        let result = `${formatNumberWithLeadingZeros(time.hours, 2)}:${formatNumberWithLeadingZeros(time.minutes, 2)}`;
+        if (format) {
+            result += `:${formatNumberWithLeadingZeros(time.seconds, 2)}`;
+            if (format >= 1000) {
+                result += `.${formatNumberWithLeadingZeros(time.milliseconds, 3)}`;
+            }
+        }
+        return result;
+    }
+
+    static millisecondsToTimeString(milliseconds: number, format?: number): string {
+        return Utils.timeToString(Utils.millisecondsToTime(milliseconds), format);
+    }
+
+    static millisecondsToDateString(milliseconds: number, format?: number): string {
+        const dateObject = new Date(milliseconds);
+        const year = dateObject.getFullYear();
+        const month = (dateObject.getMonth() + 1).toString().padStart(2, '0');
+        const day = dateObject.getDate().toString().padStart(2, '0');
+        const hours = dateObject.getHours().toString().padStart(2, '0');
+        const minutes = dateObject.getMinutes().toString().padStart(2, '0');
+        const seconds = dateObject.getSeconds().toString().padStart(2, '0');
+        const milli = dateObject.getMilliseconds().toString().padStart(3, '0');
+        let dateString = `${year}-${month}-${day}`;
+        if (format > 0) {
+            dateString += `T${hours}:${minutes}`;
+            if (format > 1) {
+                dateString += `:${seconds}`;
+                if (format > 100) {
+                    dateString += `.${milli}`;
+                }
+            }
+        }
+        return dateString;
+    }
+
+    static getTimeDifferenceInSeconds(timestamp: number): number {
+        const currentTimestamp = Date.now();
+        const differenceInMilliseconds = currentTimestamp - timestamp;
+        return Math.floor(differenceInMilliseconds / 1000);
+    }
+
+    /**
+     * The width this chrome was laid out against, and the viewports it must also stay usable on.
+     *
+     * WHY THESE NUMBERS. 1920x1080 is the design basis: at that width every size in styles.css is
+     * used exactly as written. Everything else is expressed as a ratio to it, which is what makes
+     * the chrome adapt instead of simply being too large on a small screen and too small on a wall.
+     */
+    static readonly UI_DESIGN_WIDTH = 1920;
+
+    /** Never shrink the chrome below this - 0.8 of 14px is still 11.2px, which stays legible. */
+    static readonly UI_SCALE_MIN = 0.8;
+
+    /** Never grow it above this - beyond ~1.5 a 1080p-tall window starts losing whole rows. */
+    static readonly UI_SCALE_MAX = 1.6;
+
+    /**
+     * Factor applied to headers, menus, dialogs and the shared chrome.
+     *
+     * Two things changed here, both measured against how the old version behaved:
+     *
+     * 1. IT NOW ADAPTS IN BOTH DIRECTIONS. The previous version only ever grew, and only above
+     *    3200px - so on a 1366 or 1920 laptop it returned exactly 1 and the chrome was identical
+     *    everywhere. That is the version that read as "too large" on smaller displays: nothing was
+     *    shrinking. The scale is now the viewport's ratio to the design width.
+     *
+     * 2. IT IS CONTINUOUS, NOT STEPPED. Breakpoints only ever satisfy the screens that happen to
+     *    sit near them; a ratio adapts to 1280, 1440, 1536, 1680, 2560 and every size between.
+     *
+     * It is clamped rather than free-running, because an unclamped ratio is a bug in both
+     * directions: a 3840 wall would triple every row, and an 800px window would shrink text to
+     * nothing. Outside the clamps the layout must scroll, not dissolve.
+     *
+     * A value the project configured in the editor still wins outright - that is an operator's
+     * explicit choice, and an automatic rule must not overrule it.
+     */
+    static computeUiScale(layout?: { uiScale?: number }): number {
+        const configured = Number(layout?.uiScale);
+        if (configured && configured > 0) {
+            return configured / 100;
+        }
+        return Utils.uiScaleForWidth(typeof window !== 'undefined' ? window.innerWidth : 0);
+    }
+
+    /**
+     * The scale for a given viewport width, as a pure function of it.
+     *
+     * Split out from computeUiScale so it can be reasoned about - and tested - without a DOM.
+     */
+    static uiScaleForWidth(width: number): number {
+        if (!width || width <= 0) {
+            return 1;
+        }
+        const ratio = width / Utils.UI_DESIGN_WIDTH;
+        return Math.min(Utils.UI_SCALE_MAX, Math.max(Utils.UI_SCALE_MIN, ratio));
+    }
+
+    /** Publish the chrome scale so the global stylesheet can use it. */
+    static applyUiScale(scale: number): void {
+        if (typeof document === 'undefined') {
+            return;
+        }
+        document.documentElement.style.setProperty('--scadia-ui-scale', String(scale > 0 ? scale : 1));
+    }
+
+    /**
+     * Wall / kiosk presentation mode, enabled with ?kiosk=1.
+     *
+     * A control room wall runs unattended for months: no navigation chrome, no scrollbars,
+     * no mouse pointer, no text selection. Kept as a URL flag so the very same project can
+     * be opened normally on an engineer's laptop and as a wall feed on the big screen.
+     */
+    static isKioskMode(search?: string): boolean {
+        try {
+            const query = search ?? (typeof window !== 'undefined' ? window.location.search : '');
+            const value = new URLSearchParams(query).get('kiosk');
+            return value !== null && ['1', 'true', 'yes', 'on'].indexOf(value.toLowerCase()) !== -1;
+        } catch (err) {
+            return false;
+        }
+    }
+
+    static isValidUrl(url: string): boolean {
+        try {
+            // Check if it's an absolute URL
+            new URL(url);
+            return true;
+        } catch (error) {
+            // Check if it's a relative URL (starts with / or is a valid relative path)
+            if (url.startsWith('/') || (!url.includes('://') && url.length > 0)) {
+                return true;
+            }
+            return false;
+        }
+    }
+}
+
+/** Inputs of Utils.fitView. */
+export interface ViewFitOptions {
+    mode?: PropertyScaleModeType;
+    /** Design size of the canvas being fitted, in pixels. */
+    width: number;
+    height: number;
+    /** Margin kept around the canvas, in screen pixels. */
+    padding?: number;
+    maxScale?: number;
+    minScale?: number;
+}
+
+/** What Utils.fitView applied, so callers can position overlays consistently. */
+export interface ViewFitResult {
+    mode: PropertyScaleModeType;
+    scaleX: number;
+    scaleY: number;
+    scaledWidth: number;
+    scaledHeight: number;
+    offsetX: number;
+    offsetY: number;
+    canvasWidth: number;
+    canvasHeight: number;
+}
+
+@Pipe({
+    name: 'enumToArray'
+})
+export class EnumToArrayPipe implements PipeTransform {
+
+    transform(value): any {
+        let result = [];
+        var keys = Object.keys(value);
+        var values = Object.values(value);
+        for (var i = 0; i < keys.length; i++) {
+            result.push({ key: keys[i], value: values[i] });
+        }
+        return result;
+        //or if you want to order the result:
+        //return result.sort((a, b) => a.value < b.value ? -1 : 1);
+    }
+}
+
+@Pipe({ name: 'keepHtml', pure: false })
+export class EscapeHtmlPipe implements PipeTransform {
+    constructor(private sanitizer: DomSanitizer) {
+    }
+
+    transform(content) {
+        return this.sanitizer.bypassSecurityTrustHtml(content);
+    }
+}
