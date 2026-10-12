@@ -1,0 +1,9 @@
+{
+  "root": true,
+  "parserOptions": { "ecmaVersion": 2022, "sourceType": "script" },
+  "env": { "node": true, "es2022": true, "mocha": true },
+  "ignorePatterns": ["node_modules/**", "dist/**", "_widgets/**", "_assets/**", "docs/**"],
+  "rules": {
+    "no-undef": "error"
+  }
+}

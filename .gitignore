@@ -1,0 +1,25 @@
+# 依赖与缓存（克隆后按 README 安装/构建；.angular 缓存里有 >500MB 单文件，GitHub 必拒）
+node_modules/
+.angular/
+*.pack
+
+# 运行期产物与日志
+project/_logs/
+*.log
+*.log.err
+*.err
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# 环境与密钥
+.env
+.env.*
+*.key
+*.pem
+
+# 系统杂项
+Thumbs.db
+.DS_Store

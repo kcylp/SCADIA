@@ -1,0 +1,79 @@
+:host {
+    display: block;
+    height: 100%;
+    min-height: 0;
+}
+
+/* ------------------------------------------------------------------ layout */
+
+.scada .sc-topbar__meta {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: 60%;
+}
+
+.scada .sc-panel__bd {
+    overflow-x: auto;
+}
+
+.scada .sc-table th:first-child,
+.scada .sc-table td:first-child { padding-left: 16px; }
+
+.scada .sc-table th:last-child,
+.scada .sc-table td:last-child { padding-right: 16px; }
+
+/* KPI tiles read as instrument readouts: fixed rhythm, no wrap surprises */
+.scada .sc-grid--kpi {
+    grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+}
+
+.scada .sc-kpi__value {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ----------------------------------------------------------- chart polish */
+
+.scada .sc-chart svg {
+    shape-rendering: geometricPrecision;
+}
+
+.scada .sc-chart .sc-grid-lines line {
+    opacity: 0.9;
+}
+
+.scada .sc-legend i {
+    border-radius: 50%;
+}
+
+/* ----------------------------------------------------------- live station */
+
+.scada .sc-live {
+    align-items: flex-end;
+}
+
+.scada .sc-live .sc-input {
+    height: 34px;
+}
+
+/* Dense tables inside scroll regions keep a stable header */
+.scada .sc-scroll table thead th {
+    position: sticky;
+    top: 0;
+    background: var(--sc-panel);
+    z-index: 2;
+}
+
+/* ------------------------------------------------------------- responsive */
+
+@media (max-width: 780px) {
+    .scada .sc-topbar {
+        height: auto;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 10px 14px;
+    }
+    .scada .sc-topbar__meta { max-width: 100%; }
+    .scada .sc-readout--xl { font-size: 34px; }
+}

@@ -1,0 +1,84 @@
+<svg width="1770" height="993" viewBox="0 0 1770 993" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g><title>数据展示界面</title>
+    <text x="26" y="46" font-family="微软雅黑" font-size="24" font-weight="bold" fill="#f2f7fd">数据展示</text>
+    <text x="26" y="68" font-family="微软雅黑" font-size="12" fill="#8a9cb2">统计周期 2026-09-01 至 2026-09-30 · 数据源 SQLite 历史库</text>
+    <line x1="24" y1="82" x2="1746" y2="82" stroke="#1d3145" stroke-width="1"/>
+    <rect x="24" y="98" width="554" height="178" rx="8" ry="8" fill="#0b1522" stroke="#1d3145" stroke-width="1"/>
+    <rect x="24" y="98" width="3" height="178" rx="1.5" ry="1.5" fill="#ff5a6e"/>
+    <text x="42" y="126" font-family="微软雅黑" font-size="15" font-weight="bold" fill="#f2f7fd">全矿异物报警统计</text>
+    <text x="42" y="206" font-family="Consolas,monospace" font-size="54" font-weight="bold" fill="#ff5a6e">412</text>
+    <text x="214" y="206" font-family="微软雅黑" font-size="14" fill="#8a9cb2">次</text>
+    <text x="42" y="244" font-family="微软雅黑" font-size="12" fill="#8a9cb2">本月累计 · 环比 -8%</text>
+    <polyline points="274,236 298,229 322,222 346,215 370,234 394,227 418,220 442,213 466,232 490,225 514,218 538,211" fill="none" stroke="#ff5a6e" stroke-width="2" stroke-opacity="0.85"/>
+    <rect x="602" y="98" width="554" height="178" rx="8" ry="8" fill="#0b1522" stroke="#1d3145" stroke-width="1"/>
+    <rect x="602" y="98" width="3" height="178" rx="1.5" ry="1.5" fill="#ffc247"/>
+    <text x="620" y="126" font-family="微软雅黑" font-size="15" font-weight="bold" fill="#f2f7fd">全矿跑偏报警统计</text>
+    <text x="620" y="206" font-family="Consolas,monospace" font-size="54" font-weight="bold" fill="#ffc247">168</text>
+    <text x="792" y="206" font-family="微软雅黑" font-size="14" fill="#8a9cb2">次</text>
+    <text x="620" y="244" font-family="微软雅黑" font-size="12" fill="#8a9cb2">本月累计 · 环比 +12%</text>
+    <polyline points="852,231 876,224 900,217 924,236 948,229 972,222 996,215 1020,234 1044,227 1068,220 1092,213 1116,232" fill="none" stroke="#ffc247" stroke-width="2" stroke-opacity="0.85"/>
+    <rect x="1180" y="98" width="554" height="178" rx="8" ry="8" fill="#0b1522" stroke="#1d3145" stroke-width="1"/>
+    <rect x="1180" y="98" width="3" height="178" rx="1.5" ry="1.5" fill="#4aa8ff"/>
+    <text x="1198" y="126" font-family="微软雅黑" font-size="15" font-weight="bold" fill="#f2f7fd">全矿堆煤报警统计</text>
+    <text x="1198" y="206" font-family="Consolas,monospace" font-size="54" font-weight="bold" fill="#4aa8ff">43</text>
+    <text x="1370" y="206" font-family="微软雅黑" font-size="14" fill="#8a9cb2">次</text>
+    <text x="1198" y="244" font-family="微软雅黑" font-size="12" fill="#8a9cb2">本月累计 · 环比 -3%</text>
+    <polyline points="1430,226 1454,219 1478,212 1502,231 1526,224 1550,217 1574,236 1598,229 1622,222 1646,215 1670,234 1694,227" fill="none" stroke="#4aa8ff" stroke-width="2" stroke-opacity="0.85"/>
+    <rect x="24" y="296" width="1112" height="366" rx="8" ry="8" fill="#0b1522" stroke="#1d3145" stroke-width="1"/>
+    <rect x="24" y="296" width="3" height="366" rx="1.5" ry="1.5" fill="#4aa8ff"/>
+    <text x="42" y="324" font-family="微软雅黑" font-size="15" font-weight="bold" fill="#f2f7fd">报警趋势（近 12 个月）</text>
+    <line x1="60" y1="620" x2="1100" y2="620" stroke="#1d3145" stroke-width="1"/>
+    <line x1="60" y1="348" x2="60" y2="620" stroke="#1d3145" stroke-width="1"/>
+    <line x1="60" y1="552" x2="1100" y2="552" stroke="#122031" stroke-width="1"/>
+    <line x1="60" y1="484" x2="1100" y2="484" stroke="#122031" stroke-width="1"/>
+    <line x1="60" y1="416" x2="1100" y2="416" stroke="#122031" stroke-width="1"/>
+    <line x1="60" y1="348" x2="1100" y2="348" stroke="#122031" stroke-width="1"/>
+    <polyline points="60,501.2 154.5,468.79999999999995 249,485 343.5,436.4 438,452.6 532.5,404 627,420.2 721.5,377 816,393.2 910.5,360.79999999999995 1005,382.4 1099.5,420.2" fill="none" stroke="#ff5a6e" stroke-width="2.5"/>
+    <polyline points="60,576.8 154.5,560.6 249,571.4 343.5,544.4 438,555.2 532.5,533.6 627,522.8 721.5,539 816,517.4 910.5,528.2 1005,544.4 1099.5,555.2" fill="none" stroke="#ffc247" stroke-width="2.5"/>
+    <polyline points="60,598.4 154.5,603.8 249,593 343.5,598.4 438,587.6 532.5,593 627,582.2 721.5,587.6 816,593 910.5,587.6 1005,598.4 1099.5,593" fill="none" stroke="#4aa8ff" stroke-width="2.5"/>
+    <circle cx="700" cy="326" r="5" fill="#ff5a6e"/>
+    <text x="712" y="331" font-family="微软雅黑" font-size="12" fill="#b6c8dc">异物</text>
+    <circle cx="830" cy="326" r="5" fill="#ffc247"/>
+    <text x="842" y="331" font-family="微软雅黑" font-size="12" fill="#b6c8dc">跑偏</text>
+    <circle cx="960" cy="326" r="5" fill="#4aa8ff"/>
+    <text x="972" y="331" font-family="微软雅黑" font-size="12" fill="#b6c8dc">堆煤</text>
+    <rect x="1156" y="296" width="590" height="366" rx="8" ry="8" fill="#0b1522" stroke="#1d3145" stroke-width="1"/>
+    <rect x="1156" y="296" width="3" height="366" rx="1.5" ry="1.5" fill="#35e08a"/>
+    <text x="1174" y="324" font-family="微软雅黑" font-size="15" font-weight="bold" fill="#f2f7fd">皮带报警占比</text>
+    <text x="1180" y="372" font-family="微软雅黑" font-size="13" fill="#b6c8dc">皮带一</text>
+    <rect x="1260" y="352" width="420" height="26" rx="4" ry="4" fill="#122031"/>
+    <rect x="1260" y="352" width="188" height="26" rx="4" ry="4" fill="#35e08a" fill-opacity="0.85"/>
+    <text x="1700" y="372" font-family="Consolas,monospace" font-size="14" font-weight="bold" fill="#35e08a" text-anchor="end">96</text>
+    <text x="1180" y="440" font-family="微软雅黑" font-size="13" fill="#b6c8dc">皮带二</text>
+    <rect x="1260" y="420" width="420" height="26" rx="4" ry="4" fill="#122031"/>
+    <rect x="1260" y="420" width="420" height="26" rx="4" ry="4" fill="#ff5a6e" fill-opacity="0.85"/>
+    <text x="1700" y="440" font-family="Consolas,monospace" font-size="14" font-weight="bold" fill="#ff5a6e" text-anchor="end">214</text>
+    <text x="1180" y="508" font-family="微软雅黑" font-size="13" fill="#b6c8dc">皮带三</text>
+    <rect x="1260" y="488" width="420" height="26" rx="4" ry="4" fill="#122031"/>
+    <rect x="1260" y="488" width="82" height="26" rx="4" ry="4" fill="#64748b" fill-opacity="0.85"/>
+    <text x="1700" y="508" font-family="Consolas,monospace" font-size="14" font-weight="bold" fill="#64748b" text-anchor="end">42</text>
+    <text x="1180" y="576" font-family="微软雅黑" font-size="13" fill="#b6c8dc">皮带四</text>
+    <rect x="1260" y="556" width="420" height="26" rx="4" ry="4" fill="#122031"/>
+    <rect x="1260" y="556" width="330" height="26" rx="4" ry="4" fill="#ffc247" fill-opacity="0.85"/>
+    <text x="1700" y="576" font-family="Consolas,monospace" font-size="14" font-weight="bold" fill="#ffc247" text-anchor="end">168</text>
+    <rect x="24" y="682" width="1722" height="287" rx="8" ry="8" fill="#0b1522" stroke="#1d3145" stroke-width="1"/>
+    <rect x="24" y="682" width="3" height="287" rx="1.5" ry="1.5" fill="#22d3ee"/>
+    <text x="42" y="710" font-family="微软雅黑" font-size="15" font-weight="bold" fill="#f2f7fd">煤流检测 · 实时与累计</text>
+    <text x="60" y="740" font-family="微软雅黑" font-size="13" fill="#8a9cb2">皮带一</text>
+    <text x="60" y="800" font-family="Consolas,monospace" font-size="40" font-weight="bold" fill="#f2f7fd">1280</text>
+    <text x="60" y="838" font-family="Consolas,monospace" font-size="20" fill="#22d3ee">38,420</text>
+    <text x="60" y="862" font-family="微软雅黑" font-size="11" fill="#8a9cb2">t/h · 今日累计 t</text>
+    <text x="488" y="740" font-family="微软雅黑" font-size="13" fill="#8a9cb2">皮带二</text>
+    <text x="488" y="800" font-family="Consolas,monospace" font-size="40" font-weight="bold" fill="#f2f7fd">1145</text>
+    <text x="488" y="838" font-family="Consolas,monospace" font-size="20" fill="#22d3ee">34,350</text>
+    <text x="488" y="862" font-family="微软雅黑" font-size="11" fill="#8a9cb2">t/h · 今日累计 t</text>
+    <text x="916" y="740" font-family="微软雅黑" font-size="13" fill="#8a9cb2">皮带三</text>
+    <text x="916" y="800" font-family="Consolas,monospace" font-size="40" font-weight="bold" fill="#f2f7fd">0</text>
+    <text x="916" y="838" font-family="Consolas,monospace" font-size="20" fill="#22d3ee">0</text>
+    <text x="916" y="862" font-family="微软雅黑" font-size="11" fill="#8a9cb2">t/h · 停机</text>
+    <text x="1344" y="740" font-family="微软雅黑" font-size="13" fill="#8a9cb2">皮带四</text>
+    <text x="1344" y="800" font-family="Consolas,monospace" font-size="40" font-weight="bold" fill="#f2f7fd">980</text>
+    <text x="1344" y="838" font-family="Consolas,monospace" font-size="20" fill="#22d3ee">29,400</text>
+    <text x="1344" y="862" font-family="微软雅黑" font-size="11" fill="#8a9cb2">t/h · 今日累计 t</text>
+  </g>
+</svg>

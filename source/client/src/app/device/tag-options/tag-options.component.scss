@@ -1,0 +1,25 @@
+:host {
+    .container {
+        width: 350px;
+
+        .item-block {
+            display: block;
+
+            input,
+            span {
+                width: calc(100% - 5px);
+            }
+            mat-select {
+                display: flex;
+            }
+        }
+
+        .item-param {
+            display: block;
+
+            input {
+                width: 150px;
+            }
+        }
+    }
+}

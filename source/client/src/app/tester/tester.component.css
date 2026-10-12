@@ -1,0 +1,75 @@
+.tester-panel {
+    width: 300px;
+    height: 563px;
+    z-index: 99999 !important;
+    position: absolute;
+    right: 10px;
+    top: 50px;
+    color: rgb(240, 240, 240);
+    background-color: rgb(46, 46, 48);
+    box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.2), 0 2px 6px 0 rgba(0, 0, 0, 0.18);
+    border: 0px !important;
+}
+
+.tester-header {
+    height: 30px;
+    color: rgb(230, 230, 230);
+    padding-left: 10px;
+    cursor: move;
+    line-height: 30px;
+    background-color: rgb(0, 0, 0);
+}
+
+.tester-close {
+    font-size: 28px;
+    cursor: pointer;
+    right: 5px;
+    position: absolute;
+    top: 0px;
+}
+
+.tester-body {
+    overflow-y: auto;
+    height: 350px;
+    color: rgb(230, 230, 230);
+}
+
+.tester-output {
+    overflow-y: auto;
+    height: 180px;
+    border-top: 1px solid gray;
+    padding: 2px 2px 0px 2px;
+    color: rgb(230, 230, 230);
+    padding-left: 5px;
+}
+
+.output-item {
+    display: block;
+    font-size: 12px;
+}
+
+.svg-property {
+    color: rgba(0, 0, 0, 0.75);
+}
+
+.svg-property span {
+    display: block;
+    font-size: 12px;
+    margin: 0px 5px 0px 10px;
+    color: rgb(230, 230, 230);
+}
+
+.svg-property input {
+    width: 50%;
+    display: inline-block;
+    margin: 0px 10px 12px 10px;
+    border: unset;
+    background-color: inherit;
+    color: rgb(230, 230, 230);
+    background-color: rgb(66, 66, 66);
+    height: 22px;
+}
+
+.svg-property button {
+    height: 26px;
+}

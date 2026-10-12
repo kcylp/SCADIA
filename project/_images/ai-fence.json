@@ -1,0 +1,27 @@
+{
+ "camera": "cam_6b153dde0e03",
+ "scale": 1000,
+ "points": [
+  [
+   150,
+   200
+  ],
+  [
+   850,
+   200
+  ],
+  [
+   850,
+   800
+  ],
+  [
+   150,
+   800
+  ]
+ ],
+ "label": "电子围栏",
+ "highlightMs": 3000,
+ "activeKind": null,
+ "activeAt": 1791614360653,
+ "updatedAt": 1791766727100
+}

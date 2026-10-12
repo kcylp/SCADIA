@@ -1,0 +1,60 @@
+{
+    "root": true,
+    "ignorePatterns": [
+        "**/node_modules/**"
+    ],
+    "overrides": [
+        {
+            "files": [
+                "*.ts"
+            ],
+            "plugins": ["unused-imports", "@typescript-eslint"],
+            "parserOptions": {
+                "project": "./tsconfig.json",
+                "createDefaultProgram": true
+            },
+            "extends": [
+                "plugin:@angular-eslint/recommended",
+                "plugin:@angular-eslint/template/process-inline-templates"
+            ],
+            "rules": {
+                "max-len": "off",
+                "@angular-eslint/no-output-on-prefix": "off",
+                "@typescript-eslint/member-ordering": "off",
+                "@typescript-eslint/member-delimiter-style": "off",
+                "@angular-eslint/no-input-rename": "off",
+                "@angular-eslint/no-output-rename": "off",
+                "@typescript-eslint/naming-convention": "off",
+                "@typescript-eslint/consistent-type-definitions": "error",
+                "@angular-eslint/no-output-native": "off",
+                "@angular-eslint/component-selector": [
+                    "off",
+                    {
+                        "type": "element",
+                        "prefix": "app",
+                        "style": "kebab-case"
+                    }
+                ],
+                "@angular-eslint/directive-selector": [
+                    "off",
+                    {
+                        "type": "attribute",
+                        "prefix": "app",
+                        "style": "camelCase"
+                    }
+                ],
+                "unused-imports/no-unused-imports": "error",
+                "curly": ["error", "multi-line"]
+            }
+        },
+        {
+            "files": [
+                "*.html"
+            ],
+            "extends": [
+                "plugin:@angular-eslint/template/recommended"
+            ],
+            "rules": {}
+        }
+    ]
+}

@@ -1,0 +1,135 @@
+<svg width="1770" height="993" viewBox="0 0 1770 993" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g><title>报警查询</title>
+    <text x="26" y="46" font-family="微软雅黑" font-size="24" font-weight="bold" fill="#f2f7fd">报警查询</text>
+    <text x="26" y="68" font-family="微软雅黑" font-size="12" fill="#8a9cb2">2026-09-30 00:00 至 2026-09-30 07:30 · 共 12 条（报警 2 · 预警 1 · 已处理 9）</text>
+    <line x1="24" y1="82" x2="1746" y2="82" stroke="#1d3145" stroke-width="1"/>
+    <rect x="24" y="98" width="1722" height="812" rx="8" ry="8" fill="#0b1522" stroke="#1d3145" stroke-width="1"/>
+    <rect x="24" y="98" width="1722" height="44" rx="8" ry="8" fill="#122031"/>
+    <text x="44" y="126" font-family="微软雅黑" font-size="12" font-weight="bold" fill="#8a9cb2" letter-spacing="1">报警时间</text>
+    <text x="244" y="126" font-family="微软雅黑" font-size="12" font-weight="bold" fill="#8a9cb2" letter-spacing="1">通道</text>
+    <text x="374" y="126" font-family="微软雅黑" font-size="12" font-weight="bold" fill="#8a9cb2" letter-spacing="1">类型</text>
+    <text x="524" y="126" font-family="微软雅黑" font-size="12" font-weight="bold" fill="#8a9cb2" letter-spacing="1">描述</text>
+    <text x="1224" y="126" font-family="微软雅黑" font-size="12" font-weight="bold" fill="#8a9cb2" letter-spacing="1">状态</text>
+    <text x="1354" y="126" font-family="微软雅黑" font-size="12" font-weight="bold" fill="#8a9cb2" letter-spacing="1">确认人</text>
+    <line x1="26" y1="205" x2="1744" y2="205" stroke="#122031" stroke-width="1"/>
+    <text x="44" y="180" font-family="Consolas,monospace" font-size="13" fill="#b6c8dc">2026-09-30 07:12:04</text>
+    <text x="244" y="180" font-family="Consolas,monospace" font-size="13" fill="#8a9cb2">CH-04</text>
+    <text x="374" y="180" font-family="微软雅黑" font-size="14" font-weight="bold" fill="#f2f7fd">皮带跑偏</text>
+    <text x="524" y="180" font-family="微软雅黑" font-size="13" fill="#b6c8dc">皮带四尾部托辊处皮带中心线偏移 82mm，持续 12s</text>
+    <rect x="1224" y="160" width="76" height="26" rx="4" ry="4" fill="rgba(255,90,110,0.12)" stroke="#ff5a6e" stroke-width="1"/>
+    <circle cx="1238" cy="173" r="4" fill="#ff5a6e"/>
+    <text x="1248" y="178" font-family="微软雅黑" font-size="12" font-weight="bold" fill="#ff5a6e">报警</text>
+    <text x="1354" y="180" font-family="微软雅黑" font-size="13" fill="#8a9cb2">—</text>
+    <rect x="26" y="205" width="1718" height="63" fill="#0e1a29"/>
+    <line x1="26" y1="268" x2="1744" y2="268" stroke="#122031" stroke-width="1"/>
+    <text x="44" y="243" font-family="Consolas,monospace" font-size="13" fill="#b6c8dc">2026-09-30 07:08:31</text>
+    <text x="244" y="243" font-family="Consolas,monospace" font-size="13" fill="#8a9cb2">CH-02</text>
+    <text x="374" y="243" font-family="微软雅黑" font-size="14" font-weight="bold" fill="#f2f7fd">异物检测</text>
+    <text x="524" y="243" font-family="微软雅黑" font-size="13" fill="#b6c8dc">皮带二检出木板类异物，置信度 96.4%，已联动停机</text>
+    <rect x="1224" y="223" width="76" height="26" rx="4" ry="4" fill="rgba(255,90,110,0.12)" stroke="#ff5a6e" stroke-width="1"/>
+    <circle cx="1238" cy="236" r="4" fill="#ff5a6e"/>
+    <text x="1248" y="241" font-family="微软雅黑" font-size="12" font-weight="bold" fill="#ff5a6e">报警</text>
+    <text x="1354" y="243" font-family="微软雅黑" font-size="13" fill="#8a9cb2">—</text>
+    <line x1="26" y1="331" x2="1744" y2="331" stroke="#122031" stroke-width="1"/>
+    <text x="44" y="306" font-family="Consolas,monospace" font-size="13" fill="#b6c8dc">2026-09-30 06:55:12</text>
+    <text x="244" y="306" font-family="Consolas,monospace" font-size="13" fill="#8a9cb2">CH-06</text>
+    <text x="374" y="306" font-family="微软雅黑" font-size="14" font-weight="bold" fill="#f2f7fd">堆煤预警</text>
+    <text x="524" y="306" font-family="微软雅黑" font-size="13" fill="#b6c8dc">转载点溜槽积煤高度超限，预计 3 分钟内堵溜</text>
+    <rect x="1224" y="286" width="76" height="26" rx="4" ry="4" fill="rgba(255,194,71,0.12)" stroke="#ffc247" stroke-width="1"/>
+    <circle cx="1238" cy="299" r="4" fill="#ffc247"/>
+    <text x="1248" y="304" font-family="微软雅黑" font-size="12" font-weight="bold" fill="#ffc247">预警</text>
+    <text x="1354" y="306" font-family="微软雅黑" font-size="13" fill="#8a9cb2">—</text>
+    <rect x="26" y="331" width="1718" height="63" fill="#0e1a29"/>
+    <line x1="26" y1="394" x2="1744" y2="394" stroke="#122031" stroke-width="1"/>
+    <text x="44" y="369" font-family="Consolas,monospace" font-size="13" fill="#b6c8dc">2026-09-30 06:41:08</text>
+    <text x="244" y="369" font-family="Consolas,monospace" font-size="13" fill="#8a9cb2">CH-01</text>
+    <text x="374" y="369" font-family="微软雅黑" font-size="14" font-weight="bold" fill="#f2f7fd">异物检测</text>
+    <text x="524" y="369" font-family="微软雅黑" font-size="13" fill="#b6c8dc">皮带一检出金属类异物，置信度 98.1%</text>
+    <rect x="1224" y="349" width="76" height="26" rx="4" ry="4" fill="rgba(53,224,138,0.10)" stroke="#35e08a" stroke-width="1"/>
+    <circle cx="1238" cy="362" r="4" fill="#35e08a"/>
+    <text x="1248" y="367" font-family="微软雅黑" font-size="12" font-weight="bold" fill="#35e08a">已确认</text>
+    <text x="1354" y="369" font-family="微软雅黑" font-size="13" fill="#8a9cb2">王工</text>
+    <line x1="26" y1="457" x2="1744" y2="457" stroke="#122031" stroke-width="1"/>
+    <text x="44" y="432" font-family="Consolas,monospace" font-size="13" fill="#b6c8dc">2026-09-30 06:22:47</text>
+    <text x="244" y="432" font-family="Consolas,monospace" font-size="13" fill="#8a9cb2">CH-04</text>
+    <text x="374" y="432" font-family="微软雅黑" font-size="14" font-weight="bold" fill="#f2f7fd">皮带跑偏</text>
+    <text x="524" y="432" font-family="微软雅黑" font-size="13" fill="#b6c8dc">偏移 54mm，已自行恢复</text>
+    <rect x="1224" y="412" width="76" height="26" rx="4" ry="4" fill="rgba(100,116,139,0.16)" stroke="#8a9cb2" stroke-width="1"/>
+    <circle cx="1238" cy="425" r="4" fill="#8a9cb2"/>
+    <text x="1248" y="430" font-family="微软雅黑" font-size="12" font-weight="bold" fill="#8a9cb2">已恢复</text>
+    <text x="1354" y="432" font-family="微软雅黑" font-size="13" fill="#8a9cb2">系统</text>
+    <rect x="26" y="457" width="1718" height="63" fill="#0e1a29"/>
+    <line x1="26" y1="520" x2="1744" y2="520" stroke="#122031" stroke-width="1"/>
+    <text x="44" y="495" font-family="Consolas,monospace" font-size="13" fill="#b6c8dc">2026-09-30 05:58:03</text>
+    <text x="244" y="495" font-family="Consolas,monospace" font-size="13" fill="#8a9cb2">CH-02</text>
+    <text x="374" y="495" font-family="微软雅黑" font-size="14" font-weight="bold" fill="#f2f7fd">异物检测</text>
+    <text x="524" y="495" font-family="微软雅黑" font-size="13" fill="#b6c8dc">皮带二检出矸石类异物，置信度 91.7%</text>
+    <rect x="1224" y="475" width="76" height="26" rx="4" ry="4" fill="rgba(53,224,138,0.10)" stroke="#35e08a" stroke-width="1"/>
+    <circle cx="1238" cy="488" r="4" fill="#35e08a"/>
+    <text x="1248" y="493" font-family="微软雅黑" font-size="12" font-weight="bold" fill="#35e08a">已确认</text>
+    <text x="1354" y="495" font-family="微软雅黑" font-size="13" fill="#8a9cb2">李工</text>
+    <line x1="26" y1="583" x2="1744" y2="583" stroke="#122031" stroke-width="1"/>
+    <text x="44" y="558" font-family="Consolas,monospace" font-size="13" fill="#b6c8dc">2026-09-30 05:31:55</text>
+    <text x="244" y="558" font-family="Consolas,monospace" font-size="13" fill="#8a9cb2">CH-08</text>
+    <text x="374" y="558" font-family="微软雅黑" font-size="14" font-weight="bold" fill="#f2f7fd">区域入侵</text>
+    <text x="524" y="558" font-family="微软雅黑" font-size="13" fill="#b6c8dc">原煤仓入口检测到人员进入警戒区</text>
+    <rect x="1224" y="538" width="76" height="26" rx="4" ry="4" fill="rgba(53,224,138,0.10)" stroke="#35e08a" stroke-width="1"/>
+    <circle cx="1238" cy="551" r="4" fill="#35e08a"/>
+    <text x="1248" y="556" font-family="微软雅黑" font-size="12" font-weight="bold" fill="#35e08a">已确认</text>
+    <text x="1354" y="558" font-family="微软雅黑" font-size="13" fill="#8a9cb2">王工</text>
+    <rect x="26" y="583" width="1718" height="63" fill="#0e1a29"/>
+    <line x1="26" y1="646" x2="1744" y2="646" stroke="#122031" stroke-width="1"/>
+    <text x="44" y="621" font-family="Consolas,monospace" font-size="13" fill="#b6c8dc">2026-09-30 04:47:19</text>
+    <text x="244" y="621" font-family="Consolas,monospace" font-size="13" fill="#8a9cb2">CH-04</text>
+    <text x="374" y="621" font-family="微软雅黑" font-size="14" font-weight="bold" fill="#f2f7fd">皮带跑偏</text>
+    <text x="524" y="621" font-family="微软雅黑" font-size="13" fill="#b6c8dc">偏移 61mm，持续 8s</text>
+    <rect x="1224" y="601" width="76" height="26" rx="4" ry="4" fill="rgba(100,116,139,0.16)" stroke="#8a9cb2" stroke-width="1"/>
+    <circle cx="1238" cy="614" r="4" fill="#8a9cb2"/>
+    <text x="1248" y="619" font-family="微软雅黑" font-size="12" font-weight="bold" fill="#8a9cb2">已恢复</text>
+    <text x="1354" y="621" font-family="微软雅黑" font-size="13" fill="#8a9cb2">系统</text>
+    <line x1="26" y1="709" x2="1744" y2="709" stroke="#122031" stroke-width="1"/>
+    <text x="44" y="684" font-family="Consolas,monospace" font-size="13" fill="#b6c8dc">2026-09-30 04:12:36</text>
+    <text x="244" y="684" font-family="Consolas,monospace" font-size="13" fill="#8a9cb2">CH-06</text>
+    <text x="374" y="684" font-family="微软雅黑" font-size="14" font-weight="bold" fill="#f2f7fd">堆煤预警</text>
+    <text x="524" y="684" font-family="微软雅黑" font-size="13" fill="#b6c8dc">溜槽积煤接近上限</text>
+    <rect x="1224" y="664" width="76" height="26" rx="4" ry="4" fill="rgba(100,116,139,0.16)" stroke="#8a9cb2" stroke-width="1"/>
+    <circle cx="1238" cy="677" r="4" fill="#8a9cb2"/>
+    <text x="1248" y="682" font-family="微软雅黑" font-size="12" font-weight="bold" fill="#8a9cb2">已恢复</text>
+    <text x="1354" y="684" font-family="微软雅黑" font-size="13" fill="#8a9cb2">系统</text>
+    <rect x="26" y="709" width="1718" height="63" fill="#0e1a29"/>
+    <line x1="26" y1="772" x2="1744" y2="772" stroke="#122031" stroke-width="1"/>
+    <text x="44" y="747" font-family="Consolas,monospace" font-size="13" fill="#b6c8dc">2026-09-30 03:29:41</text>
+    <text x="244" y="747" font-family="Consolas,monospace" font-size="13" fill="#8a9cb2">CH-03</text>
+    <text x="374" y="747" font-family="微软雅黑" font-size="14" font-weight="bold" fill="#f2f7fd">异物检测</text>
+    <text x="524" y="747" font-family="微软雅黑" font-size="13" fill="#b6c8dc">皮带三检出木板类异物，置信度 88.2%</text>
+    <rect x="1224" y="727" width="76" height="26" rx="4" ry="4" fill="rgba(53,224,138,0.10)" stroke="#35e08a" stroke-width="1"/>
+    <circle cx="1238" cy="740" r="4" fill="#35e08a"/>
+    <text x="1248" y="745" font-family="微软雅黑" font-size="12" font-weight="bold" fill="#35e08a">已确认</text>
+    <text x="1354" y="747" font-family="微软雅黑" font-size="13" fill="#8a9cb2">李工</text>
+    <line x1="26" y1="835" x2="1744" y2="835" stroke="#122031" stroke-width="1"/>
+    <text x="44" y="810" font-family="Consolas,monospace" font-size="13" fill="#b6c8dc">2026-09-30 02:51:07</text>
+    <text x="244" y="810" font-family="Consolas,monospace" font-size="13" fill="#8a9cb2">CH-01</text>
+    <text x="374" y="810" font-family="微软雅黑" font-size="14" font-weight="bold" fill="#f2f7fd">皮带跑偏</text>
+    <text x="524" y="810" font-family="微软雅黑" font-size="13" fill="#b6c8dc">偏移 47mm，未超阈值</text>
+    <rect x="1224" y="790" width="76" height="26" rx="4" ry="4" fill="rgba(100,116,139,0.16)" stroke="#8a9cb2" stroke-width="1"/>
+    <circle cx="1238" cy="803" r="4" fill="#8a9cb2"/>
+    <text x="1248" y="808" font-family="微软雅黑" font-size="12" font-weight="bold" fill="#8a9cb2">已忽略</text>
+    <text x="1354" y="810" font-family="微软雅黑" font-size="13" fill="#8a9cb2">王工</text>
+    <rect x="26" y="835" width="1718" height="63" fill="#0e1a29"/>
+    <line x1="26" y1="898" x2="1744" y2="898" stroke="#122031" stroke-width="1"/>
+    <text x="44" y="873" font-family="Consolas,monospace" font-size="13" fill="#b6c8dc">2026-09-30 02:14:52</text>
+    <text x="244" y="873" font-family="Consolas,monospace" font-size="13" fill="#8a9cb2">CH-10</text>
+    <text x="374" y="873" font-family="微软雅黑" font-size="14" font-weight="bold" fill="#f2f7fd">异物检测</text>
+    <text x="524" y="873" font-family="微软雅黑" font-size="13" fill="#b6c8dc">精煤仓出口检出异物，置信度 94.0%</text>
+    <rect x="1224" y="853" width="76" height="26" rx="4" ry="4" fill="rgba(53,224,138,0.10)" stroke="#35e08a" stroke-width="1"/>
+    <circle cx="1238" cy="866" r="4" fill="#35e08a"/>
+    <text x="1248" y="871" font-family="微软雅黑" font-size="12" font-weight="bold" fill="#35e08a">已确认</text>
+    <text x="1354" y="873" font-family="微软雅黑" font-size="13" fill="#8a9cb2">王工</text>
+    <line x1="26" y1="898" x2="1744" y2="898" stroke="#1d3145" stroke-width="1"/>
+    <text x="44" y="926" font-family="微软雅黑" font-size="12" fill="#8a9cb2">每页 12 条 · 共 12 条</text>
+    <rect x="1650" y="908" width="34" height="26" rx="4" ry="4" fill="#122031" stroke="#4aa8ff" stroke-width="1"/>
+    <text x="1667" y="926" font-family="Consolas,monospace" font-size="12" fill="#4aa8ff" text-anchor="middle">1</text>
+    <rect x="1690" y="908" width="34" height="26" rx="4" ry="4" fill="#122031"/>
+    <text x="1707" y="926" font-family="Consolas,monospace" font-size="12" fill="#8a9cb2" text-anchor="middle">2</text>
+  </g>
+</svg>

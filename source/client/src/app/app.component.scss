@@ -1,0 +1,81 @@
+:host {
+    /*
+     * The shell owns the whole viewport, in the shell's own dark base colour.
+     *
+     * WHY NOT WHITE: this container is the outermost painted surface. While it was #FFFFFF, any
+     * area the dark page did not cover (the strip above the project header, the rail beside the
+     * drawer, the edges of a maximised window) showed as white - measured 2026-10-06 at
+     * 2086x1143: #main-container rgb(255,255,255) over .mat-drawer-content rgb(5,10,18).
+     *
+     * The surface is #0a1017, the same base the MES/EMS boards and the drawing canvas use, so the
+     * shell, the header strip, the drawer rail and the canvas read as one surface instead of two
+     * near-black tones side by side.
+     */
+    .container {
+        width: 100%;
+        height: 100% !important;
+        background-color: #0a1017
+    }
+
+    .work-void {
+        height: 100%;
+        width: 100%;
+    }
+
+    /* Same reason as .container: these are the routed pages' backdrops, and a white backdrop
+       shows through wherever a page does not paint. */
+    .work-editor {
+        background-color: #0a1017;
+        height: calc(100% - (46px));
+        min-width: 800px;
+    }
+
+    .work-home {
+        background-color: #0a1017;
+        height: 100%;
+        min-width: 640px;
+    }
+
+    .header {
+        /* height: 40px !important;     */
+    }
+
+    .footer {
+        height: 20px;
+        position: absolute;
+        bottom: 0px;
+    }
+
+    .fab-button {
+        position: absolute;
+        bottom: 20px;
+        left: 10px;
+        color: rgba(255, 255, 255, 1);
+        background-color: rgba(68, 138, 255, 0);
+        /* background-color: rgba(0,0,0,0.9); */
+    }
+
+    .banner {
+        display: flex;
+        position: absolute;
+        left: 0px;
+        top: 0px;
+        right: 0px;
+        z-index: 999999;
+        font-size: 16px;
+        padding-left: 25px;
+        height: 48px;
+        background-color: #B71C1C;
+        color: #FFFFFF;
+
+        div {
+            display: flex;
+            align-items: center;
+            margin: auto;
+        }
+
+        mat-icon {
+            margin-left: 10px;
+        }
+    }
+}

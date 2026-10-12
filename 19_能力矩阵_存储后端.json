@@ -1,0 +1,300 @@
+{
+  "schemaVersion": 1,
+  "title": "存储后端能力矩阵",
+  "deliverable": "D2",
+  "producedFor": "开诚智枢 SCADIA · 存储平面 D2",
+  "rule": [
+    "本文件是单一事实来源（机器读）。19_能力矩阵_存储后端.md 由本文件生成，禁止手改。",
+    "每一个不是 unverified 的格子，都必须带 evidence；缺证据的判断一律退回 unverified。",
+    "标为 no 的格子不是缺陷，是对契约的约束：契约不得要求一个后端做不到的事。",
+    "身份（名称/状态/适配器文件）不在本文件里，由 runtime/storage/registry.js 单一声明并在渲染时取用 —— 本文件只负责「能力与证据」。"
+  ],
+  "vocabulary": {
+    "capability": {
+      "yes": "已证实可以",
+      "no": "已证实不可以——契约不得依赖它",
+      "partial": "可以但有条件，条件下写在 evidence 里",
+      "unverified": "尚未证实；由 D3 拿真实文档走接口后填入"
+    }
+  },
+  "unverifiedClosesAt": "D3",
+  "axes": [
+    {
+      "id": "durability",
+      "question": "进程重启后，已提交的数据是否仍在？",
+      "why": "四个域契约（Config / Event / TimeSeries / Object）的公共前提",
+      "origin": "18_交接书 §3 D4：五个域契约"
+    },
+    {
+      "id": "atomic-batch",
+      "question": "一次写入的多行能否原子提交，失败时整体回滚？",
+      "why": "Event 域（报警/事件历史）与 Config 域（配方、工程保存）不能留下写一半的记录",
+      "origin": "18_交接书 §3 D4：Event / Config 域"
+    },
+    {
+      "id": "ts-range",
+      "question": "能否按 tag + 时间区间扫描时序样本？",
+      "why": "TimeSeries 域的基本读法；现状入口 getDaqValue / getNodeValues",
+      "origin": "runtime/storage/daqstorage.js:70,91"
+    },
+    {
+      "id": "ts-aggregate",
+      "question": "能否在服务端做分桶聚合（min / max / avg / sum）？",
+      "why": "报表时段引擎按 min5 / hour / day 取数，聚合下推到后端才不需要把原始点全量拉到内存",
+      "origin": "runtime/reporting/period.js；runtime/storage/calculator.js"
+    },
+    {
+      "id": "retention",
+      "question": "后端自身是否提供保留期 / TTL？",
+      "why": "现状 settings.daqstore.retention 必须有地方落地",
+      "origin": "runtime/storage/daqstorage.js:322-340 checkRetention"
+    },
+    {
+      "id": "schema-evolution",
+      "question": "能否在已有数据的表上增改列？",
+      "why": "Config 域要演进，D5 要求 schema 版本化而不是重建库",
+      "origin": "18_交接书 §3 D5：后端注册表 + SQLite 适配"
+    },
+    {
+      "id": "concurrent-writers",
+      "question": "是否支持多个进程同时写？",
+      "why": "决定契约能不能假设并发写；现状是单 Node 进程，但交付部署未必",
+      "origin": "部署现实（Node 单进程现状）"
+    },
+    {
+      "id": "embedded-zero-ops",
+      "question": "能否不依赖独立服务端进程运行？",
+      "why": "裁决 12 把 SQLite 定为默认就是因为零运维",
+      "origin": "18_交接书 §2 裁决 12"
+    },
+    {
+      "id": "binary-object",
+      "question": "能否存二进制对象？",
+      "why": "Object 域要放相机抓拍与图片，不能假设只有数值",
+      "origin": "18_交接书 §3 D4：Object 域"
+    },
+    {
+      "id": "auth-tls",
+      "question": "是否具备账户鉴权与传输加密？",
+      "why": "信创交付与网络部署的硬要求；缺这一项的后端只能部署在本机",
+      "origin": "18_交接书 §2 裁决 12：信创三适配器"
+    }
+  ],
+  "backends": [
+    {
+      "id": "sqlite",
+      "role": "默认后端（零运维）",
+      "provenance": "18_交接书 §2 裁决 12",
+      "driver": "sqlite3",
+      "verdicts": {
+        "durability": {
+          "verdict": "yes",
+          "evidence": "measured: test/architecture/_support/capability-probe.js#durability"
+        },
+        "atomic-batch": {
+          "verdict": "yes",
+          "evidence": "measured: test/architecture/_support/capability-probe.js#atomic-batch"
+        },
+        "ts-range": {
+          "verdict": "yes",
+          "evidence": "measured: test/architecture/_support/capability-probe.js#ts-range"
+        },
+        "ts-aggregate": {
+          "verdict": "yes",
+          "evidence": "measured: test/architecture/_support/capability-probe.js#ts-aggregate"
+        },
+        "retention": {
+          "verdict": "no",
+          "evidence": "measured: test/architecture/_support/capability-probe.js#retention"
+        },
+        "schema-evolution": {
+          "verdict": "yes",
+          "evidence": "measured: test/architecture/_support/capability-probe.js#schema-evolution"
+        },
+        "concurrent-writers": {
+          "verdict": "no",
+          "evidence": "measured: test/architecture/_support/capability-probe.js#concurrent-writers"
+        },
+        "embedded-zero-ops": {
+          "verdict": "yes",
+          "evidence": "measured: test/architecture/_support/capability-probe.js#embedded-zero-ops"
+        },
+        "binary-object": {
+          "verdict": "yes",
+          "evidence": "measured: test/architecture/_support/capability-probe.js#binary-object"
+        },
+        "auth-tls": {
+          "verdict": "no",
+          "evidence": "measured: test/architecture/_support/capability-probe.js#auth-tls"
+        }
+      }
+    },
+    {
+      "id": "postgresql",
+      "role": "标准后端 / 信创 PG 系基线",
+      "provenance": "18_交接书 §2 裁决 12",
+      "driver": "pg",
+      "verdicts": {
+        "durability": {
+          "verdict": "yes",
+          "evidence": "measured: test/architecture/_support/capability-probe-postgres.js#durability (PostgreSQL 18, docker compose, 2026-09-30)"
+        },
+        "atomic-batch": {
+          "verdict": "yes",
+          "evidence": "measured: test/architecture/_support/capability-probe-postgres.js#atomic-batch (PostgreSQL 18, docker compose, 2026-09-30)"
+        },
+        "ts-range": {
+          "verdict": "yes",
+          "evidence": "measured: test/architecture/_support/capability-probe-postgres.js#ts-range (PostgreSQL 18, docker compose, 2026-09-30)"
+        },
+        "ts-aggregate": {
+          "verdict": "yes",
+          "evidence": "measured: test/architecture/_support/capability-probe-postgres.js#ts-aggregate (PostgreSQL 18, docker compose, 2026-09-30)"
+        },
+        "retention": {
+          "verdict": "no",
+          "evidence": "measured: test/architecture/_support/capability-probe-postgres.js#retention (PostgreSQL 18, docker compose, 2026-09-30)"
+        },
+        "schema-evolution": {
+          "verdict": "yes",
+          "evidence": "measured: test/architecture/_support/capability-probe-postgres.js#schema-evolution (PostgreSQL 18, docker compose, 2026-09-30)"
+        },
+        "concurrent-writers": {
+          "verdict": "yes",
+          "evidence": "measured: test/architecture/_support/capability-probe-postgres.js#concurrent-writers (PostgreSQL 18, docker compose, 2026-09-30)"
+        },
+        "embedded-zero-ops": {
+          "verdict": "no",
+          "evidence": "measured: test/architecture/_support/capability-probe-postgres.js#embedded-zero-ops (PostgreSQL 18, docker compose, 2026-09-30)"
+        },
+        "binary-object": {
+          "verdict": "yes",
+          "evidence": "measured: test/architecture/_support/capability-probe-postgres.js#binary-object (PostgreSQL 18, docker compose, 2026-09-30)"
+        },
+        "auth-tls": {
+          "verdict": "yes",
+          "evidence": "measured: test/architecture/_support/capability-probe-postgres.js#auth-tls (PostgreSQL 18, docker compose, 2026-09-30)"
+        }
+      }
+    },
+    {
+      "id": "tdengine",
+      "role": "时序后端",
+      "provenance": "18_交接书 §2 裁决 12；但 02_PLAN_集成规划.md:75 记为「非交付件、待裁决项 D2 定稿」——见 openItems",
+      "driver": "@tdengine/rest",
+      "verdicts": {
+        "durability": {
+          "verdict": "yes",
+          "evidence": "https://docs.tdengine.com/tdengine-sql/ddl/database/ 数据库 DDL 提供 WAL_LEVEL / WAL_FSYNC_PERIOD / WAL_RETENTION_PERIOD 等预写日志参数"
+        },
+        "atomic-batch": {
+          "verdict": "no",
+          "evidence": "https://www.taosdata.com/tdengine-engineering/14534.html 官方说明：TDengine 3.0 的事务机制作用于元数据而非业务数据，针对表的操作以队列方式逐个进行 —— 业务数据没有 BEGIN/COMMIT 语义"
+        },
+        "retention": {
+          "verdict": "yes",
+          "evidence": "https://docs.tdengine.com/tdengine-sql/ddl/database/ CREATE DATABASE 的 KEEP / DURATION / RETENTIONS 即保留期；另见 https://docs.tdengine.com/tdengine-sql/ddl/table/ 的表级 TTL"
+        },
+        "schema-evolution": {
+          "verdict": "yes",
+          "evidence": "https://docs.tdengine.com/tdengine-sql/ddl/table/ ALTER TABLE 支持 ADD COLUMN / DROP COLUMN / MODIFY COLUMN / RENAME COLUMN"
+        },
+        "binary-object": {
+          "verdict": "yes",
+          "evidence": "https://docs.tdengine.com/tdengine-sql/datatype/ BLOB 最大 16,777,212 字节；限制：只能用于普通数据列"
+        },
+        "auth-tls": {
+          "verdict": "partial",
+          "evidence": "https://docs.tdengine.com/tdengine-sql/user-and-privilege/user/ CREATE USER ... PASS / SHOW USERS / GRANT 在开源版可用；该页同时注明「Advanced functionalities require the TDengine TSDB Enterprise Edition」"
+        }
+      }
+    },
+    {
+      "id": "dameng",
+      "role": "信创适配器：达梦 Oracle 系",
+      "provenance": "18_交接书 §2 裁决 12",
+      "driver": null,
+      "verdicts": {
+        "atomic-batch": {
+          "verdict": "yes",
+          "evidence": "https://eco.dameng.com/document/dm/zh-cn/pm/consistency-concurrency.html 官方手册原文：DM 把一个事务的所有 SQL 语句作为一个整体，即事务中的操作，要么全部执行，要么一个也不执行；提供 COMMIT / ROLLBACK"
+        }
+      }
+    },
+    {
+      "id": "mysql",
+      "role": "信创适配器：MySQL 系",
+      "provenance": "18_交接书 §2 裁决 12",
+      "driver": null,
+      "verdicts": {}
+    },
+    {
+      "id": "influxdb",
+      "role": "现状已交付适配器（裁决 12 未列入）",
+      "provenance": "runtime/storage/influxdb/index.js 现有实现；范围待定，见 openItems",
+      "driver": "@influxdata/influxdb-client",
+      "verdicts": {}
+    },
+    {
+      "id": "questdb",
+      "role": "现状已交付适配器（裁决 12 未列入）",
+      "provenance": "runtime/storage/questdb/index.js 现有实现；范围待定，见 openItems",
+      "driver": "@questdb/nodejs-client",
+      "verdicts": {}
+    }
+  ],
+  "openItems": [
+    {
+      "id": "O-3",
+      "what": "信创三条路径（PG 系 / 达梦 Oracle 系 / MySQL 系）当前只有 PostgreSQL 的驱动在本机存在；达梦与 MySQL 系没有任何驱动包（含 odbc）。这与裁决 14「预留位置，而非现在实现」一致，但意味着 D8-D10 之前必须先解决驱动与授权。",
+      "closesAt": "D8-D10",
+      "decidedBy": "自动核对（driver 列由 package.json 与 node_modules 实测得出）"
+    },
+    {
+      "id": "O-5",
+      "what": "达梦官方手册站为 SPA、部分内容只以 PDF 发布，本轮只取到事务一轴的官方引用。达梦其余各轴留 unverified，由 D10 离线取得官方手册后填入。",
+      "closesAt": "D10（达梦填空）",
+      "decidedBy": "自动核对（证据可追溯性优先于覆盖率）"
+    },
+    {
+      "id": "O-6",
+      "what": "【后端能 ≠ 我们在用】TDengine 后端有保留期（KEEP/DURATION/RETENTIONS 与表级 TTL），但现有适配器建库时把它丢了：runtime/storage/tdengine/index.js:36 写着 //TODO add retention。同理 tdengine/index.js:38 把样本值定成 BINARY(20)，远小于后端 16MB 的 BLOB 能力。矩阵的 capacity 列描述的是「后端能不能」，不是「我们做没做」——适配器缺口见 20_纸上实现_D3.md 的 F-2/F-3。",
+      "closesAt": "D5 / D9",
+      "decidedBy": "自动核对（file:line 可追溯）"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D-1",
+      "what": "TDengine 的口径在四份文件里互相矛盾（台账 L-23）。",
+      "decision": "以 18_交接书 §2 裁决 12 为准：TDengine 是时序后端，进入交付后端列表；保留代码、保留依赖 @tdengine/rest 3.0.2、保留 daqstorage.js:52-53 路由分支。",
+      "why": "裁决 12「默认 SQLite（零运维）+ PostgreSQL（标准/信创基线）+ TDengine（时序）」是老板拍板，晚于 02_PLAN 2026-09-29 的「暂定口径：标注为非交付件」。以裁决为准。",
+      "evidence": "02_PLAN_集成规划.md:75 已就地更正并注明依据；01_架构手册.md:57,140,258、package.json:23、runtime/storage/daqstorage.js:52-53 原即与该口径一致，无需改动。",
+      "reversible": "可回退：撤回 02_PLAN:75 的更正段并恢复本条即可。"
+    },
+    {
+      "id": "D-2",
+      "what": "InfluxDB 与 QuestDB 已经在交付代码里，但裁决 12 未将二者列入。",
+      "decision": "代码保留、不删；但二者不进入裁决 12 的交付后端列表，D6 契约测试套件只覆盖裁决 12 命名的五个后端（SQLite / PostgreSQL / TDengine / 达梦 / MySQL 系）。",
+      "why": "裁决 12 已经定义了选型范围，不在其中的不应获得交付承诺；而删除已在运行的适配器属于破坏性变更且无收益。这与裁决 14「预留位置，而非现在实现」同向。",
+      "evidence": "二者适配器在盘：runtime/storage/influxdb/index.js、runtime/storage/questdb/index.js；驱动已安装，见本文件 driver 列（自动核对）。",
+      "reversible": "可回退：把二者列入交付后端列表，并把 D6 覆盖范围扩到七个后端。"
+    },
+    {
+      "id": "D-3",
+      "what": "【D3 填空失败 F-1】TDengine 对业务数据没有事务语义，而 Event 域要求「多行原子提交、失败整体回滚」。",
+      "decision": "取选项 (a)：契约不要求跨记录原子性。Event 域契约只要求「单条记录写入后持久且可读」；需要跨记录原子性的场景（配方整体保存、工程整体保存）归 Config 域，并在契约中把 atomic-batch 标注为能力依赖——后端具备才启用，TDengine 上必须显式拒绝或降级为逐条写入并逐条回报结果。",
+      "why": "要让契约要求原子性，就必须把 TDengine 逐出时序后端，与裁决 12 直接冲突；而默认后端 SQLite 虽支持事务，却不支持并发写，单进程下跨记录原子性的边际收益有限。两害相权，改契约的成本最低、且与既有裁决一致。",
+      "evidence": "https://www.taosdata.com/tdengine-engineering/14534.html 官方说明 TDengine 的事务机制作用于元数据而非业务数据；https://eco.dameng.com/document/dm/zh-cn/pm/consistency-concurrency.html 官方手册确认达梦具备完整 ACID。走查过程见 20_纸上实现_D3.md §3.2/§4(F-1)。",
+      "reversible": "可回退：改契约要求原子性，同时把 Event 域移出 TDengine（需重新裁决时序后端人选）。"
+    },
+    {
+      "id": "D-4",
+      "what": "矩阵已实测出默认后端的三条硬限制，尚未写成对契约的约束。",
+      "decision": "三条否定约束进 D4 契约：不得要求服务端 TTL、不得要求多进程并发写、不得要求传输层安全。三者缺一时，契约必须提供降级路径而不是失败。",
+      "why": "SQLite 是裁决 12 的默认后端，三条均为本机实测结论（保留期无 TTL 构造、第二个并发写者 SQLITE_BUSY、本地文件无账号与传输）。契约要求默认后端做不到的事，等于让默认配置不可用。",
+      "evidence": "实测见 test/architecture/_support/capability-probe.js 的 retention / concurrent-writers / auth-tls 三轴，由 capabilityMatrix.test.js 每次运行重跑比对；结论见 20_纸上实现_D3.md §3.1。",
+      "reversible": "可回退：把默认后端改为非 SQLite，或为三条限制各指定一个强制后端。"
+    }
+  ]
+}

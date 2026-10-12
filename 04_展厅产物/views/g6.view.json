@@ -1,0 +1,33 @@
+{
+  "id": "v_zc_g6",
+  "name": "报警图片预览",
+  "type": "svg",
+  "profile": {
+    "width": 800,
+    "height": 600,
+    "bkcolor": "#000000ff"
+  },
+  "items": {},
+  "variables": {},
+  "svgcontent": "<svg width=\"800\" height=\"600\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n  <g>\n    <title>报警图片预览</title>\n      <rect id=\"ctrl_ic1\" x=\"5\" y=\"5\" width=\"30\" height=\"30\" fill=\"#00000000\" stroke=\"#4a90d980\" stroke-width=\"1\" stroke-dasharray=\"4 3\" opacity=\"0\"/>\n      <rect id=\"ctrl_ic2\" x=\"0\" y=\"0\" width=\"800\" height=\"600\" fill=\"#00000000\" stroke=\"#4a90d980\" stroke-width=\"1\" stroke-dasharray=\"4 3\"/>\n  </g>\n</svg>",
+  "__controls": [
+    {
+      "id": "ctrl_ic1",
+      "name": "Windows按钮1",
+      "type": "CtrlSurrogate",
+      "x": 5,
+      "y": 5,
+      "w": 30,
+      "h": 30
+    },
+    {
+      "id": "ctrl_ic2",
+      "name": "图片快速写入1",
+      "type": "CtrlSurrogate",
+      "x": 0,
+      "y": 0,
+      "w": 800,
+      "h": 600
+    }
+  ]
+}

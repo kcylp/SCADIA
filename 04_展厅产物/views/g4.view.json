@@ -1,0 +1,33 @@
+{
+  "id": "v_zc_g4",
+  "name": "视频监控画面",
+  "type": "svg",
+  "profile": {
+    "width": 1770,
+    "height": 993,
+    "bkcolor": "#000000ff"
+  },
+  "items": {},
+  "variables": {},
+  "svgcontent": "<svg width=\"1770\" height=\"993\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n  <g>\n    <title>视频监控画面</title>\n      <image x=\"0\" y=\"0\" width=\"1770\" height=\"993\" xlink:href=\"/_images/zc/67de4bffdd0c40deb3e59d354b752756.png\"/>\n      <rect x=\"27\" y=\"21\" width=\"1366\" height=\"940\" rx=\"10\" ry=\"10\" fill=\"#0a2c50ff\" stroke=\"#000000ff\" stroke-width=\"3\"/>\n      <rect id=\"ctrl_ic1\" x=\"40\" y=\"32\" width=\"1344\" height=\"912\" fill=\"#00000000\" stroke=\"#4a90d980\" stroke-width=\"1\" stroke-dasharray=\"4 3\"/>\n      <rect x=\"1410\" y=\"342\" width=\"336\" height=\"300\" rx=\"10\" ry=\"10\" fill=\"#0a2c50ff\" stroke=\"#000000ff\" stroke-width=\"1\"/>\n      <rect x=\"1410\" y=\"663\" width=\"336\" height=\"300\" rx=\"10\" ry=\"10\" fill=\"#0a2c50ff\" stroke=\"#000000ff\" stroke-width=\"1\"/>\n      <rect x=\"1410\" y=\"21\" width=\"336\" height=\"300\" rx=\"10\" ry=\"10\" fill=\"#0a2c50ff\" stroke=\"#000000ff\" stroke-width=\"1\"/>\n      <text id=\"txt_ic2\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1427\" y=\"173\">报警时间：</text>\n      <text id=\"txt_ic3\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1427\" y=\"213\">报警通道：</text>\n      <text id=\"txt_ic4\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1427\" y=\"253\">报警类型：</text>\n      <text id=\"txt_ic5\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1427\" y=\"293\">报警描述：</text>\n      <text id=\"txt_ic6\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1509\" y=\"173\"></text>\n      <rect x=\"1509\" y=\"198\" width=\"220\" height=\"30\" fill=\"#ffffffff\"/>\n      <text id=\"txt_ic7\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1509\" y=\"213\"></text>\n      <text id=\"txt_ic8\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1509\" y=\"253\"></text>\n      <text id=\"txt_ic9\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1509\" y=\"293\"></text>\n      <image x=\"1417\" y=\"33\" width=\"322\" height=\"111\" xlink:href=\"/_images/zc/9eafbc2f89314b72aeddfe5ba1d430bc.jpg\"/>\n      <text id=\"txt_ica\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1427\" y=\"494\">报警时间：</text>\n      <text id=\"txt_icb\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1427\" y=\"534\">报警通道：</text>\n      <text id=\"txt_icc\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1427\" y=\"574\">报警类型：</text>\n      <text id=\"txt_icd\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1427\" y=\"614\">报警描述：</text>\n      <text id=\"txt_ice\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1509\" y=\"494\"></text>\n      <rect x=\"1509\" y=\"519\" width=\"220\" height=\"30\" fill=\"#ffffffff\"/>\n      <text id=\"txt_icf\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1509\" y=\"534\"></text>\n      <text id=\"txt_icg\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1509\" y=\"574\"></text>\n      <text id=\"txt_ich\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1509\" y=\"614\"></text>\n      <image x=\"1417\" y=\"354\" width=\"322\" height=\"111\" xlink:href=\"/_images/zc/9eafbc2f89314b72aeddfe5ba1d430bc.jpg\"/>\n      <text id=\"txt_ici\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1427\" y=\"814\">报警时间：</text>\n      <text id=\"txt_icj\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1427\" y=\"854\">报警通道：</text>\n      <text id=\"txt_ick\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1427\" y=\"894\">报警类型：</text>\n      <text id=\"txt_icl\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1427\" y=\"934\">报警描述：</text>\n      <text id=\"txt_icm\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1509\" y=\"814\"></text>\n      <rect x=\"1509\" y=\"839\" width=\"220\" height=\"30\" fill=\"#ffffffff\"/>\n      <text id=\"txt_icn\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1509\" y=\"854\"></text>\n      <text id=\"txt_ico\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1509\" y=\"894\"></text>\n      <text id=\"txt_icp\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1509\" y=\"934\"></text>\n      <image x=\"1417\" y=\"674\" width=\"322\" height=\"111\" xlink:href=\"/_images/zc/9eafbc2f89314b72aeddfe5ba1d430bc.jpg\"/>\n      <rect id=\"ctrl_icq\" x=\"5\" y=\"5\" width=\"30\" height=\"30\" fill=\"#00000000\" stroke=\"#4a90d980\" stroke-width=\"1\" stroke-dasharray=\"4 3\" opacity=\"0\"/>\n  </g>\n</svg>",
+  "__controls": [
+    {
+      "id": "ctrl_ic1",
+      "name": "视频监控器",
+      "type": "CtrlSurrogate",
+      "x": 40,
+      "y": 32,
+      "w": 1344,
+      "h": 912
+    },
+    {
+      "id": "ctrl_icq",
+      "name": "定时器1",
+      "type": "CtrlSurrogate",
+      "x": 5,
+      "y": 5,
+      "w": 30,
+      "h": 30
+    }
+  ]
+}

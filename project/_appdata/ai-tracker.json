@@ -1,0 +1,32 @@
+{
+  "platform": "http://127.0.0.1:1881",
+  "user": "admin",
+  "password": "123456",
+  "cameraId": "cam_6b153dde0e03",
+  "camera": {
+    "host": "192.168.110.21",
+    "user": "admin",
+    "password": "KC12345678"
+  },
+  "source": {
+    "rtsp": "rtsp://admin:KC12345678@192.168.110.21:554/Streaming/Channels/102",
+    "width": 704,
+    "height": 576
+  },
+  "model": "yolov8n.pt",
+  "device": "auto",
+  "imgsz": 640,
+  "conf": 0.35,
+  "iou": 0.5,
+  "classes": [
+    0
+  ],
+  "label": "人员",
+  "targetFps": 8,
+  "pushHz": 0.2,
+  "tracker": "bytetrack.yaml",
+  "endAfterMs": 2000,
+  "reconnectMs": 5000,
+  "debugDir": null,
+  "debugEvery": 30
+}

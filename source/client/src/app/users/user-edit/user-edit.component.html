@@ -1,0 +1,50 @@
+<form [formGroup]="formGroup">
+    <h1 mat-dialog-title class="force-lbk pointer-move" mat-dialog-draggable>{{'dlg.userproperty-title' | translate}}</h1>
+    <mat-icon (click)="onCancelClick()" class="dialog-close-btn">clear</mat-icon>
+    <div mat-dialog-content>
+        <div class="my-form-field block">
+            <span>{{'general.username' | translate}}</span>
+            <input formControlName="username" type="text">
+        </div>
+        <div class="my-form-field block mt10">
+            <span>{{'general.fullname' | translate}}</span>
+            <input formControlName="fullname" type="text">
+        </div>
+        <div class="my-form-field block mt10 password-field">
+            <span>{{'general.password' | translate}}</span>
+            <input autocomplete="off" formControlName="password" (keydown)="keyDownStopPropagation($event)" [type]="showPassword ? 'text' : 'password'"
+                placeholder="•••••••">
+            <mat-icon matSuffix (click)="showPassword = !showPassword" class="show-password">{{showPassword ? 'visibility' : 'visibility_off'}}</mat-icon>
+        </div>
+        <div *ngIf="languages" class="my-form-field block mt10">
+            <span>{{'dlg.userproperty-language' | translate}}</span>
+            <mat-select formControlName="languageId">
+                <mat-option [value]="languages?.default?.id">{{ languages?.default?.name }}</mat-option>
+                <mat-option *ngFor="let language of languages?.options" [value]="language.id">
+                    {{ language.name }}
+                </mat-option>
+            </mat-select>
+        </div>
+        <div class="my-form-field block mt10">
+            <ng-template *ngIf="isRolePermission(); else groups">
+                <span>{{'dlg.userproperty-role' | translate}}</span>
+            </ng-template>
+            <ng-template #groups>
+                <span>{{'dlg.userproperty-groups' | translate}}</span>
+            </ng-template>
+            <sel-options #seloptions [selected]="selected" [disabled]="isAdmin()" [options]="options"></sel-options>
+        </div>
+        <div class="my-form-field block mt10 mb5">
+            <span>{{'dlg.userproperty-start' | translate}}</span>
+            <mat-select formControlName="start">
+                <mat-option *ngFor="let view of views" [value]="view.id">
+                    {{ view.name }}
+                </mat-option>
+            </mat-select>
+        </div>
+    </div>
+    <div mat-dialog-actions class="dialog-action">
+        <button mat-raised-button (click)="onCancelClick()">{{'dlg.cancel' | translate}}</button>
+        <button mat-raised-button [disabled]="formGroup.invalid" color="primary" (click)="onOkClick()">{{'dlg.ok' | translate}}</button>
+    </div>
+</form>

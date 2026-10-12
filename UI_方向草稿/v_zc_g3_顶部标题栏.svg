@@ -1,0 +1,38 @@
+<svg width="1920" height="87" viewBox="0 0 1920 87" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g>
+    <title>顶部标题栏</title>
+    <!-- 底图复用：不重新生成、不覆盖 -->
+    <image x="0" y="0" width="1920" height="87" xlink:href="/_images/zc/0af2124651d747c6bd4b562accc3609c.png" preserveAspectRatio="none"/>
+    <!-- 品牌 -->
+    <rect x="24" y="24" width="39" height="39" rx="9" ry="9" fill="#4aa8ff"/>
+    <text x="43.5" y="51" font-family="微软雅黑" font-size="21" font-weight="bold" fill="#04121f" text-anchor="middle">矿</text>
+    <text x="76" y="44" font-family="微软雅黑" font-size="21" font-weight="bold" fill="#f2f7fd">AI 人工智能服务平台</text>
+    <text x="77" y="63" font-family="Consolas,monospace" font-size="10" letter-spacing="4" fill="#22d3ee">KAICHENG SCADIA</text>
+    <!-- 矿区 -->
+    <line x1="330" y1="24" x2="330" y2="63" stroke="#1d3145" stroke-width="1"/>
+    <text x="352" y="47" font-family="微软雅黑" font-size="14" fill="#b6c8dc">矿区</text>
+    <text x="390" y="47" font-family="微软雅黑" font-size="14" font-weight="bold" fill="#f2f7fd">开诚智枢 · 演示DEMO</text>
+    <!-- 右侧状态 -->
+    <g>
+      <rect x="1226" y="30" width="150" height="27" rx="13.5" ry="13.5" fill="#0b1522" stroke="#1d3145" stroke-width="1"/>
+      <circle cx="1244" cy="43.5" r="4" fill="#35e08a"/>
+      <text x="1256" y="48" font-family="微软雅黑" font-size="12" fill="#b6c8dc">AI 推理 4 路 · 在线</text>
+    </g>
+    <g>
+      <rect x="1386" y="30" width="132" height="27" rx="13.5" ry="13.5" fill="#0b1522" stroke="#1d3145" stroke-width="1"/>
+      <circle cx="1404" cy="43.5" r="4" fill="#35e08a"/>
+      <text x="1416" y="48" font-family="微软雅黑" font-size="12" fill="#b6c8dc">数据 200ms 前</text>
+    </g>
+    <g>
+      <rect x="1528" y="30" width="104" height="27" rx="13.5" ry="13.5" fill="rgba(255,90,110,0.12)" stroke="#ff5a6e" stroke-width="1"/>
+      <circle cx="1546" cy="43.5" r="4" fill="#ff5a6e"/>
+      <text x="1558" y="48" font-family="微软雅黑" font-size="12" fill="#ff5a6e">未确认 3</text>
+    </g>
+    <line x1="1650" y1="24" x2="1650" y2="63" stroke="#1d3145" stroke-width="1"/>
+    <text x="1666" y="49" font-family="Consolas,monospace" font-size="19" font-weight="bold" fill="#f2f7fd">07:12:36</text>
+    <line x1="1770" y1="24" x2="1770" y2="63" stroke="#1d3145" stroke-width="1"/>
+    <circle cx="1794" cy="43.5" r="14" fill="#122031" stroke="#1d3145" stroke-width="1"/>
+    <text x="1794" y="48" font-family="微软雅黑" font-size="12" fill="#b6c8dc" text-anchor="middle">值</text>
+    <text x="1818" y="48" font-family="微软雅黑" font-size="12" fill="#b6c8dc">值班员 · 王工</text>
+  </g>
+</svg>

@@ -1,0 +1,40 @@
+{
+  "id": "v_zc_g5",
+  "name": "报警查询",
+  "type": "svg",
+  "profile": {
+    "width": 1770,
+    "height": 993,
+    "bkcolor": "#000000ff"
+  },
+  "items": {},
+  "variables": {},
+  "svgcontent": "<svg width=\"1770\" height=\"993\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n  <g>\n    <title>报警查询</title>\n      <image x=\"0\" y=\"0\" width=\"1770\" height=\"993\" xlink:href=\"/_images/zc/67de4bffdd0c40deb3e59d354b752756.png\"/>\n      <rect x=\"30\" y=\"115\" width=\"1710\" height=\"814\" rx=\"20\" ry=\"20\" fill=\"#02264dff\" stroke=\"#000000ff\" stroke-width=\"1\"/>\n      <rect x=\"729\" y=\"39.49991\" width=\"309\" height=\"54\" rx=\"20\" ry=\"20\" fill=\"#000000cf\" stroke=\"#000000ff\" stroke-width=\"1\"/>\n      <rect x=\"1014\" y=\"38.49991\" width=\"76\" height=\"54\" fill=\"#00000000\" stroke=\"#80808080\" stroke-width=\"0.5\"/>\n      <rect x=\"78\" y=\"163\" width=\"1600\" height=\"700\" fill=\"#02264dff\"/>\n      <rect x=\"78\" y=\"163\" width=\"1600\" height=\"28\" fill=\"#033c7aff\"/>\n      <text x=\"86\" y=\"177\" fill=\"#c2d9e7ff\" font-family=\"微软雅黑\" font-size=\"14\" dominant-baseline=\"central\">时间</text>\n      <line x1=\"318\" y1=\"163\" x2=\"318\" y2=\"863\" stroke=\"#1b4a7a\" stroke-width=\"1\"/>\n      <text x=\"326\" y=\"177\" fill=\"#c2d9e7ff\" font-family=\"微软雅黑\" font-size=\"14\" dominant-baseline=\"central\">用户</text>\n      <line x1=\"478\" y1=\"163\" x2=\"478\" y2=\"863\" stroke=\"#1b4a7a\" stroke-width=\"1\"/>\n      <text x=\"486\" y=\"177\" fill=\"#c2d9e7ff\" font-family=\"微软雅黑\" font-size=\"14\" dominant-baseline=\"central\">自定义1</text>\n      <line x1=\"718\" y1=\"163\" x2=\"718\" y2=\"863\" stroke=\"#1b4a7a\" stroke-width=\"1\"/>\n      <text x=\"726\" y=\"177\" fill=\"#c2d9e7ff\" font-family=\"微软雅黑\" font-size=\"14\" dominant-baseline=\"central\">自定义2</text>\n      <line x1=\"958\" y1=\"163\" x2=\"958\" y2=\"863\" stroke=\"#1b4a7a\" stroke-width=\"1\"/>\n      <text x=\"966\" y=\"177\" fill=\"#c2d9e7ff\" font-family=\"微软雅黑\" font-size=\"14\" dominant-baseline=\"central\">自定义3</text>\n      <line x1=\"1198\" y1=\"163\" x2=\"1198\" y2=\"863\" stroke=\"#1b4a7a\" stroke-width=\"1\"/>\n      <text x=\"1206\" y=\"177\" fill=\"#c2d9e7ff\" font-family=\"微软雅黑\" font-size=\"14\" dominant-baseline=\"central\">自定义4</text>\n      <line x1=\"1438\" y1=\"163\" x2=\"1438\" y2=\"863\" stroke=\"#1b4a7a\" stroke-width=\"1\"/>\n      <line x1=\"78\" y1=\"191\" x2=\"1678\" y2=\"191\" stroke=\"#1b4a7a\" stroke-width=\"1\"/>\n      <rect x=\"1666\" y=\"191\" width=\"12\" height=\"672\" fill=\"#0a1a2e\"/>\n      <rect x=\"1667\" y=\"195\" width=\"10\" height=\"60\" rx=\"4\" fill=\"#2a5a8a\"/>\n      <rect x=\"80\" y=\"40\" width=\"290\" height=\"54\" rx=\"20\" ry=\"20\" fill=\"#000000cf\" stroke=\"#000000ff\" stroke-width=\"1\"/>\n      <rect x=\"407\" y=\"39.49997\" width=\"290\" height=\"54\" rx=\"20\" ry=\"20\" fill=\"#000000cf\" stroke=\"#000000ff\" stroke-width=\"1\"/>\n      <rect x=\"110\" y=\"45.49999\" width=\"230\" height=\"43\" fill=\"#000000cf\"/>\n      <text id=\"txt_ic1\" font-family=\"微软雅黑\" font-size=\"14\" fill=\"#2992faff\" text-anchor=\"start\" dominant-baseline=\"hanging\" x=\"110\" y=\"66.99999\">\r\n          \r\n          \r\n          \r\n          \r\n          \r\n          \r\n          \r\n          \r\n          \r\n          \r\n          \r\n        </text>\n      <rect x=\"437\" y=\"44.99996\" width=\"230\" height=\"43\" fill=\"#000000cf\"/>\n      <text id=\"txt_ic2\" font-family=\"微软雅黑\" font-size=\"14\" fill=\"#2992faff\" text-anchor=\"start\" dominant-baseline=\"hanging\" x=\"437\" y=\"66.49996\">\r\n          \r\n          \r\n          \r\n          \r\n          \r\n          \r\n          \r\n          \r\n          \r\n          \r\n          \r\n        </text>\n      <rect id=\"ctrl_ic3\" x=\"749\" y=\"48\" width=\"258\" height=\"39\" fill=\"#00000000\" stroke=\"#4a90d980\" stroke-width=\"1\" stroke-dasharray=\"4 3\"/>\n  </g>\n</svg>",
+  "__controls": [
+    {
+      "name": "消息浏览器",
+      "type": "alarm-table",
+      "x": 78,
+      "y": 163,
+      "w": 1600,
+      "h": 700,
+      "columns": [
+        "时间",
+        "用户",
+        "自定义1",
+        "自定义2",
+        "自定义3",
+        "自定义4"
+      ]
+    },
+    {
+      "id": "ctrl_ic3",
+      "name": "组合框1",
+      "type": "CtrlSurrogate",
+      "x": 749,
+      "y": 48,
+      "w": 258,
+      "h": 39
+    }
+  ]
+}

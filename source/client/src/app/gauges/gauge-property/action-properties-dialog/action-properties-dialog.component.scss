@@ -1,0 +1,16 @@
+:host {
+    .container {
+      width: 760px;
+      position: relative;
+    }
+
+    .content {
+        min-height:300px;
+        height: 600px;
+    }
+    .toolbox {
+        position: absolute;
+        right: 10px;
+        top: 20px;
+    }
+}

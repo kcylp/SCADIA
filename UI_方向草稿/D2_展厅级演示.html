@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>D2 展厅级演示 · AI检测</title>
+<style>
+  :root{
+    --bg:#050a12; --panel:#0b1522; --panel2:#122031; --line:#1d3145;
+    --ink:#f2f7fd; --ink2:#b6c8dc; --ink3:#8a9cb2;
+    --ok:#35e08a; --warn:#ffc247; --alarm:#ff5a6e; --info:#4aa8ff; --cyan:#22d3ee;
+    --sans:"Inter","Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+    --mono:"JetBrains Mono","Cascadia Mono",Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:13px;line-height:1.5;
+    height:100vh;overflow:hidden;display:grid;grid-template-rows:58px 1fr;position:relative}
+  body::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:
+      radial-gradient(1100px 520px at 22% -8%,rgba(74,168,255,.20),transparent 60%),
+      radial-gradient(900px 460px at 88% 8%,rgba(34,211,238,.14),transparent 62%),
+      radial-gradient(700px 420px at 60% 108%,rgba(255,90,110,.10),transparent 60%)}
+  .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+  header{display:flex;align-items:center;gap:18px;padding:0 26px;position:relative;z-index:2;
+    border-bottom:1px solid rgba(120,170,230,.14);background:rgba(6,12,20,.55)}
+  .mk{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-weight:800;font-size:15px;
+    background:linear-gradient(140deg,#4aa8ff,#22d3ee);color:#04121f}
+  .ti h1{font-size:18px;font-weight:700;letter-spacing:2px}
+  .ti span{display:block;font-size:10px;letter-spacing:5px;color:var(--cyan);font-family:var(--mono)}
+  .grow{flex:1}
+  .chip{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink2);
+    border:1px solid rgba(120,170,230,.18);background:rgba(10,20,32,.7);padding:6px 13px;border-radius:999px}
+  .led{width:8px;height:8px;border-radius:50%;box-shadow:0 0 10px currentColor}
+  .led.ok{background:var(--ok);color:var(--ok)} .led.alarm{background:var(--alarm);color:var(--alarm);animation:p 1.3s infinite}
+  @keyframes p{0%,100%{opacity:1}50%{opacity:.3}}
+  .clk{font-family:var(--mono);font-size:24px;font-weight:700;letter-spacing:1px}
+
+  main{position:relative;z-index:2;display:grid;gap:16px;padding:16px 20px 18px;
+    grid-template-columns:minmax(0,1fr) 392px;grid-template-rows:minmax(0,1fr) 168px;min-height:0}
+
+  /* hero video band */
+  .hero{display:grid;grid-template-columns:2fr 1fr;gap:14px;min-height:0}
+  .cam{position:relative;border-radius:14px;overflow:hidden;background:#03070d;
+    border:1px solid rgba(120,170,230,.22);box-shadow:0 10px 40px rgba(0,0,0,.5)}
+  .cam img{width:100%;height:100%;object-fit:cover;display:block}
+  .cam .veil{position:absolute;inset:0;background:linear-gradient(0deg,rgba(3,8,14,.92) 2%,transparent 46%)}
+  .cam .tl{position:absolute;left:16px;top:14px;display:flex;align-items:center;gap:8px;
+    background:rgba(4,10,18,.8);border:1px solid rgba(255,90,110,.5);border-radius:8px;padding:5px 12px;font-size:12px}
+  .cam .big{position:absolute;left:16px;bottom:14px}
+  .cam .big .k{font-size:11px;letter-spacing:3px;color:var(--cyan);font-family:var(--mono)}
+  .cam .big .v{font-family:var(--mono);font-size:30px;font-weight:700;line-height:1.15}
+  .box{position:absolute;border:2px solid var(--alarm);border-radius:4px;
+    box-shadow:0 0 0 1px rgba(0,0,0,.6),0 0 26px rgba(255,90,110,.5)}
+  .box .cp{position:absolute;left:-2px;top:-24px;background:var(--alarm);color:#1b0409;
+    font-size:11px;font-weight:800;padding:2px 8px;border-radius:4px;white-space:nowrap}
+  .box.cyn{border-color:var(--cyan);box-shadow:0 0 0 1px rgba(0,0,0,.6),0 0 26px rgba(34,211,238,.5)}
+  .box.cyn .cp{background:var(--cyan);color:#04161c}
+
+  /* big number boards */
+  .boards{display:grid;grid-template-rows:repeat(3,1fr);gap:14px;min-height:0}
+  .board{border-radius:14px;padding:14px 18px;display:flex;flex-direction:column;justify-content:center;
+    border:1px solid rgba(120,170,230,.18);background:linear-gradient(120deg,rgba(18,32,49,.95),rgba(9,17,28,.9));position:relative;overflow:hidden}
+  .board::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--alarm)}
+  .board.w::before{background:var(--warn)} .board.i::before{background:var(--info)}
+  .board .k{font-size:12px;color:var(--ink2);letter-spacing:1px}
+  .board .v{font-family:var(--mono);font-size:52px;font-weight:700;line-height:1;letter-spacing:-2px;
+    text-shadow:0 0 30px rgba(74,168,255,.35)}
+  .board .v small{font-size:13px;font-weight:400;color:var(--ink3);margin-left:8px;letter-spacing:0;font-family:var(--sans)}
+  .board .u{font-size:11px;color:var(--ink3);margin-top:5px}
+
+  /* alarms */
+  .alwrap{grid-column:2;grid-row:1;display:flex;flex-direction:column;gap:12px;min-height:0}
+  .alh{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;letter-spacing:1px;color:var(--ink2)}
+  .al{flex:1;display:grid;grid-template-columns:96px 1fr;gap:12px;border-radius:12px;padding:11px;
+    background:linear-gradient(120deg,rgba(30,16,22,.95),rgba(11,21,34,.92));
+    border:1px solid rgba(255,90,110,.35);border-left:3px solid var(--alarm);min-height:0}
+  .al.w{border-color:rgba(255,194,71,.35);border-left-color:var(--warn);background:linear-gradient(120deg,rgba(32,25,12,.95),rgba(11,21,34,.92))}
+  .al .sh{width:96px;height:100%;object-fit:cover;border-radius:8px;display:block;border:1px solid rgba(120,170,230,.2)}
+  .al .t{font-family:var(--mono);font-size:12px;color:var(--ink3)}
+  .al .ty{font-size:15px;font-weight:700;margin:2px 0 4px}
+  .al .d{font-size:11.5px;color:var(--ink2);line-height:1.6}
+  b{color:#fff;font-weight:700}
+
+  /* belt strip */
+  .strip{grid-column:1 / -1;display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .bu{border-radius:14px;padding:13px 16px;display:flex;align-items:center;gap:13px;
+    background:linear-gradient(120deg,rgba(18,32,49,.9),rgba(9,17,28,.88));border:1px solid rgba(120,170,230,.16)}
+  .bu.on{border-color:rgba(53,224,138,.4)} .bu.wn{border-color:rgba(255,194,71,.45)} .bu.off{opacity:.55}
+  .bu .n{font-size:14px;font-weight:700} .bu .c{font-family:var(--mono);font-size:10.5px;color:var(--ink3);letter-spacing:1px}
+  .bu .f{margin-left:auto;text-align:right}
+  .bu .f .v{font-family:var(--mono);font-size:24px;font-weight:700}
+  .bu .f .u{font-size:10px;color:var(--ink3);font-family:var(--mono)}
+</style>
+</head>
+<body>
+<header>
+  <div class="mk">矿</div>
+  <div class="ti"><h1>AI 人工智能服务平台</h1><span>KAICHENG SCADIA</span></div>
+  <div class="grow"></div>
+  <div class="chip"><span class="led ok"></span>AI 推理 4 路 · 在线</div>
+  <div class="chip"><span class="led ok"></span>数据 200ms 前更新</div>
+  <div class="chip"><span class="led alarm"></span>未确认报警 <b class="num">3</b></div>
+  <div class="clk" id="clock">07:12:36</div>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="cam">
+      <img src="assets/belt_event.png" alt="">
+      <div class="veil"></div>
+      <div class="tl"><span class="led alarm"></span>皮带二 · 机头 · CH-02</div>
+      <div class="box" style="left:26%;top:42%;width:31%;height:27%"><span class="cp">异物 96.4%</span></div>
+      <div class="big">
+        <div class="k">实时 AI 检测</div>
+        <div class="v">检出异物 · 木板类</div>
+      </div>
+    </div>
+    <div class="boards">
+      <div class="board">
+        <div class="k">全矿异物报警</div>
+        <div class="v">37<small>次</small></div>
+        <div class="u">今日累计 · 较昨日 +6</div>
+      </div>
+      <div class="board w">
+        <div class="k">全矿跑偏报警</div>
+        <div class="v">12<small>次</small></div>
+        <div class="u">皮带四占 7 次</div>
+      </div>
+      <div class="board i">
+        <div class="k">全矿堆煤报警</div>
+        <div class="v">5<small>次</small></div>
+        <div class="u">转载点 3 次</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="alwrap">
+    <div class="alh"><span class="led alarm"></span>实时报警 · 未确认 3</div>
+    <div class="al">
+      <img class="sh" src="assets/belt_deviate.png" alt="">
+      <div><div class="t">07:12:04</div><div class="ty">皮带跑偏</div>
+      <div class="d">皮带四尾部托辊处中心线偏移 <b>82 mm</b>，持续 12s，超阈值 50mm。</div></div>
+    </div>
+    <div class="al">
+      <img class="sh" src="assets/belt_event.png" alt="">
+      <div><div class="t">07:08:31</div><div class="ty">异物检测</div>
+      <div class="d">皮带二检出<b>木板类异物</b>，置信度 <b>96.4%</b>，已联动停机。</div></div>
+    </div>
+    <div class="al w">
+      <img class="sh" src="assets/coal_pileup.png" alt="">
+      <div><div class="t">06:55:12</div><div class="ty">堆煤预警</div>
+      <div class="d">转载点溜槽积煤超限，预计 <b>3 分钟</b>内堵溜。</div></div>
+    </div>
+  </div>
+
+  <div class="strip">
+    <div class="bu on"><span class="led ok"></span><div><div class="c">CV-01</div><div class="n">皮带一</div></div>
+      <div class="f"><div class="v">1280</div><div class="u">t/h</div></div></div>
+    <div class="bu on"><span class="led ok"></span><div><div class="c">CV-02</div><div class="n">皮带二</div></div>
+      <div class="f"><div class="v">1145</div><div class="u">t/h</div></div></div>
+    <div class="bu wn"><span class="led alarm"></span><div><div class="c">CV-04</div><div class="n">皮带四</div></div>
+      <div class="f"><div class="v">980</div><div class="u">t/h</div></div></div>
+    <div class="bu off"><span class="led ok"></span><div><div class="c">CV-03</div><div class="n">皮带三</div></div>
+      <div class="f"><div class="v">0</div><div class="u">t/h</div></div></div>
+  </div>
+</main>
+<script>
+  var el=document.getElementById('clock');
+  var p=function(n){return (n<10?'0':'')+n;};
+  var t=function(){var d=new Date();el.textContent=p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());};
+  t();setInterval(t,1000);
+</script>
+</body>
+</html>

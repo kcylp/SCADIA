@@ -1,0 +1,35 @@
+{
+  "platform": "http://127.0.0.1:1881",
+  "user": "admin",
+  "password": "123456",
+  "cameraId": "cam_6b153dde0e03",
+  "debounceMs": 1200,
+  "camera": {
+    "host": "192.168.110.21",
+    "user": "admin",
+    "password": "KC12345678"
+  },
+  "fence": {
+    "note": "电子围栏 = 相机 FieldDetection 区域 1 的多边形，归一化 0..1000（与 /ISAPI/Smart/FieldDetection/1 一致）",
+    "scale": 1000,
+    "points": [
+      [
+        150,
+        200
+      ],
+      [
+        850,
+        200
+      ],
+      [
+        850,
+        800
+      ],
+      [
+        150,
+        800
+      ]
+    ],
+    "highlightMs": 3000
+  }
+}

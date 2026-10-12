@@ -1,0 +1,71 @@
+<svg width="1770" height="993" viewBox="0 0 1770 993" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g><title>视频监控画面</title>
+    <text x="26" y="46" font-family="微软雅黑" font-size="24" font-weight="bold" fill="#f2f7fd">视频监控</text>
+    <text x="26" y="68" font-family="微软雅黑" font-size="12" fill="#8a9cb2">9 路 · 全部在线 · 点击任意通道全屏</text>
+    <line x1="24" y1="82" x2="1746" y2="82" stroke="#1d3145" stroke-width="1"/>
+    <rect x="24" y="98" width="566" height="268" rx="6" ry="6" fill="#05090e" stroke="#1d3145" stroke-width="1"/>
+    <image x="26" y="100" width="562" height="264" preserveAspectRatio="xMidYMid slice" xlink:href="/_images/zc/gpt-belt-foreign.png"/>
+    <rect x="32" y="106" width="130" height="24" rx="5" ry="5" fill="rgba(4,10,18,0.85)"/>
+    <circle cx="44" cy="118" r="4" fill="#35e08a"/>
+    <text x="54" y="122.5" font-family="微软雅黑" font-size="12" fill="#e8f0fa">皮带一 · 机头</text>
+    <text x="578" y="122.5" font-family="Consolas,monospace" font-size="11" fill="#8a9cb2" text-anchor="end">CH-01</text>
+    <rect x="602" y="98" width="566" height="268" rx="6" ry="6" fill="#05090e" stroke="#ff5a6e" stroke-width="2"/>
+    <image x="604" y="100" width="562" height="264" preserveAspectRatio="xMidYMid slice" xlink:href="/_images/zc/gpt-belt-deviate.png"/>
+    <rect x="610" y="106" width="130" height="24" rx="5" ry="5" fill="rgba(4,10,18,0.85)"/>
+    <circle cx="622" cy="118" r="4" fill="#ff5a6e"/>
+    <text x="632" y="122.5" font-family="微软雅黑" font-size="12" fill="#e8f0fa">皮带二 · 机头</text>
+    <text x="1156" y="122.5" font-family="Consolas,monospace" font-size="11" fill="#8a9cb2" text-anchor="end">CH-02</text>
+    <rect x="771.8" y="205.2" width="169.8" height="80.4" fill="none" stroke="#ff5a6e" stroke-width="2"/>
+    <rect x="771.8" y="185.2" width="104" height="20" rx="3" ry="3" fill="#ff5a6e"/>
+    <text x="779.8" y="199.2" font-family="微软雅黑" font-size="12" font-weight="bold" fill="#1a0407">异物 96.4%</text>
+    <rect x="1180" y="98" width="566" height="268" rx="6" ry="6" fill="#05090e" stroke="#1d3145" stroke-width="1"/>
+    <image x="1182" y="100" width="562" height="264" preserveAspectRatio="xMidYMid slice" xlink:href="/_images/zc/gpt-coal-pileup.png"/>
+    <rect x="1188" y="106" width="130" height="24" rx="5" ry="5" fill="rgba(4,10,18,0.85)"/>
+    <circle cx="1200" cy="118" r="4" fill="#35e08a"/>
+    <text x="1210" y="122.5" font-family="微软雅黑" font-size="12" fill="#e8f0fa">皮带三 · 机头</text>
+    <text x="1734" y="122.5" font-family="Consolas,monospace" font-size="11" fill="#8a9cb2" text-anchor="end">CH-03</text>
+    <rect x="24" y="378" width="566" height="268" rx="6" ry="6" fill="#05090e" stroke="#ffc247" stroke-width="2"/>
+    <image x="26" y="380" width="562" height="264" preserveAspectRatio="xMidYMid slice" xlink:href="/_images/zc/gpt-belt-foreign.png"/>
+    <rect x="32" y="386" width="130" height="24" rx="5" ry="5" fill="rgba(4,10,18,0.85)"/>
+    <circle cx="44" cy="398" r="4" fill="#ffc247"/>
+    <text x="54" y="402.5" font-family="微软雅黑" font-size="12" fill="#e8f0fa">皮带四 · 尾部</text>
+    <text x="578" y="402.5" font-family="Consolas,monospace" font-size="11" fill="#8a9cb2" text-anchor="end">CH-04</text>
+    <rect x="193.8" y="485.2" width="169.8" height="80.4" fill="none" stroke="#ffc247" stroke-width="2"/>
+    <rect x="193.8" y="465.2" width="104" height="20" rx="3" ry="3" fill="#ffc247"/>
+    <text x="201.8" y="479.2" font-family="微软雅黑" font-size="12" font-weight="bold" fill="#1a0407">跑偏 82mm</text>
+    <rect x="602" y="378" width="566" height="268" rx="6" ry="6" fill="#05090e" stroke="#1d3145" stroke-width="1"/>
+    <image x="604" y="380" width="562" height="264" preserveAspectRatio="xMidYMid slice" xlink:href="/_images/zc/gpt-belt-deviate.png"/>
+    <rect x="610" y="386" width="130" height="24" rx="5" ry="5" fill="rgba(4,10,18,0.85)"/>
+    <circle cx="622" cy="398" r="4" fill="#35e08a"/>
+    <text x="632" y="402.5" font-family="微软雅黑" font-size="12" fill="#e8f0fa">转载点 · 溜槽</text>
+    <text x="1156" y="402.5" font-family="Consolas,monospace" font-size="11" fill="#8a9cb2" text-anchor="end">CH-06</text>
+    <rect x="1180" y="378" width="566" height="268" rx="6" ry="6" fill="#05090e" stroke="#1d3145" stroke-width="1"/>
+    <image x="1182" y="380" width="562" height="264" preserveAspectRatio="xMidYMid slice" xlink:href="/_images/zc/gpt-coal-pileup.png"/>
+    <rect x="1188" y="386" width="130" height="24" rx="5" ry="5" fill="rgba(4,10,18,0.85)"/>
+    <circle cx="1200" cy="398" r="4" fill="#35e08a"/>
+    <text x="1210" y="402.5" font-family="微软雅黑" font-size="12" fill="#e8f0fa">原煤仓 · 入口</text>
+    <text x="1734" y="402.5" font-family="Consolas,monospace" font-size="11" fill="#8a9cb2" text-anchor="end">CH-08</text>
+    <rect x="24" y="658" width="566" height="268" rx="6" ry="6" fill="#05090e" stroke="#1d3145" stroke-width="1"/>
+    <image x="26" y="660" width="562" height="264" preserveAspectRatio="xMidYMid slice" xlink:href="/_images/zc/gpt-belt-foreign.png"/>
+    <rect x="32" y="666" width="130" height="24" rx="5" ry="5" fill="rgba(4,10,18,0.85)"/>
+    <circle cx="44" cy="678" r="4" fill="#35e08a"/>
+    <text x="54" y="682.5" font-family="微软雅黑" font-size="12" fill="#e8f0fa">精煤仓 · 出口</text>
+    <text x="578" y="682.5" font-family="Consolas,monospace" font-size="11" fill="#8a9cb2" text-anchor="end">CH-10</text>
+    <rect x="602" y="658" width="566" height="268" rx="6" ry="6" fill="#05090e" stroke="#1d3145" stroke-width="1"/>
+    <image x="604" y="660" width="562" height="264" preserveAspectRatio="xMidYMid slice" xlink:href="/_images/zc/gpt-belt-deviate.png"/>
+    <rect x="610" y="666" width="70" height="24" rx="5" ry="5" fill="rgba(4,10,18,0.85)"/>
+    <circle cx="622" cy="678" r="4" fill="#35e08a"/>
+    <text x="632" y="682.5" font-family="微软雅黑" font-size="12" fill="#e8f0fa">配电室</text>
+    <text x="1156" y="682.5" font-family="Consolas,monospace" font-size="11" fill="#8a9cb2" text-anchor="end">CH-12</text>
+    <rect x="1180" y="658" width="566" height="268" rx="6" ry="6" fill="#05090e" stroke="#1d3145" stroke-width="1"/>
+    <image x="1182" y="660" width="562" height="264" preserveAspectRatio="xMidYMid slice" xlink:href="/_images/zc/gpt-coal-pileup.png"/>
+    <rect x="1188" y="666" width="94" height="24" rx="5" ry="5" fill="rgba(4,10,18,0.85)"/>
+    <circle cx="1200" cy="678" r="4" fill="#35e08a"/>
+    <text x="1210" y="682.5" font-family="微软雅黑" font-size="12" fill="#e8f0fa">主控室通道</text>
+    <text x="1734" y="682.5" font-family="Consolas,monospace" font-size="11" fill="#8a9cb2" text-anchor="end">CH-14</text>
+    <rect x="24" y="942" width="1722" height="29" rx="6" ry="6" fill="#0b1522" stroke="#1d3145" stroke-width="1"/>
+    <circle cx="46" cy="964" r="4" fill="#ff5a6e"/>
+    <text x="58" y="969" font-family="微软雅黑" font-size="13" fill="#e8f0fa">2 路检测到异常：CH-02 异物、CH-04 跑偏</text>
+    <text x="1726" y="969" font-family="微软雅黑" font-size="12" fill="#8a9cb2" text-anchor="end">录像正常 · 存储剩余 68%</text>
+  </g>
+</svg>

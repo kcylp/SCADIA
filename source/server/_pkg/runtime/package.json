@@ -1,0 +1,6 @@
+{
+  "name": "scadia-plugin-runtime",
+  "private": true,
+  "version": "1.0.0",
+  "description": "SCADIA isolated runtime for dynamic npm packages"
+}

@@ -1,0 +1,14 @@
+[
+  {
+    "id": "kuangqu",
+    "desc": "demo-demos-kuangqu",
+    "file": "demo-kuangqu.json",
+    "name": "kuangqu"
+  },
+  {
+    "id": "factory",
+    "desc": "demo-demos-factory",
+    "file": "demo-factory.json",
+    "name": "factory"
+  }
+]

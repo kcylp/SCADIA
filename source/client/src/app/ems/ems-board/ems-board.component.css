@@ -1,0 +1,211 @@
+:host {
+    display: block;
+    height: 100%;
+    min-height: 0;
+}
+
+/* ------------------------------------------------------------------ layout */
+
+.scada .sc-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sc-gap);
+    padding: var(--sc-gap);
+}
+
+.scada .sc-topbar__meta {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: 60%;
+}
+
+.scada .sc-grid--kpi {
+    grid-template-columns: repeat(auto-fit, minmax(calc(180px * var(--sc-u, 1)), 1fr));
+}
+
+.scada .sc-kpi__value {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.scada .sc-panel__bd {
+    overflow-x: auto;
+}
+
+.scada .sc-table th:first-child,
+.scada .sc-table td:first-child { padding-left: calc(16px * var(--sc-u, 1)); }
+
+.scada .sc-table th:last-child,
+.scada .sc-table td:last-child { padding-right: calc(16px * var(--sc-u, 1)); }
+
+.scada .sc-scroll table thead th {
+    position: sticky;
+    top: 0;
+    background: var(--sc-panel);
+    z-index: 2;
+}
+
+/* ------------------------------------------------------------------- chart */
+
+/*
+ * The chart's palette, in ONE place.
+ *
+ * src/scada.css already declares the whole industrial palette, and this board uses it rather than
+ * repeating any hex: --sc-accent for electricity, --sc-accent-2 for water, --sc-warn for gas,
+ * --sc-alarm for steam and for the 峰/尖 load hours. An attribute presentation value such as
+ * <rect fill> is NOT a CSS property, so the colour has to arrive through a rule - which is what the
+ * classes below are for. Nothing here is a new colour; the two values with no .scada token are the
+ * plot background and the axis ink, pinned to their measured equivalents.
+ */
+.scada .ems-plot-bg { fill: var(--sc-panel-3); stroke: var(--sc-line); }
+
+.scada .ems-grid {
+    stroke: var(--sc-line);
+    opacity: 0.85;
+    vector-effect: non-scaling-stroke;
+}
+
+.scada .ems-series {
+    fill: none;
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+
+.scada .ems-series--kwh   { stroke: var(--sc-accent); }
+.scada .ems-series--water { stroke: var(--sc-accent-2); }
+.scada .ems-series--gas   { stroke: var(--sc-warn); }
+.scada .ems-series--steam { stroke: var(--sc-alarm); }
+/* The load series shares the alarm colour with the 蒸汽 line, so it is separated by a dash rather
+   than by a new colour - the standard allows the existing tokens and nothing else. */
+.scada .ems-series--peak  { stroke: var(--sc-alarm); stroke-dasharray: 6 5; }
+
+.scada .ems-axis {
+    fill: var(--sc-ink-3);
+    font-size: clamp(10px, calc(11px * var(--sc-u, 1)), 17.6px);
+    font-family: var(--sc-mono);
+}
+
+/* The legend key takes the colour of the series it names, so a key cannot disagree with its line. */
+.scada .sc-legend span.ems-series--kwh   i { background: var(--sc-accent); }
+.scada .sc-legend span.ems-series--water i { background: var(--sc-accent-2); }
+.scada .sc-legend span.ems-series--gas   i { background: var(--sc-warn); }
+.scada .sc-legend span.ems-series--steam i { background: var(--sc-alarm); }
+.scada .sc-legend span.ems-series--peak  i { background: var(--sc-alarm); }
+.scada .sc-legend span.ems-series--flat  i { background: var(--sc-idle); }
+
+/* ------------------------------------------------------- hourly load columns */
+
+.scada .ems-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: calc(4px * var(--sc-u, 1));
+    margin-top: calc(6px * var(--sc-u, 1));
+}
+
+.scada .ems-bars__col {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(4px * var(--sc-u, 1));
+    min-width: 0;
+}
+
+.scada .ems-bars__track {
+    width: 100%;
+    height: calc(64px * var(--sc-u, 1));
+    display: flex;
+    align-items: flex-end;
+    background: var(--sc-panel-3);
+    border: 1px solid var(--sc-line);
+    border-radius: var(--sc-r-sm);
+    overflow: hidden;
+}
+
+.scada .ems-bars__fill { width: 100%; }
+.scada .ems-bars__fill--flat { background: var(--sc-accent); }
+.scada .ems-bars__fill--peak { background: var(--sc-alarm); }
+
+.scada .ems-bars__label {
+    font-size: clamp(10px, calc(10px * var(--sc-u, 1)), 16px);
+    color: var(--sc-ink-3);
+    font-family: var(--sc-mono);
+    white-space: nowrap;
+}
+
+/* ------------------------------------------- tariff ratio bar inside a table */
+
+.scada .ems-progress {
+    display: flex;
+    align-items: center;
+    gap: calc(8px * var(--sc-u, 1));
+}
+
+.scada .ems-progress__track {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: calc(56px * var(--sc-u, 1));
+    height: calc(8px * var(--sc-u, 1));
+    border-radius: calc(999px * var(--sc-u, 1));
+    background: var(--sc-panel-3);
+    border: 1px solid var(--sc-line);
+    overflow: hidden;
+}
+
+.scada .ems-progress__fill {
+    height: 100%;
+    border-radius: calc(999px * var(--sc-u, 1));
+}
+
+.scada .ems-progress__fill--mid    { background: var(--sc-accent); }
+.scada .ems-progress__fill--sharp  { background: var(--sc-alarm); }
+.scada .ems-progress__fill--peak   { background: var(--sc-warn); }
+.scada .ems-progress__fill--valley { background: var(--sc-accent-2); }
+
+.scada .ems-progress__pct {
+    flex: 0 0 auto;
+    min-width: calc(46px * var(--sc-u, 1));
+    text-align: right;
+    font-size: clamp(10px, calc(11.5px * var(--sc-u, 1)), 18.4px);
+    color: var(--sc-ink-2);
+}
+
+/* The LED beside each band name wears the same colour as its bar. */
+.scada .ems-led--mid    { background: var(--sc-accent);    box-shadow: 0 0 calc(8px * var(--sc-u, 1)) rgba(61, 155, 255, 0.7); }
+.scada .ems-led--sharp  { background: var(--sc-alarm);     box-shadow: 0 0 calc(8px * var(--sc-u, 1)) rgba(255, 84, 104, 0.7); }
+.scada .ems-led--peak   { background: var(--sc-warn);      box-shadow: 0 0 calc(8px * var(--sc-u, 1)) rgba(255, 176, 32, 0.7); }
+.scada .ems-led--valley { background: var(--sc-accent-2);  box-shadow: 0 0 calc(8px * var(--sc-u, 1)) rgba(23, 184, 166, 0.7); }
+
+/* ------------------------------------------------------------------ carbon */
+
+.scada .ems-co2 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(12px * var(--sc-u, 1));
+    flex-wrap: wrap;
+}
+
+.scada .ems-delta--ok { color: var(--sc-ok); margin-left: calc(6px * var(--sc-u, 1)); }
+
+/* ------------------------------------------------------------- responsive */
+
+@media (max-width: calc(980px * var(--sc-u, 1))) {
+    .scada .ems-bars__label { font-size: clamp(10px, calc(9px * var(--sc-u, 1)), 14.4px); }
+    .scada .ems-bars { gap: calc(2px * var(--sc-u, 1)); }
+}
+
+@media (max-width: calc(780px * var(--sc-u, 1))) {
+    .scada .sc-topbar {
+        height: auto;
+        flex-wrap: wrap;
+        gap: calc(10px * var(--sc-u, 1));
+        padding: calc(10px * var(--sc-u, 1)) calc(14px * var(--sc-u, 1));
+    }
+    .scada .sc-topbar__meta { max-width: 100%; }
+    .scada .ems-bars__track { height: calc(48px * var(--sc-u, 1)); }
+    .scada .ems-progress__pct { min-width: calc(40px * var(--sc-u, 1)); }
+}

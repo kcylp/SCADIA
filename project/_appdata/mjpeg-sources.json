@@ -1,0 +1,9 @@
+{
+  "sources": [
+    {
+      "name": "kuangqu1",
+      "rtsp": "rtsp://admin:KC12345678@192.168.110.21:554/Streaming/Channels/102",
+      "fps": 20
+    }
+  ]
+}

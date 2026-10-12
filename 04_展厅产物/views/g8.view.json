@@ -1,0 +1,24 @@
+{
+  "id": "v_zc_g8",
+  "name": "左列表",
+  "type": "svg",
+  "profile": {
+    "width": 150,
+    "height": 993,
+    "bkcolor": "#000000ff"
+  },
+  "items": {},
+  "variables": {},
+  "svgcontent": "<svg width=\"150\" height=\"993\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n  <g>\n    <title>左列表</title>\n      <image x=\"0\" y=\"0\" width=\"150\" height=\"993\" xlink:href=\"/_images/zc/fa4ad0cc16774392948f6ea4056e689a.png\"/>\n      <rect x=\"5\" y=\"63\" width=\"140\" height=\"903\" rx=\"20\" ry=\"20\" fill=\"#02264dff\" stroke=\"#000000ff\" stroke-width=\"5\"/>\n      <rect id=\"ctrl_ic1\" x=\"15\" y=\"80\" width=\"130\" height=\"870\" fill=\"#00000000\" stroke=\"#4a90d980\" stroke-width=\"1\" stroke-dasharray=\"4 3\"/>\n      <text id=\"txt_ic2\" font-family=\"微软雅黑\" font-size=\"10.5\" fill=\"#1296dbff\" text-anchor=\"middle\" dominant-baseline=\"central\" x=\"96.5\" y=\"30\">登录账号</text>\n      <rect x=\"13\" y=\"10\" width=\"40\" height=\"40\" fill=\"#00000000\" stroke=\"#80808080\" stroke-width=\"0.5\"/>\n  </g>\n</svg>",
+  "__controls": [
+    {
+      "id": "ctrl_ic1",
+      "name": "树形控件1",
+      "type": "CtrlSurrogate",
+      "x": 15,
+      "y": 80,
+      "w": 130,
+      "h": 870
+    }
+  ]
+}

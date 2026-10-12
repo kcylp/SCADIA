@@ -1,0 +1,186 @@
+{
+  "id": "v_zc_g1",
+  "name": "AI检测",
+  "type": "svg",
+  "profile": {
+    "width": 1770,
+    "height": 993,
+    "bkcolor": "#000000ff"
+  },
+  "items": {},
+  "variables": {},
+  "svgcontent": "<svg width=\"1770\" height=\"993\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n  <g>\n    <title>AI检测</title>\n      <image x=\"0\" y=\"0\" width=\"1770\" height=\"993\" xlink:href=\"/_images/zc/67de4bffdd0c40deb3e59d354b752756.png\"/>\n      <rect x=\"27.33333\" y=\"25.33333\" width=\"1366\" height=\"940.0001\" rx=\"10\" ry=\"10\" fill=\"#0a2c50ff\" stroke=\"#000000ff\" stroke-width=\"3\"/>\n      <rect id=\"ctrl_ic1\" x=\"45\" y=\"45\" width=\"430\" height=\"250\" fill=\"#00000000\" stroke=\"#4a90d980\" stroke-width=\"1\" stroke-dasharray=\"4 3\"/>\n      <rect id=\"ctrl_ic2\" x=\"495\" y=\"45\" width=\"430\" height=\"250\" fill=\"#00000000\" stroke=\"#4a90d980\" stroke-width=\"1\" stroke-dasharray=\"4 3\"/>\n      <rect id=\"ctrl_ic3\" x=\"945\" y=\"45\" width=\"430\" height=\"250\" fill=\"#00000000\" stroke=\"#4a90d980\" stroke-width=\"1\" stroke-dasharray=\"4 3\"/>\n      <rect x=\"1414\" y=\"344\" width=\"336\" height=\"300\" rx=\"10\" ry=\"10\" fill=\"#0a2c50ff\" stroke=\"#000000ff\" stroke-width=\"1\"/>\n      <rect x=\"1414\" y=\"665\" width=\"336\" height=\"300\" rx=\"10\" ry=\"10\" fill=\"#0a2c50ff\" stroke=\"#000000ff\" stroke-width=\"1\"/>\n      <rect x=\"1414\" y=\"23\" width=\"336\" height=\"300\" rx=\"10\" ry=\"10\" fill=\"#0a2c50ff\" stroke=\"#000000ff\" stroke-width=\"1\"/>\n      <text id=\"txt_ic4\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1431\" y=\"175\">报警时间：</text>\n      <text id=\"txt_ic5\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1431\" y=\"215\">报警通道：</text>\n      <text id=\"txt_ic6\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1431\" y=\"255\">报警类型：</text>\n      <text id=\"txt_ic7\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1431\" y=\"295\">报警描述：</text>\n      <text id=\"txt_ic8\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1513\" y=\"175\"></text>\n      <rect x=\"1513\" y=\"200\" width=\"220\" height=\"30\" fill=\"#ffffffff\"/>\n      <text id=\"txt_ic9\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1513\" y=\"215\"></text>\n      <text id=\"txt_ica\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1513\" y=\"255\"></text>\n      <text id=\"txt_icb\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1513\" y=\"295\"></text>\n      <image x=\"1421\" y=\"35\" width=\"322\" height=\"111\" xlink:href=\"/_images/zc/9eafbc2f89314b72aeddfe5ba1d430bc.jpg\"/>\n      <text id=\"txt_icc\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1431\" y=\"496\">报警时间：</text>\n      <text id=\"txt_icd\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1431\" y=\"536\">报警通道：</text>\n      <text id=\"txt_ice\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1431\" y=\"576\">报警类型：</text>\n      <text id=\"txt_icf\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1431\" y=\"616\">报警描述：</text>\n      <text id=\"txt_icg\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1513\" y=\"496\"></text>\n      <rect x=\"1513\" y=\"521\" width=\"220\" height=\"30\" fill=\"#ffffffff\"/>\n      <text id=\"txt_ich\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1513\" y=\"536\"></text>\n      <text id=\"txt_ici\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1513\" y=\"576\"></text>\n      <text id=\"txt_icj\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1513\" y=\"616\"></text>\n      <image x=\"1421\" y=\"356\" width=\"322\" height=\"111\" xlink:href=\"/_images/zc/9eafbc2f89314b72aeddfe5ba1d430bc.jpg\"/>\n      <text id=\"txt_ick\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1431\" y=\"816\">报警时间：</text>\n      <text id=\"txt_icl\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1431\" y=\"856\">报警通道：</text>\n      <text id=\"txt_icm\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1431\" y=\"896\">报警类型：</text>\n      <text id=\"txt_icn\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1431\" y=\"936\">报警描述：</text>\n      <text id=\"txt_ico\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1513\" y=\"816\"></text>\n      <rect x=\"1513\" y=\"841\" width=\"220\" height=\"30\" fill=\"#ffffffff\"/>\n      <text id=\"txt_icp\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1513\" y=\"856\"></text>\n      <text id=\"txt_icq\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1513\" y=\"896\"></text>\n      <text id=\"txt_icr\" font-family=\"微软雅黑\" font-size=\"12\" fill=\"#9edcffff\" text-anchor=\"start\" dominant-baseline=\"central\" x=\"1513\" y=\"936\"></text>\n      <image x=\"1421\" y=\"676\" width=\"322\" height=\"111\" xlink:href=\"/_images/zc/9eafbc2f89314b72aeddfe5ba1d430bc.jpg\"/>\n      <rect id=\"ctrl_ics\" x=\"3\" y=\"6\" width=\"30\" height=\"30\" fill=\"#00000000\" stroke=\"#4a90d980\" stroke-width=\"1\" stroke-dasharray=\"4 3\" opacity=\"0\"/>\n      <rect id=\"ctrl_ict\" x=\"45\" y=\"347\" width=\"430\" height=\"250\" fill=\"#00000000\" stroke=\"#4a90d980\" stroke-width=\"1\" stroke-dasharray=\"4 3\"/>\n      <rect id=\"ctrl_icu\" x=\"495\" y=\"347\" width=\"430\" height=\"250\" fill=\"#00000000\" stroke=\"#4a90d980\" stroke-width=\"1\" stroke-dasharray=\"4 3\"/>\n      <rect id=\"ctrl_icv\" x=\"945\" y=\"347\" width=\"430\" height=\"250\" fill=\"#00000000\" stroke=\"#4a90d980\" stroke-width=\"1\" stroke-dasharray=\"4 3\"/>\n      <rect id=\"ctrl_icw\" x=\"45\" y=\"652\" width=\"430\" height=\"250\" fill=\"#00000000\" stroke=\"#4a90d980\" stroke-width=\"1\" stroke-dasharray=\"4 3\"/>\n      <rect id=\"ctrl_icx\" x=\"495\" y=\"652\" width=\"430\" height=\"250\" fill=\"#00000000\" stroke=\"#4a90d980\" stroke-width=\"1\" stroke-dasharray=\"4 3\"/>\n      <rect id=\"ctrl_icy\" x=\"945\" y=\"652\" width=\"430\" height=\"250\" fill=\"#00000000\" stroke=\"#4a90d980\" stroke-width=\"1\" stroke-dasharray=\"4 3\"/>\n      <rect id=\"ctrl_icz\" x=\"46\" y=\"299\" width=\"203\" height=\"36\" fill=\"#00000000\" stroke=\"#4a90d980\" stroke-width=\"1\" stroke-dasharray=\"4 3\"/>\n      <rect id=\"ctrl_ic10\" x=\"493\" y=\"297\" width=\"220\" height=\"36\" fill=\"#00000000\" stroke=\"#4a90d980\" stroke-width=\"1\" stroke-dasharray=\"4 3\"/>\n      <rect id=\"ctrl_ic11\" x=\"947\" y=\"299\" width=\"220\" height=\"36\" fill=\"#00000000\" stroke=\"#4a90d980\" stroke-width=\"1\" stroke-dasharray=\"4 3\"/>\n      <rect id=\"ctrl_ic12\" x=\"49\" y=\"602\" width=\"220\" height=\"36\" fill=\"#00000000\" stroke=\"#4a90d980\" stroke-width=\"1\" stroke-dasharray=\"4 3\"/>\n      <rect id=\"ctrl_ic13\" x=\"497\" y=\"599\" width=\"220\" height=\"36\" fill=\"#00000000\" stroke=\"#4a90d980\" stroke-width=\"1\" stroke-dasharray=\"4 3\"/>\n      <rect id=\"ctrl_ic14\" x=\"948\" y=\"601\" width=\"220\" height=\"36\" fill=\"#00000000\" stroke=\"#4a90d980\" stroke-width=\"1\" stroke-dasharray=\"4 3\"/>\n      <rect id=\"ctrl_ic15\" x=\"47\" y=\"903\" width=\"220\" height=\"36\" fill=\"#00000000\" stroke=\"#4a90d980\" stroke-width=\"1\" stroke-dasharray=\"4 3\"/>\n      <rect id=\"ctrl_ic16\" x=\"498\" y=\"904\" width=\"220\" height=\"36\" fill=\"#00000000\" stroke=\"#4a90d980\" stroke-width=\"1\" stroke-dasharray=\"4 3\"/>\n      <rect id=\"ctrl_ic17\" x=\"948\" y=\"906\" width=\"220\" height=\"36\" fill=\"#00000000\" stroke=\"#4a90d980\" stroke-width=\"1\" stroke-dasharray=\"4 3\"/>\n  </g>\n</svg>",
+  "__controls": [
+    {
+      "id": "ctrl_ic1",
+      "name": "QuickWriteImage1",
+      "type": "CtrlSurrogate",
+      "x": 45,
+      "y": 45,
+      "w": 430,
+      "h": 250
+    },
+    {
+      "id": "ctrl_ic2",
+      "name": "QuickWriteImage2",
+      "type": "CtrlSurrogate",
+      "x": 495,
+      "y": 45,
+      "w": 430,
+      "h": 250
+    },
+    {
+      "id": "ctrl_ic3",
+      "name": "QuickWriteImage3",
+      "type": "CtrlSurrogate",
+      "x": 945,
+      "y": 45,
+      "w": 430,
+      "h": 250
+    },
+    {
+      "id": "ctrl_ics",
+      "name": "定时器1",
+      "type": "CtrlSurrogate",
+      "x": 3,
+      "y": 6,
+      "w": 30,
+      "h": 30
+    },
+    {
+      "id": "ctrl_ict",
+      "name": "QuickWriteImage4",
+      "type": "CtrlSurrogate",
+      "x": 45,
+      "y": 347,
+      "w": 430,
+      "h": 250
+    },
+    {
+      "id": "ctrl_icu",
+      "name": "QuickWriteImage5",
+      "type": "CtrlSurrogate",
+      "x": 495,
+      "y": 347,
+      "w": 430,
+      "h": 250
+    },
+    {
+      "id": "ctrl_icv",
+      "name": "QuickWriteImage6",
+      "type": "CtrlSurrogate",
+      "x": 945,
+      "y": 347,
+      "w": 430,
+      "h": 250
+    },
+    {
+      "id": "ctrl_icw",
+      "name": "QuickWriteImage7",
+      "type": "CtrlSurrogate",
+      "x": 45,
+      "y": 652,
+      "w": 430,
+      "h": 250
+    },
+    {
+      "id": "ctrl_icx",
+      "name": "QuickWriteImage8",
+      "type": "CtrlSurrogate",
+      "x": 495,
+      "y": 652,
+      "w": 430,
+      "h": 250
+    },
+    {
+      "id": "ctrl_icy",
+      "name": "QuickWriteImage9",
+      "type": "CtrlSurrogate",
+      "x": 945,
+      "y": 652,
+      "w": 430,
+      "h": 250
+    },
+    {
+      "id": "ctrl_icz",
+      "name": "摄像头名称11",
+      "type": "CtrlSurrogate",
+      "x": 46,
+      "y": 299,
+      "w": 203,
+      "h": 36
+    },
+    {
+      "id": "ctrl_ic10",
+      "name": "摄像头名称12",
+      "type": "CtrlSurrogate",
+      "x": 493,
+      "y": 297,
+      "w": 220,
+      "h": 36
+    },
+    {
+      "id": "ctrl_ic11",
+      "name": "摄像头名称13",
+      "type": "CtrlSurrogate",
+      "x": 947,
+      "y": 299,
+      "w": 220,
+      "h": 36
+    },
+    {
+      "id": "ctrl_ic12",
+      "name": "摄像头名称14",
+      "type": "CtrlSurrogate",
+      "x": 49,
+      "y": 602,
+      "w": 220,
+      "h": 36
+    },
+    {
+      "id": "ctrl_ic13",
+      "name": "摄像头名称15",
+      "type": "CtrlSurrogate",
+      "x": 497,
+      "y": 599,
+      "w": 220,
+      "h": 36
+    },
+    {
+      "id": "ctrl_ic14",
+      "name": "摄像头名称16",
+      "type": "CtrlSurrogate",
+      "x": 948,
+      "y": 601,
+      "w": 220,
+      "h": 36
+    },
+    {
+      "id": "ctrl_ic15",
+      "name": "摄像头名称17",
+      "type": "CtrlSurrogate",
+      "x": 47,
+      "y": 903,
+      "w": 220,
+      "h": 36
+    },
+    {
+      "id": "ctrl_ic16",
+      "name": "摄像头名称18",
+      "type": "CtrlSurrogate",
+      "x": 498,
+      "y": 904,
+      "w": 220,
+      "h": 36
+    },
+    {
+      "id": "ctrl_ic17",
+      "name": "摄像头名称19",
+      "type": "CtrlSurrogate",
+      "x": 948,
+      "y": 906,
+      "w": 220,
+      "h": 36
+    }
+  ]
+}
