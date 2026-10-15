@@ -1,0 +1,17 @@
+<div class="scadia-view-dialog"
+    [style.background]="data?.view?.profile?.bkcolor">
+    <a class="dialog-modal-close"
+       *ngIf="!data.disableDefaultClose">
+        <i (click)="onCloseDialog()"
+           class="material-icons"
+           style="font-size: 22px; cursor: pointer;">close</i>
+    </a>
+    <app-scadia-view (onclose)="onCloseDialog()"
+                   [child]='true'
+                   [gaugesManager]="data.gaugesManager"
+                   [hmi]="hmi"
+                   [variablesMapping]="data.variablesMapping"
+                   [view]="data.view"
+                   [sourceDeviceId]="data.sourceDeviceId">
+    </app-scadia-view>
+</div>

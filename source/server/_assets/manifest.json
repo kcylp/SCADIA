@@ -1,0 +1,277 @@
+{
+  "version": 1,
+  "name": "开诚智枢 SCADIA 内置素材库",
+  "nameEn": "Kaicheng SCADIA built-in asset library",
+  "description": "随软件分发的画面素材。新工程可直接取用；取用时是拷贝进工程的 _images，工程保持自包含。",
+  "updated": "2026-09-30",
+  "categories": [
+    {
+      "id": "backdrop",
+      "name": "底图",
+      "nameEn": "Backdrops"
+    },
+    {
+      "id": "bar",
+      "name": "条幅",
+      "nameEn": "Bars"
+    },
+    {
+      "id": "rail",
+      "name": "侧栏",
+      "nameEn": "Rails"
+    },
+    {
+      "id": "deco",
+      "name": "装饰",
+      "nameEn": "Decorations"
+    },
+    {
+      "id": "icon",
+      "name": "图标",
+      "nameEn": "Icons"
+    }
+  ],
+  "assets": [
+    {
+      "id": "底图-主底板-1770x993",
+      "name": "主底板（深蓝工业）",
+      "nameEn": "Project backdrop, dark industrial",
+      "category": "backdrop",
+      "file": "底图-主底板-1770x993.png",
+      "width": 1770,
+      "height": 993,
+      "bytes": 858178,
+      "sha256": "a81788678ef3fbd3",
+      "tags": [
+        "深色",
+        "工业",
+        "展厅",
+        "默认"
+      ],
+      "origin": "project/_images/zc/67de4bffdd0c40deb3e59d354b752756.png"
+    },
+    {
+      "id": "底图-主底板-备选-1770x993",
+      "name": "主底板（备选）",
+      "nameEn": "Project backdrop, alternate",
+      "category": "backdrop",
+      "file": "底图-主底板-备选-1770x993.png",
+      "width": 1770,
+      "height": 993,
+      "bytes": 858178,
+      "sha256": "a81788678ef3fbd3",
+      "tags": [
+        "深色",
+        "工业",
+        "备选"
+      ],
+      "origin": "project/_images/zc/1dad573f4ada484bb236a8e2ef2be4e7.png"
+    },
+    {
+      "id": "底图-启动页-1920x1080",
+      "name": "启动页底板",
+      "nameEn": "Splash backdrop",
+      "category": "backdrop",
+      "file": "底图-启动页-1920x1080.png",
+      "width": 1920,
+      "height": 1080,
+      "bytes": 1453360,
+      "sha256": "f704ac436de7dc9f",
+      "tags": [
+        "启动页",
+        "1920x1080"
+      ],
+      "origin": "project/_images/zc/7fce16437d7c4625ab6a5d1384f30b53.png"
+    },
+    {
+      "id": "底图-内容区A-1406x993",
+      "name": "内容区底板 A",
+      "nameEn": "Content panel backdrop A",
+      "category": "backdrop",
+      "file": "底图-内容区A-1406x993.png",
+      "width": 1406,
+      "height": 993,
+      "bytes": 696052,
+      "sha256": "46149c5cdce12548",
+      "tags": [
+        "内容区"
+      ],
+      "origin": "project/_images/zc/7c61e77ad0814ccb8c68eac9aaba103c.png"
+    },
+    {
+      "id": "底图-内容区B-1406x993",
+      "name": "内容区底板 B",
+      "nameEn": "Content panel backdrop B",
+      "category": "backdrop",
+      "file": "底图-内容区B-1406x993.png",
+      "width": 1406,
+      "height": 993,
+      "bytes": 696052,
+      "sha256": "46149c5cdce12548",
+      "tags": [
+        "内容区",
+        "备选"
+      ],
+      "origin": "project/_images/zc/afcbb670d5bf42bab68ea7693e18cc84.png"
+    },
+    {
+      "id": "底图-顶部标题栏-1920x87",
+      "name": "顶部标题栏",
+      "nameEn": "Header bar strip",
+      "category": "bar",
+      "file": "底图-顶部标题栏-1920x87.png",
+      "width": 1920,
+      "height": 87,
+      "bytes": 71120,
+      "sha256": "d110cf9417188a88",
+      "tags": [
+        "标题栏",
+        "条"
+      ],
+      "origin": "project/_images/zc/0af2124651d747c6bd4b562accc3609c.png"
+    },
+    {
+      "id": "底图-左列表-364x993",
+      "name": "左侧列表底板",
+      "nameEn": "Left rail backdrop",
+      "category": "rail",
+      "file": "底图-左列表-364x993.png",
+      "width": 364,
+      "height": 993,
+      "bytes": 164064,
+      "sha256": "8a80aeecb41c1746",
+      "tags": [
+        "侧栏",
+        "列表"
+      ],
+      "origin": "project/_images/zc/a71b6e0c6e3343769b7c6d41a52104de.png"
+    },
+    {
+      "id": "素材-左列表-150x993",
+      "name": "左侧列表素材",
+      "nameEn": "Left rail artwork",
+      "category": "rail",
+      "file": "素材-左列表-150x993.png",
+      "width": 150,
+      "height": 993,
+      "bytes": 24829,
+      "sha256": "af61f62b67927782",
+      "tags": [
+        "侧栏"
+      ],
+      "origin": "project/_images/zc/fa4ad0cc16774392948f6ea4056e689a.png"
+    },
+    {
+      "id": "素材-按钮条-262x48",
+      "name": "按钮条",
+      "nameEn": "Button strip",
+      "category": "deco",
+      "file": "素材-按钮条-262x48.png",
+      "width": 262,
+      "height": 48,
+      "bytes": 11642,
+      "sha256": "2f5276c69d3bb08c",
+      "tags": [
+        "按钮",
+        "条"
+      ],
+      "origin": "project/_images/zc/50942f4b4fb5414f8489eef4c42516c9.png"
+    },
+    {
+      "id": "素材-标题条-531x66",
+      "name": "标题条",
+      "nameEn": "Title strip",
+      "category": "deco",
+      "file": "素材-标题条-531x66.png",
+      "width": 531,
+      "height": 66,
+      "bytes": 27726,
+      "sha256": "2995e82b5a3e315d",
+      "tags": [
+        "标题",
+        "条"
+      ],
+      "origin": "project/_images/zc/b4e4f8963a8c43b3bc0a46029aac4ba7.png"
+    },
+    {
+      "id": "素材-徽标-200x200",
+      "name": "徽标",
+      "nameEn": "Badge",
+      "category": "deco",
+      "file": "素材-徽标-200x200.png",
+      "width": 200,
+      "height": 200,
+      "bytes": 12271,
+      "sha256": "afa4846f30227050",
+      "tags": [
+        "徽标"
+      ],
+      "origin": "project/_images/zc/1b7f894c75a6462c8c8d11892aaf9ac4.png"
+    },
+    {
+      "id": "图标-120x70",
+      "name": "小图 120x70",
+      "nameEn": "Small artwork",
+      "category": "icon",
+      "file": "图标-120x70.png",
+      "width": 120,
+      "height": 70,
+      "bytes": 11311,
+      "sha256": "dff3f8bc4f57c58b",
+      "tags": [],
+      "origin": "project/_images/zc/112b9e77039347008262310b50046e74.png"
+    },
+    {
+      "id": "图标-117x66",
+      "name": "小图 117x66",
+      "nameEn": "Small artwork",
+      "category": "icon",
+      "file": "图标-117x66.png",
+      "width": 117,
+      "height": 66,
+      "bytes": 6879,
+      "sha256": "2e613550c2492641",
+      "tags": [],
+      "origin": "project/_images/zc/6427a9d4e7fb4e3bbe7267393dd3fc96.png"
+    },
+    {
+      "id": "图标-76x56-a",
+      "name": "图标 A",
+      "nameEn": "Icon",
+      "category": "icon",
+      "file": "图标-76x56-a.png",
+      "width": 76,
+      "height": 56,
+      "bytes": 5321,
+      "sha256": "f513107dd39083c8",
+      "tags": [],
+      "origin": "project/_images/zc/78b9a579b1d3464586b7ccaf3fbe83c1.png"
+    },
+    {
+      "id": "图标-76x56-b",
+      "name": "图标 B",
+      "nameEn": "Icon",
+      "category": "icon",
+      "file": "图标-76x56-b.png",
+      "width": 76,
+      "height": 56,
+      "bytes": 5321,
+      "sha256": "f513107dd39083c8",
+      "tags": [],
+      "origin": "project/_images/zc/97e40c378657472d817d9816d2f0e343.png"
+    },
+    {
+      "id": "图标-26x26",
+      "name": "小图标",
+      "nameEn": "Small icon",
+      "category": "icon",
+      "file": "图标-26x26.png",
+      "width": 26,
+      "height": 26,
+      "bytes": 1563,
+      "sha256": "47f9ab2ee94e65e1",
+      "tags": [],
+      "origin": "project/_images/zc/43bc835d4ede4e2484df92b54912a549.png"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+# 开诚智枢 SCADIA · 人体检测与轨迹追踪服务 依赖
+# 无显卡（CPU 跑推理）：
+ultralytics>=8.3
+opencv-python>=4.8
+# 有 NVIDIA 显卡的工作站：先装 CUDA 版 torch，再装上面两个
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+#   pip install ultralytics opencv-python

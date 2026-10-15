@@ -1,0 +1,248 @@
+<div class="cam-editor">
+    <header class="cam-editor__hd">
+        <mat-icon>videocam</mat-icon>
+        <span>{{(isNew ? 'camera.new' : 'camera.edit') | translate}}</span>
+        <span class="cam-editor__spacer"></span>
+        <button class="sc-btn sc-btn--icon sc-btn--ghost" (click)="onClose()" title="{{'general.cancel' | translate}}">
+            <mat-icon>close</mat-icon>
+        </button>
+    </header>
+
+    <div class="cam-editor__body">
+
+        <div class="cam-editor__grid">
+
+            <!-- ------------------------------------------------ left: form -->
+            <div class="cam-col">
+                <div class="cam-group">
+                    <div class="cam-group__title">{{'camera.section.basic' | translate}}</div>
+
+                    <div class="sc-field">
+                        <label class="sc-field__label">{{'camera.name' | translate}}</label>
+                        <input class="sc-input" type="text" [(ngModel)]="camera.name" maxlength="120"
+                               placeholder="{{'camera.name-placeholder' | translate}}">
+                    </div>
+
+                    <div class="sc-row">
+                        <div class="sc-field" style="flex:1 1 200px">
+                            <label class="sc-field__label">{{'camera.vendor' | translate}}</label>
+                            <select class="sc-input" [(ngModel)]="camera.vendor" (ngModelChange)="onVendorChange($event)">
+                                <option *ngFor="let v of vendors" [value]="v.id">{{v.label}}</option>
+                            </select>
+                        </div>
+                        <div class="sc-field" style="flex:1 1 160px">
+                            <label class="sc-field__label">{{'camera.group' | translate}}</label>
+                            <input class="sc-input" type="text" [(ngModel)]="camera.group" maxlength="60">
+                        </div>
+                    </div>
+
+                    <div class="sc-row" *ngIf="!isCustom">
+                        <div class="sc-field" style="flex:2 1 220px">
+                            <label class="sc-field__label">{{'camera.host' | translate}}</label>
+                            <input class="sc-input" type="text" [(ngModel)]="camera.host" placeholder="192.168.1.64">
+                        </div>
+                        <div class="sc-field" style="flex:1 1 90px">
+                            <label class="sc-field__label">{{'camera.port' | translate}}</label>
+                            <input class="sc-input" type="number" [(ngModel)]="camera.port" placeholder="554">
+                        </div>
+                        <div class="sc-field" style="flex:1 1 90px">
+                            <label class="sc-field__label">{{'camera.http-port' | translate}}</label>
+                            <input class="sc-input" type="number" [(ngModel)]="camera.httpPort" placeholder="80">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cam-group">
+                    <div class="cam-group__title">{{'camera.section.channel' | translate}}</div>
+                    <div class="sc-row">
+                        <div class="sc-field" style="flex:1 1 90px">
+                            <label class="sc-field__label">{{'camera.channel' | translate}}</label>
+                            <input class="sc-input" type="number" min="1" [(ngModel)]="camera.channel">
+                        </div>
+                        <div class="sc-field" style="flex:1 1 120px">
+                            <label class="sc-field__label">{{'camera.stream' | translate}}</label>
+                            <select class="sc-input" [(ngModel)]="camera.subtype">
+                                <option [ngValue]="0">{{'camera.stream-main' | translate}}</option>
+                                <option [ngValue]="1">{{'camera.stream-sub' | translate}}</option>
+                            </select>
+                        </div>
+                        <div class="sc-field" style="flex:1 1 120px">
+                            <label class="sc-field__label">{{'camera.preview-fps' | translate}}</label>
+                            <input class="sc-input" type="number" min="1" max="25" [(ngModel)]="camera.previewFps">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cam-group">
+                    <div class="cam-group__title">{{'camera.section.auth' | translate}}</div>
+                    <div class="sc-row">
+                        <div class="sc-field" style="flex:1 1 160px">
+                            <label class="sc-field__label">{{'camera.username' | translate}}</label>
+                            <input class="sc-input" type="text" [(ngModel)]="camera.username" autocomplete="off">
+                        </div>
+                        <div class="sc-field" style="flex:1 1 160px">
+                            <label class="sc-field__label">{{'camera.password' | translate}}</label>
+                            <input class="sc-input" type="password" [(ngModel)]="camera.password" autocomplete="new-password"
+                                   placeholder="{{camera.hasPassword ? '••••••••' : ''}}">
+                        </div>
+                    </div>
+                    <div class="sc-hint">{{'camera.password-hint' | translate}}</div>
+                </div>
+
+                <div class="cam-group">
+                    <div class="cam-group__title">{{'camera.section.options' | translate}}</div>
+                    <label class="cam-check">
+                        <input type="checkbox" [(ngModel)]="camera.enabled">
+                        <span>{{'camera.enabled' | translate}}</span>
+                    </label>
+                    <label class="cam-check">
+                        <input type="checkbox" [(ngModel)]="camera.aiEnabled">
+                        <span>{{'camera.ai-enabled' | translate}}</span>
+                    </label>
+                    <div class="sc-field" *ngIf="camera.aiEnabled">
+                        <label class="sc-field__label">{{'camera.ai-endpoint' | translate}}</label>
+                        <input class="sc-input" type="text" [(ngModel)]="camera.aiEndpoint"
+                               placeholder="http://127.0.0.1:5001/api/detect">
+                    </div>
+                </div>
+
+                <div class="cam-group" *ngIf="isCustom">
+                    <div class="cam-group__title">{{'camera.section.templates' | translate}}</div>
+                    <div class="sc-field">
+                        <label class="sc-field__label">RTSP</label>
+                        <input class="sc-input" type="text" [(ngModel)]="camera.rtspTemplate"
+                               placeholder="rtsp://{user}:{pass}@{host}:{port}/...">
+                    </div>
+                    <div class="sc-field">
+                        <label class="sc-field__label">Snapshot</label>
+                        <input class="sc-input" type="text" [(ngModel)]="camera.snapshotTemplate"
+                               placeholder="http://{host}:{httpPort}/...">
+                    </div>
+                    <div class="sc-hint">{{'camera.template-vars' | translate}}</div>
+                </div>
+
+                <!-- ------------------------------------------- 视数融合 (fusion) -->
+                <div class="cam-group">
+                    <div class="cam-group__title">{{'camera.section.fusion' | translate}}</div>
+
+                    <div class="sc-field">
+                        <label class="sc-field__label">{{'camera.status-tag' | translate}}</label>
+                        <input class="sc-input" type="text" [(ngModel)]="camera.statusTagId"
+                               placeholder="S7-1200/cam1_online">
+                    </div>
+                    <div class="sc-hint">{{'camera.status-tag-hint' | translate}}</div>
+
+                    <div class="cam-osd-editor">
+                        <div class="cam-osd-editor__hd">
+                            <span>{{'camera.osd' | translate}}</span>
+                            <button class="sc-btn sc-btn--ghost" type="button" (click)="addOsdItem()">
+                                <mat-icon>add</mat-icon>{{'camera.osd-add' | translate}}
+                            </button>
+                        </div>
+
+                        <div class="cam-osd-row" *ngFor="let item of osdItems; let oi = index">
+                            <select class="cam-input cam-osd-row__type" [(ngModel)]="item.type" (ngModelChange)="onOsdTypeChange(item)">
+                                <option value="text">{{'camera.osd-type-text' | translate}}</option>
+                                <option value="time">{{'camera.osd-type-time' | translate}}</option>
+                                <option value="value">{{'camera.osd-type-value' | translate}}</option>
+                            </select>
+
+                            <input *ngIf="item.type === 'text'" class="cam-input" type="text"
+                                   [(ngModel)]="item.text" placeholder="{{'camera.osd-text' | translate}}">
+
+                            <select *ngIf="item.type === 'time'" class="cam-input" [(ngModel)]="item.format">
+                                <option value="time">{{'camera.osd-fmt-time' | translate}}</option>
+                                <option value="date">{{'camera.osd-fmt-date' | translate}}</option>
+                                <option value="datetime">{{'camera.osd-fmt-datetime' | translate}}</option>
+                                <option value="weekday">{{'camera.osd-fmt-weekday' | translate}}</option>
+                            </select>
+
+                            <ng-container *ngIf="item.type === 'value'">
+                                <input class="cam-input" type="text" [(ngModel)]="item.tagId"
+                                       placeholder="{{'camera.osd-tag' | translate}}  S7-1200/temp">
+                                <input class="cam-input cam-osd-row__sm" type="text" [(ngModel)]="item.label"
+                                       placeholder="{{'camera.osd-label' | translate}}">
+                                <input class="cam-input cam-osd-row__sm" type="text" [(ngModel)]="item.unit"
+                                       placeholder="{{'camera.osd-unit' | translate}}">
+                                <input class="cam-input cam-osd-row__xs" type="number" min="0" max="8" [(ngModel)]="item.decimals">
+                            </ng-container>
+
+                            <select class="cam-input cam-osd-row__pos" [(ngModel)]="item.position">
+                                <option value="top-left">{{'camera.osd-pos-tl' | translate}}</option>
+                                <option value="top-right">{{'camera.osd-pos-tr' | translate}}</option>
+                                <option value="bottom-left">{{'camera.osd-pos-bl' | translate}}</option>
+                                <option value="bottom-right">{{'camera.osd-pos-br' | translate}}</option>
+                            </select>
+
+                            <button class="sc-btn sc-btn--icon sc-btn--ghost" type="button" (click)="removeOsdItem(oi)">
+                                <mat-icon>remove</mat-icon>
+                            </button>
+                        </div>
+
+                        <div class="sc-hint" *ngIf="!osdItems.length">{{'camera.osd-empty' | translate}}</div>
+
+                        <div class="cam-osd-preview" *ngIf="osdPreview && osdPreview.length">
+                            <div class="sc-hint">{{'camera.osd-preview' | translate}}</div>
+                            <div class="cam-osd-preview__row" *ngFor="let p of osdPreview">
+                                <span class="sc-tag">{{p.position}}</span>
+                                <span [class.cam-bad]="p.quality === 'bad'">{{p.text}}</span>
+                                <span class="sc-hint" *ngIf="p.quality === 'bad'">{{'camera.osd-quality-bad' | translate}}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ----------------------------------------------- right: preview -->
+            <div class="cam-col">
+                <div class="cam-group cam-group--preview">
+                    <div class="cam-group__title">{{'camera.preview' | translate}}</div>
+
+                    <div class="cam-stage" *ngIf="previewCamera">
+                        <app-camera-view [camera]="previewCamera" [mediaEnabled]="mediaEnabled"
+                                         [fps]="camera.previewFps || 4"></app-camera-view>
+                    </div>
+                    <div class="cam-stage cam-stage--empty" *ngIf="!previewCamera">
+                        <mat-icon>videocam_off</mat-icon>
+                        <span>{{isNew ? ('camera.save-first' | translate) : ('camera.no-preview' | translate)}}</span>
+                    </div>
+
+                    <div class="cam-probe" *ngIf="probeResult">
+                        <div class="sc-kv">
+                            <span>{{'camera.test-result' | translate}}</span>
+                            <b [style.color]="probeResult.ok ? 'var(--sc-ok)' : 'var(--sc-alarm)'">
+                                {{probeResult.ok ? ('camera.test-ok' | translate) : ('camera.test-fail' | translate)}}
+                            </b>
+                        </div>
+                        <div class="sc-kv" *ngIf="probeResult.snapshot">
+                            <span>JPEG</span>
+                            <b class="sc-mono">{{probeResult.snapshot.jpeg ? ('general.yes' | translate) : ('general.no' | translate)}} · {{probeResult.snapshot.bytes || 0}}B</b>
+                        </div>
+                        <div class="sc-kv" *ngIf="probeResult.snapshot && probeResult.snapshot.error">
+                            <span>{{'camera.error' | translate}}</span><b class="sc-mono">{{probeResult.snapshot.error}}</b>
+                        </div>
+                        <div class="sc-kv" *ngIf="probeResult.auth"><span>{{'camera.auth' | translate}}</span><b>{{probeResult.auth}}</b></div>
+                    </div>
+
+                    <div class="cam-endpoints" *ngIf="camera.id">
+                        <div class="sc-kv"><span>{{'camera.endpoint.rtsp' | translate}}</span>
+                            <b class="sc-hex">{{endpointPreview?.rtsp || '—'}}</b></div>
+                        <div class="sc-kv"><span>{{'camera.endpoint.snapshot' | translate}}</span>
+                            <b class="sc-hex">{{endpointPreview?.snapshot || '—'}}</b></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="cam-editor__ft">
+        <button class="sc-btn" (click)="onProbe()" [disabled]="probing || saving">
+            <mat-icon>{{probing ? 'hourglass_empty' : 'network_check'}}</mat-icon>{{'camera.test' | translate}}
+        </button>
+        <span class="cam-editor__spacer"></span>
+        <button class="sc-btn sc-btn--ghost" (click)="onClose()" [disabled]="saving">{{'general.cancel' | translate}}</button>
+        <button class="sc-btn sc-btn--primary" (click)="onSave()" [disabled]="saving">
+            <mat-icon>save</mat-icon>{{'general.save' | translate}}
+        </button>
+    </footer>
+</div>

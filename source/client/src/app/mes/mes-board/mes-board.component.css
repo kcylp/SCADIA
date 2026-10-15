@@ -1,0 +1,168 @@
+:host {
+    display: block;
+    height: 100%;
+    min-height: 0;
+}
+
+/* ------------------------------------------------------------------ layout */
+
+/* The board is long by design (orders + routing + output + OEE + quality). The scroll region is
+   the .sc-body of the .scada surface, declared once in src/scada.css. */
+.scada .sc-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sc-gap);
+    padding: var(--sc-gap);
+}
+
+.scada .sc-topbar__meta {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: 60%;
+}
+
+.scada .sc-grid--kpi {
+    grid-template-columns: repeat(auto-fit, minmax(calc(180px * var(--sc-u, 1)), 1fr));
+}
+
+.scada .sc-kpi__value {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.scada .sc-panel__bd {
+    overflow-x: auto;
+}
+
+.scada .sc-table th:first-child,
+.scada .sc-table td:first-child { padding-left: calc(16px * var(--sc-u, 1)); }
+
+.scada .sc-table th:last-child,
+.scada .sc-table td:last-child { padding-right: calc(16px * var(--sc-u, 1)); }
+
+/* Dense tables inside the scrolling board keep a readable header. */
+.scada .sc-scroll table thead th {
+    position: sticky;
+    top: 0;
+    background: var(--sc-panel);
+    z-index: 2;
+}
+
+/* -------------------------------------------------------- progress in a cell */
+
+/* One progress bar shape for every column that carries a ratio: an order's completion, a
+   station's load, a shift's output, a defect's share and an OEE. The COLOUR never comes from
+   here - it comes from the modifier below, so a bar cannot disagree with its own status pill. */
+.scada .mes-progress {
+    display: flex;
+    align-items: center;
+    gap: calc(8px * var(--sc-u, 1));
+}
+
+.scada .mes-progress__track {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: calc(56px * var(--sc-u, 1));
+    height: calc(8px * var(--sc-u, 1));
+    border-radius: calc(999px * var(--sc-u, 1));
+    /* The empty part of the track is the surface's own line colour: no new literal is introduced,
+       and the track stays visible in both themes because .scada owns that token. */
+    background: var(--sc-panel-3);
+    border: 1px solid var(--sc-line);
+    overflow: hidden;
+}
+
+.scada .mes-progress__fill {
+    height: 100%;
+    border-radius: calc(999px * var(--sc-u, 1));
+    background: var(--sc-accent);
+    transition: width 0.2s ease;
+}
+
+.scada .mes-progress__pct {
+    flex: 0 0 auto;
+    min-width: calc(46px * var(--sc-u, 1));
+    text-align: right;
+    font-size: clamp(10px, calc(11.5px * var(--sc-u, 1)), 18.4px);
+    color: var(--sc-ink-2);
+}
+
+/* The fill wears the same signal tokens as the status pill in the same row. */
+.scada .mes-progress__fill--done    { background: var(--sc-ok); }
+.scada .mes-progress__fill--running { background: var(--sc-accent); }
+.scada .mes-progress__fill--qc      { background: var(--sc-warn); }
+.scada .mes-progress__fill--blocked { background: var(--sc-alarm); }
+.scada .mes-progress__fill--pending { background: var(--sc-idle); }
+.scada .mes-progress__fill--station { background: var(--sc-accent-2); }
+.scada .mes-progress__fill--defect  { background: var(--sc-alarm); }
+
+.scada .mes-status { white-space: nowrap; }
+
+/* ------------------------------------------------------ hourly output columns */
+
+.scada .mes-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: calc(10px * var(--sc-u, 1));
+    min-height: calc(190px * var(--sc-u, 1));
+}
+
+.scada .mes-bars__col {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(6px * var(--sc-u, 1));
+    min-width: 0;
+}
+
+.scada .mes-bars__value {
+    font-size: clamp(10px, calc(11px * var(--sc-u, 1)), 17.6px);
+    color: var(--sc-ink-2);
+}
+
+/* A fixed-height track is what makes a bar's height a plain percentage of the peak. */
+.scada .mes-bars__track {
+    width: 100%;
+    max-width: calc(42px * var(--sc-u, 1));
+    height: calc(120px * var(--sc-u, 1));
+    display: flex;
+    align-items: flex-end;
+    background: var(--sc-panel-3);
+    border: 1px solid var(--sc-line);
+    border-radius: var(--sc-r-sm);
+    overflow: hidden;
+}
+
+.scada .mes-bars__fill {
+    width: 100%;
+    background: var(--sc-accent);
+    border-top: 2px solid var(--sc-accent-2);
+}
+
+.scada .mes-bars__label {
+    font-size: clamp(10px, calc(11px * var(--sc-u, 1)), 17.6px);
+    color: var(--sc-ink-3);
+    white-space: nowrap;
+}
+
+.scada .mes-delta--ok { color: var(--sc-ok); margin-left: calc(6px * var(--sc-u, 1)); }
+
+/* ------------------------------------------------------------- responsive */
+
+@media (max-width: calc(980px * var(--sc-u, 1))) {
+    .scada .mes-bars__track { height: calc(96px * var(--sc-u, 1)); }
+}
+
+@media (max-width: calc(780px * var(--sc-u, 1))) {
+    .scada .sc-topbar {
+        height: auto;
+        flex-wrap: wrap;
+        gap: calc(10px * var(--sc-u, 1));
+        padding: calc(10px * var(--sc-u, 1)) calc(14px * var(--sc-u, 1));
+    }
+    .scada .sc-topbar__meta { max-width: 100%; }
+    .scada .mes-bars { gap: calc(6px * var(--sc-u, 1)); }
+    .scada .mes-progress__pct { min-width: calc(40px * var(--sc-u, 1)); }
+}

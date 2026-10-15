@@ -1,0 +1,296 @@
+<div style="width: 800px;height: 890px; position: relative" class="dialog-mdsd-main">
+    <h1 mat-dialog-title class="dialog-title" mat-dialog-draggable>{{'editor.controls-bag-settings' | translate}}</h1>
+    <mat-icon (click)="onNoClick()" class="dialog-close-btn">clear</mat-icon>
+    <div mat-dialog-content class="dialog-mdsd-content">
+        <div style="display: block; width: 660px">
+            <div style="display: block;">
+                <div class="my-form-field">
+                    <span>{{'gauges.property-name' | translate}}</span>
+                    <input [(ngModel)]="data.settings.name" style="width: 220px" type="text">
+                </div>
+                <div class="my-form-field" style="vertical-align: bottom; margin-left: 13px;">
+                    <span>{{'gauges.property-permission' | translate}}</span>
+                    <div style="text-align:center;cursor:pointer;" class="my-form-field-permission" (click)="onEditPermission()">
+                        <mat-icon *ngIf="(property.permission || property.permissionRoles?.show?.length || property.permissionRoles?.enabled?.length); else unlock"
+                                class="header-icon"
+                                style="line-height: 28px;">lock</mat-icon>
+                        <ng-template #unlock>
+                            <mat-icon class="header-icon"
+                                    style="line-height: 28px;">lock_open</mat-icon>
+                        </ng-template>
+                    </div>
+                </div>
+            </div>
+            <div mat-dialog-content style="overflow: hidden; width:100%">
+                <flex-head [data]="data" [property]="property" #flexhead></flex-head>
+            </div>
+        </div>
+        <div style="width: 750px; height: 690px; position: relative">
+            <div style="display: block; height: 360px;">
+                <div class="gauge">
+                    <div class="gauge-select">
+                        <div (click)="onGaugeChange(gaugeTypeEnum.Gauge)" class="btn-gauge btn-gauge-mat"
+                            [ngStyle]="{'background-color': gaugeType === gaugeTypeEnum.Gauge ? 'transparent' : 'rgba(0,0,0,0.1)'}"></div>
+                        <div (click)="onGaugeChange(gaugeTypeEnum.Donut)" class="btn-gauge btn-gauge-donut"
+                            [ngStyle]="{'background-color': gaugeType === gaugeTypeEnum.Donut ? 'transparent' : 'rgba(0,0,0,0.1)'}"></div>
+                        <div (click)="onGaugeChange(gaugeTypeEnum.Zones)" class="btn-gauge btn-gauge-zone"
+                            [ngStyle]="{'background-color': gaugeType === gaugeTypeEnum.Zones ? 'transparent' : 'rgba(0,0,0,0.1)'}"></div>
+                    </div>
+                    <div class="gauge-view">
+                        <ngx-gauge [options]="options" #ngauge [value]="gauge.value"></ngx-gauge>
+                    </div>
+                </div>
+                <div class="toolbox-det" *ngIf="gaugeType !== gaugeTypeEnum.Donut">
+                    <div class="field-row">
+                        <div class="my-form-field" style="padding-left: 12px">
+                            <span>{{'bag.property-ticks' | translate}}</span>
+                            <mat-slide-toggle color="primary" [(ngModel)]="optcfg.ticksEnabled" (change)="onChangeTicks($event.checked)"></mat-slide-toggle>
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="my-form-field slider-field" style="padding-left: 12px">
+                            <span>{{'bag.property-divisions' | translate}}</span>
+                            <input numberOnly type="number" class="number-input"
+                                [disabled]="!optcfg.ticksEnabled" [max]="20" [min]="0" [step]="1"
+                                [(ngModel)]="optcfg.renderTicks.divisions" (ngModelChange)="onChangeOptionsTicks('divisions', $event)">
+                        </div>
+                        <div class="my-form-field slider-field" style="padding-left: 12px">
+                            <span>{{'bag.property-subdivisions' | translate}}</span>
+                            <input numberOnly type="number" class="number-input"
+                                [disabled]="!optcfg.ticksEnabled" [max]="20" [min]="0" [step]="1"
+                                [(ngModel)]="optcfg.renderTicks.subDivisions" (ngModelChange)="onChangeOptionsTicks('subDivisions', $event)">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="my-form-field slider-field" style="padding-left: 12px">
+                            <span>{{'bag.property-divisions-length' | translate}}</span>
+                            <input numberOnly type="number" class="number-input"
+                                [disabled]="!optcfg.ticksEnabled" [max]="100" [min]="0" [step]="1"
+                                [(ngModel)]="optcfg.renderTicks.divLength" (ngModelChange)="onChangeOptionsTicks('divLength', $event)">
+                        </div>
+                        <div class="my-form-field slider-field" style="padding-left: 12px">
+                            <span>{{'bag.property-subdivisions-length' | translate}}</span>
+                            <input numberOnly type="number" class="number-input"
+                                [disabled]="!optcfg.ticksEnabled" [max]="100" [min]="0" [step]="1"
+                                [(ngModel)]="optcfg.renderTicks.subLength" (ngModelChange)="onChangeOptionsTicks('subLength', $event)">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="my-form-field slider-field" style="padding-left: 12px">
+                            <span>{{'bag.property-divisions-width' | translate}}</span>
+                            <input numberOnly type="number" class="number-input"
+                                [disabled]="!optcfg.ticksEnabled" [max]="100" [min]="0" [step]="1"
+                                [(ngModel)]="optcfg.renderTicks.divWidth" (ngModelChange)="onChangeOptionsTicks('divWidth', $event)">
+                        </div>
+                        <div class="my-form-field slider-field" style="padding-left: 12px">
+                            <span>{{'bag.property-subdivisions-width' | translate}}</span>
+                            <input numberOnly type="number" class="number-input"
+                                [disabled]="!optcfg.ticksEnabled" [max]="100" [min]="0" [step]="1"
+                                [(ngModel)]="optcfg.renderTicks.subWidth" (ngModelChange)="onChangeOptionsTicks('subWidth', $event)">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="my-form-field slider-field color-field" style="padding-left: 12px">
+                            <span>{{'bag.property-divisions-color' | translate}}</span>
+                            <input [disabled]="!optcfg.ticksEnabled" [(colorPicker)]="optcfg.renderTicks.divColor" [cpAlphaChannel]="'always'" class="input-color"
+                                [style.background]="optcfg.renderTicks.divColor" [cpPresetColors]="defaultColor" [cpOKButton]="true" [cpCancelButton]="true"
+                                [cpCancelButtonClass]="'cpCancelButtonClass'" [cpCancelButtonText]="'Cancel'" [cpOKButtonText]="'OK'" [cpOKButtonClass]="'cpOKButtonClass'"
+                                style="width: 120px" [cpPosition]="'left'" (colorPickerChange)="onChangeOptionsTicks('divColor', $event)" />
+                        </div>
+                        <div class="my-form-field slider-field color-field" style="padding-left: 12px;">
+                            <span>{{'bag.property-subdivisions-color' | translate}}</span>
+                            <input [disabled]="!optcfg.ticksEnabled" [(colorPicker)]="optcfg.renderTicks.subColor" [cpAlphaChannel]="'always'" class="input-color"
+                                [style.background]="optcfg.renderTicks.subColor" [cpPresetColors]="defaultColor" [cpOKButton]="true" [cpCancelButton]="true"
+                                [cpCancelButtonClass]="'cpCancelButtonClass'" [cpCancelButtonText]="'Cancel'" [cpOKButtonText]="'OK'" [cpOKButtonClass]="'cpOKButtonClass'"
+                                style="width: 120px" [cpPosition]="'left'" (colorPickerChange)="onChangeOptionsTicks('subColor', $event)" />
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="my-form-field slider-field" style="padding-left: 12px">
+                            <span>{{'bag.property-divisionfont-size' | translate}}</span>
+                            <input numberOnly type="number" class="number-input"
+                                [disabled]="!optcfg.ticksEnabled" [max]="100" [min]="0" [step]="1"
+                                [(ngModel)]="optcfg.staticFontSize" (ngModelChange)="onChangeOptionsLabels('fontSize', $event)">
+                        </div>
+                        <div class="my-form-field slider-field color-field" style="padding-left: 12px">
+                            <span>{{'bag.property-divisionfont-color' | translate}}</span>
+                            <input [(colorPicker)]="optcfg.staticFontColor" [cpDisabled]="!optcfg.ticksEnabled" [cpAlphaChannel]="'always'" class="input-color"
+                                [style.background]="optcfg.staticFontColor" [cpPresetColors]="defaultColor" [cpOKButton]="true" [cpCancelButton]="true"
+                                [cpCancelButtonClass]="'cpCancelButtonClass'" [cpCancelButtonText]="'Cancel'" [cpOKButtonText]="'OK'" [cpOKButtonClass]="'cpOKButtonClass'"
+                                style="width: 120px" [cpPosition]="'left'" (colorPickerChange)="onChangeOptionsLabels('labelsColor', $event)" />
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="my-form-field slider-field" style="padding-left: 12px">
+                            <span style="max-width: 180px">{{'bag.property-divisions-labels' | translate}}</span>
+                            <input [disabled]="!optcfg.ticksEnabled" [(ngModel)]="optcfg.staticLabelsText" (change)="onChangeOptionsLabels('labels', optcfg.staticLabelsText)"
+                                style="width: 265px;" type="text">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="toolbox">
+                <div class="toolbox-left">
+                    <div class="field-row">
+                        <div class="my-form-field slider-field" style="padding-left: 12px">
+                            <span>{{'bag.property-current-value' | translate}}</span>
+                            <input numberOnly type="number" class="number-input"
+                                [max]="optcfg.maxValue" [min]="optcfg.minValue" [step]="1"
+                                [(ngModel)]="gauge.value" (ngModelChange)="onChangeValue($event)">
+                        </div>
+                        <div class="my-form-field slider-field" style="padding-left: 12px">
+                            <span>{{'bag.property-min' | translate}}</span>
+                            <input numberOnly [(ngModel)]="optcfg.minValue" (change)="onChangeOptions('minValue', optcfg.minValue)"
+                                style="width: 50px;text-align: center;display:inline-block;" type="number">
+                        </div>
+                        <div class="my-form-field slider-field" style="padding-left: 14px">
+                            <span>{{'bag.property-max' | translate}}</span>
+                            <input numberOnly [(ngModel)]="optcfg.maxValue" (change)="onChangeOptions('maxValue', optcfg.maxValue)"
+                                style="width: 50px;text-align: center;display:inline-block;" type="number">
+                        </div>
+                        <div class="my-form-field slider-field" style="padding-left: 12px">
+                            <span>{{'bag.property-bar-width' | translate}}</span>
+                            <input numberOnly type="number" class="number-input"
+                                [max]="70" [min]="0" [step]="1"
+                                [(ngModel)]="optcfg.lineWidth" (ngModelChange)="onChangeOptions('lineWidth', $event)">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="my-form-field slider-field" style="padding-left: 12px">
+                            <span>{{'bag.property-animation-speed' | translate}}</span>
+                            <input numberOnly type="number" class="number-input"
+                                [max]="128" [min]="1" [step]="1"
+                                [(ngModel)]="optcfg.animationSpeed" (ngModelChange)="onChangeOptions('animationSpeed', $event)">
+                        </div>
+                        <div class="my-form-field slider-field" style="padding-left: 12px">
+                            <span>{{'bag.property-angle' | translate}}</span>
+                            <input numberOnly type="number" class="number-input"
+                                [max]="50" [min]="-50" [step]="1"
+                                [(ngModel)]="optcfg.angle" (ngModelChange)="onChangeOptions('angle', $event)">
+                        </div>
+                        <div class="my-form-field slider-field" style="padding-left: 12px">
+                            <span>{{'bag.property-radius' | translate}}</span>
+                            <input numberOnly type="number" class="number-input"
+                                [max]="100" [min]="50" [step]="1"
+                                [(ngModel)]="optcfg.radiusScale" (ngModelChange)="onChangeOptions('radiusScale', $event)">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="my-form-field slider-field" style="padding-left: 12px">
+                            <span>{{'bag.property-font-size' | translate}}</span>
+                            <input numberOnly type="number" class="number-input"
+                                [max]="100" [min]="0" [step]="1"
+                                [(ngModel)]="optcfg.fontSize" (ngModelChange)="onChangeOptions('fontSize', $event)">
+                        </div>
+                        <div class="my-form-field slider-field" style="padding-left: 12px">
+                            <span>{{'bag.property-textfield-position' | translate}}</span>
+                            <input numberOnly type="number" class="number-input"
+                                [max]="100" [min]="0" [step]="1"
+                                [(ngModel)]="optcfg.textFilePosition" (ngModelChange)="onChangeOptions('textFilePosition', $event)">
+                        </div>
+                        <div class="my-form-field slider-field" style="padding-left: 12px">
+                            <span>{{'bag.property-format-digits' | translate}}</span>
+                            <input numberOnly type="number" class="number-input"
+                                [max]="5" [min]="0" [step]="1"
+                                [(ngModel)]="optcfg.fractionDigits" (ngModelChange)="onChangeOptions('fractionDigits', $event)">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="my-form-field slider-field" style="padding-left: 12px">
+                            <span>{{'bag.property-pointer-length' | translate}}</span>
+                            <input numberOnly type="number" class="number-input"
+                                [max]="100" [min]="0" [step]="1"
+                                [(ngModel)]="optcfg.pointer.length" (ngModelChange)="onChangeOptionsPointer('pointerLength', $event)">
+                        </div>
+                        <div class="my-form-field slider-field" style="padding-left: 12px">
+                            <span>{{'bag.property-pointer-stroke' | translate}}</span>
+                            <input numberOnly type="number" class="number-input"
+                                [max]="300" [min]="0" [step]="1"
+                                [(ngModel)]="optcfg.pointer.strokeWidth" (ngModelChange)="onChangeOptionsPointer('pointerStrokeWidth', $event)">
+                        </div>
+                        <div class="my-form-field slider-field color-field" style="padding-left: 12px">
+                            <span>{{'bag.property-pointer-color' | translate}}</span>
+                            <input [(colorPicker)]="optcfg.pointer.color" [cpAlphaChannel]="'always'" [style.background]="optcfg.pointer.color" class="input-color"
+                                [cpPresetColors]="defaultColor" [cpOKButton]="true" [cpCancelButton]="true" [cpCancelButtonClass]="'cpCancelButtonClass'"
+                                [cpCancelButtonText]="'Cancel'" [cpOKButtonText]="'OK'" [cpOKButtonClass]="'cpOKButtonClass'" style="width: 120px" [cpPosition]="'top'"
+                                (colorPickerChange)="onChangeOptionsPointer('color', $event)" />
+                        </div>
+                    </div>
+                    <div class="field-row slider-field">
+                        <div class="my-form-field color-field" style="padding-left: 12px">
+                            <span>{{'bag.property-color-start' | translate}}</span>
+                            <input [(colorPicker)]="optcfg.colorStart" [style.background]="optcfg.colorStart" [cpAlphaChannel]="'always'" class="input-color"
+                                [cpPresetColors]="defaultColor" [cpOKButton]="true" [cpCancelButton]="true" [cpCancelButtonClass]="'cpCancelButtonClass'"
+                                [cpCancelButtonText]="'Cancel'" [cpOKButtonText]="'OK'" [cpOKButtonClass]="'cpOKButtonClass'" style="width: 120px" [cpPosition]="'top'"
+                                (colorPickerChange)="onChangeOptions('colorStart', $event)" />
+                        </div>
+                        <div class="my-form-field slider-field color-field" style="padding-left: 12px">
+                            <span>{{'bag.property-color-stop' | translate}}</span>
+                            <input [(colorPicker)]="optcfg.colorStop" [style.background]="optcfg.colorStop" [cpAlphaChannel]="'always'" class="input-color"
+                                [cpPresetColors]="defaultColor" [cpOKButton]="true" [cpCancelButton]="true" [cpCancelButtonClass]="'cpCancelButtonClass'"
+                                [cpCancelButtonText]="'Cancel'" [cpOKButtonText]="'OK'" [cpOKButtonClass]="'cpOKButtonClass'" style="width: 120px" [cpPosition]="'top'"
+                                (colorPickerChange)="onChangeOptions('colorStop', $event)" />
+                        </div>
+                        <div class="my-form-field slider-field color-field" style="padding-left: 12px">
+                            <span>{{'bag.property-background' | translate}}</span>
+                            <input [(colorPicker)]="optcfg.strokeColor" [style.background]="optcfg.strokeColor" [cpAlphaChannel]="'always'" class="input-color"
+                                [cpPresetColors]="defaultColor" [cpOKButton]="true" [cpCancelButton]="true" [cpCancelButtonClass]="'cpCancelButtonClass'"
+                                [cpCancelButtonText]="'Cancel'" [cpOKButtonText]="'OK'" [cpOKButtonClass]="'cpOKButtonClass'" style="width: 120px" [cpPosition]="'top'"
+                                (colorPickerChange)="onChangeOptions('strokeColor', $event)" />
+                        </div>
+                    </div>
+                    <div class="field-row slider-field">
+                        <div class="my-form-field" style="padding-left: 12px;width:160px">
+                            <span>{{'bag.property-font' | translate}}</span>
+                            <mat-select [(value)]="options.fontFamily" (selectionChange)="onChangeOptionsLabels('fontFamily',  $event.value)">
+                                <mat-option *ngFor="let font of fonts" [style.fontFamily]="font" [value]="font">
+                                    {{font}}
+                                </mat-option>
+                            </mat-select>
+                        </div>
+                        <!-- <div class="my-form-field slider-field color-field" style="padding-left: 12px">
+                        <span>{{'bag.property-background' | translate}}</span>
+                        <input [(colorPicker)]="optcfg.backgroundColor" [style.background]="optcfg.backgroundColor" [cpAlphaChannel]="'always'" class="input-color" [cpPresetColors]="defaultColor" [cpOKButton]="true" [cpCancelButton]="true" [cpCancelButtonClass]="'cpCancelButtonClass'" [cpCancelButtonText]="'Cancel'" [cpOKButtonText]="'OK'" [cpOKButtonClass]="'cpOKButtonClass'" style="padding: 8px 0 0 0; width: 126px" [cpPosition]="'top'" (colorPickerChange)="onChangeOptions('backgroundColor', $event)" />
+                    </div> -->
+                    </div>
+                </div>
+                <div class="toolbox-right" *ngIf="gaugeType === gaugeTypeEnum.Zones">
+                    <div style="position: absolute; top: 0px; right: 0px">
+                        <span>{{'bag.property-zones' | translate}}</span>
+                        <button mat-icon-button (click)="onAddZone()" [disabled]="optcfg.staticZones && optcfg.staticZones.length >= 5">
+                            <mat-icon>add_circle_outline</mat-icon>
+                        </button>
+                    </div>
+                    <div style="margin-top: 20px; margin-bottom:20px; height:250px">
+                        <div *ngFor="let item of optcfg.staticZones; index as i" style="display: block;">
+                            <div class="my-form-field slider-field">
+                                <span>{{'bag.property-min' | translate}}</span>
+                                <input [(ngModel)]="item.min" style="width: 60px; text-align: center;" type="text" (change)="onChangeStaticZones()">
+                            </div>
+                            <div class="my-form-field slider-field" style="padding-left: 12px;">
+                                <span>{{'bag.property-max' | translate}}</span>
+                                <input [(ngModel)]="item.max" style="width: 60px" type="text" (change)="onChangeStaticZones()">
+                            </div>
+                            <div class="my-form-field slider-field color-field" style="padding-left: 12px">
+                                <span>{{'bag.property-color' | translate}}</span>
+                                <input [cpDialogDisplay]="'popup'" [(colorPicker)]="item.strokeStyle" [cpAlphaChannel]="'always'" class="input-color"
+                                    [style.background]="item.strokeStyle" [cpPresetColors]="defaultColor" [cpOKButton]="true" [cpCancelButton]="true"
+                                    [cpCancelButtonClass]="'cpCancelButtonClass'" [cpCancelButtonText]="'Cancel'" [cpOKButtonText]="'OK'" [cpOKButtonClass]="'cpOKButtonClass'"
+                                    style="width: 58px" [cpPosition]="'top'" (colorPickerChange)="onChangeStaticZones()" />
+                            </div>
+                            <div class="my-form-field" style="line-height: 40px;">
+                                <button mat-icon-button (click)="onRemoveZone(i)" class="remove">
+                                    <mat-icon>clear</mat-icon>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div mat-dialog-actions class="dialog-action">
+        <button mat-raised-button (click)="onNoClick()">{{'dlg.cancel' | translate}}</button>
+        <button mat-raised-button color="primary" (click)="onOkClick()" [mat-dialog-close]="data" cdkFocusInitial>{{'dlg.ok' | translate}}</button>
+    </div>
+</div>

@@ -1,0 +1,23 @@
+.range-container {
+    width: 200px;
+}
+
+.range-type {
+    display: inline-block;
+}
+
+.range-type-switch {
+    float: right;
+}
+
+.range-type-switch button {
+    margin-top: 15px;
+    line-height: 30px;
+    height:30px !important;
+    width:30px !important;
+    font-size: 14px;
+}
+
+.boolean-selection {
+    width: 157px;
+}

@@ -1,0 +1,40 @@
+{
+  "name": "node-red-contrib-scadia",
+  "version": "1.0.0",
+  "description": "Node-RED nodes for SCADIA SCADA integration",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "node-red",
+    "scadia",
+    "scada",
+    "hmi"
+  ],
+  "author": "MatthewReed303",
+  "license": "MIT",
+  "node-red": {
+    "nodes": {
+      "get tag": "nodes/scadia-get-tag.js",
+      "set tag": "nodes/scadia-set-tag.js",
+      "get daq": "nodes/scadia-get-daq.js",
+      "get historical tags": "nodes/scadia-get-historical-tags.js",
+      "execute script": "nodes/scadia-execute-script.js",
+      "send message": "nodes/scadia-send-message.js",
+      "set view": "nodes/scadia-set-view.js",
+      "open card": "nodes/scadia-open-card.js",
+      "get alarms": "nodes/scadia-get-alarms.js",
+      "get history alarms": "nodes/scadia-get-history-alarms.js",
+      "ack alarm": "nodes/scadia-ack-alarm.js",
+      "get tag id": "nodes/scadia-get-tag-id.js",
+      "get tag daq settings": "nodes/scadia-get-tag-daq-settings.js",
+      "set tag daq settings": "nodes/scadia-set-tag-daq-settings.js",
+      "enable device": "nodes/scadia-enable-device.js",
+      "get device property": "nodes/scadia-get-device-property.js",
+      "set device property": "nodes/scadia-set-device-property.js",
+      "get device": "nodes/scadia-get-device.js",
+      "emit event": "nodes/scadia-emit-event.js"
+    }
+  }
+}

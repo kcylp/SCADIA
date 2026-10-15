@@ -1,0 +1,39 @@
+<main class="scene-page">
+  <header>
+    <div><h1>{{people ? '门口进入记录' : '八场景视频分析'}}</h1><p>{{people ? '仅指定门口向内过线；工位和室内走动不纳入统计。' : '7个可见光场景共享一个镜头与检测结果，红外为独立源。'}}</p></div>
+    <nav aria-label="分析导航"><a routerLink="/scenes" routerLinkActive="active">八场景</a><a routerLink="/people" routerLinkActive="active">人员统计</a><a routerLink="/alarms">报警确认</a><a routerLink="/home/v_zc_home">总览</a><button type="button" data-login (click)="login()">登录 / 切换账号</button></nav>
+  </header>
+  <p class="error" role="alert" *ngIf="error">{{error}}</p>
+  <p class="message" role="status" *ngIf="message">{{message}}</p>
+  <div *ngIf="!people"><button type="button" (click)="beginCalibration()">门口标定（管理员）</button></div>
+  <section *ngIf="calibrating" aria-label="门口标定">
+    <p>在V1画面依次点击门口四角 → 方向线两点 → 室内参考点。当前：{{calibrationStep === 'points' ? '门口区域' : calibrationStep === 'line' ? '方向线' : '室内参考点'}}。缩放后的黑边不参与标定。</p>
+    <label><input type="checkbox" [(ngModel)]="calibrationConfirmed">已核对门口区域和向内方向，工位不在统计区域</label>
+    <button type="button" (click)="saveCalibration()" [disabled]="!calibrationConfirmed || !calibration.gate.insidePoint">保存标定</button>
+    <button type="button" (click)="beginCalibration()">重新选择</button><button type="button" (click)="calibrating=false;focus=''">取消</button>
+  </section>
+  <section *ngIf="!people" class="scenes" [class.focused]="focus">
+    <article *ngFor="let scene of scenes" [hidden]="focus && focus !== scene.id">
+      <div class="scene-head"><h2>{{scene.id}} · {{scene.name}}</h2><button type="button" (click)="focus = focus ? '' : scene.id">{{focus ? '返回八窗' : '放大'}}</button></div>
+      <div class="picture" (dblclick)="focus = focus ? '' : scene.id">
+        <canvas #pane (click)="pickCalibration($event,scene)" [attr.data-scene]="scene.id" [attr.aria-label]="scene.name + '实时画面'"></canvas>
+        <span class="offline" *ngIf="!frameFresh(scene)">视频画面未更新，请检查本路视频源</span>
+      </div>
+      <div class="scene-info"><strong>{{fresh(scene) ? statusLabel(scene) : '分析离线 · 暂停叠加'}}</strong><span>{{frameFresh(scene) ? '视频在线' : '视频离线'}} · {{source(scene)?.inferenceMs == null ? '等待检测数据' : '检测处理 ' + source(scene)?.inferenceMs + ' ms'}}</span></div>
+      <p class="detail">{{state(scene)?.detail || '等待服务状态，暂不能作出正常或异常判断。'}}</p>
+      <div class="review">VLM · {{reviewLabel(scene)}} · {{reviewAge(scene)}}<br>
+        <span *ngIf="review(scene)?.reviewStatus !== 'completed'">{{review(scene)?.text || '暂无本场景复核证据'}} {{review(scene)?.errorCode || ''}}<br></span>
+        <ng-container *ngIf="reviewEvidence(scene) as evidence">{{review(scene)?.reviewStatus !== 'completed' ? '上次结果 · ' : ''}}{{evidence.verdict}} · {{evidence.text}}<br>{{evidence.limitations}}</ng-container>
+      </div>
+    </article>
+  </section>
+  <section *ngIf="people" class="people">
+    <div class="summary"><h2>进入次数</h2><p>今日 <strong>{{ledger.stats?.today ?? '—'}}</strong>　累计 <strong>{{ledger.stats?.total ?? '—'}}</strong>　筛选结果 {{ledger.count ?? '—'}} 条</p><p>{{ledger.stats?.timezone || '等待站点时区'}} · 清零保留历史记录和证据；无完整出入口覆盖，不推算室内总人数。</p><p>{{state(scenes[0])?.detail || '等待门口标定状态'}}</p></div>
+    <form (ngSubmit)="offset=0; loadLedger()"><label>开始日期 <input type="date" name="from" [(ngModel)]="from"></label><label>结束日期 <input type="date" name="to" [(ngModel)]="to"></label><button type="submit" [disabled]="ledgerBusy">查询</button><button type="button" (click)="reset()">全部计数清零</button></form>
+    <div class="table-wrap"><table><caption>门口向内进入事件账本</caption><thead><tr><th>发生时间</th><th>事件 / 轨迹</th><th>证据</th><th>标定版本</th><th>操作员确认</th></tr></thead><tbody>
+      <tr *ngFor="let row of ledger.rows"><td>{{row.at | date:'yyyy-MM-dd HH:mm:ss'}}</td><td>{{row.label}}<br>{{row.trackId}}</td><td><a *ngIf="shot(row)" [href]="shot(row)" target="_blank" rel="noopener"><img [src]="shot(row)" alt="进入事件抓拍" loading="lazy"></a><span *ngIf="!shot(row)">{{row.shotError ? '抓拍不可用' : '正在读取证据'}}</span></td><td>{{row.calibrationVersion}}</td><td><button type="button" (click)="ack(row)" [disabled]="row.ackAt || row.busy">{{row.ackAt ? '已确认' : '确认此事件'}}</button><br><time *ngIf="row.ackAt">{{row.ackAt | date:'MM-dd HH:mm:ss'}}</time></td></tr>
+      <tr *ngIf="!ledger.rows.length"><td colspan="5">{{ledgerBusy ? '正在读取…' : '当前范围没有进入记录；未标定时不会生成记录。'}}</td></tr>
+    </tbody></table></div>
+    <div class="pagination"><button type="button" [disabled]="offset === 0 || ledgerBusy" (click)="page(-1)">上一页</button><span>{{offset + 1}} – {{offset + ledger.rows.length}} / {{ledger.count || 0}}</span><button type="button" [disabled]="offset + 30 >= ledger.count || ledgerBusy" (click)="page(1)">下一页</button></div>
+  </section>
+</main>

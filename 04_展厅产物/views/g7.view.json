@@ -1,0 +1,14 @@
+{
+  "id": "v_zc_g7",
+  "name": "进入平台",
+  "type": "svg",
+  "profile": {
+    "width": 1920,
+    "height": 1080,
+    "bkcolor": "#000000ff"
+  },
+  "items": {},
+  "variables": {},
+  "svgcontent": "<svg width=\"1920\" height=\"1080\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n  <g>\n    <title>进入平台</title>\n      <image x=\"0\" y=\"0\" width=\"1920\" height=\"1080\" xlink:href=\"/_images/zc/7fce16437d7c4625ab6a5d1384f30b53.png\"/>\n      <rect x=\"722\" y=\"890\" width=\"412\" height=\"75\" fill=\"#00000000\" stroke=\"#80808080\" stroke-width=\"0.5\"/>\n      <rect x=\"1508\" y=\"567\" width=\"297\" height=\"94\" rx=\"45\" ry=\"45\" fill=\"none\" stroke=\"#000000ff\" stroke-width=\"2\"/>\n      <rect x=\"1034\" y=\"392\" width=\"774\" height=\"75\" fill=\"#ffffff00\"/>\n      <text id=\"txt_ic1\" font-family=\"微软雅黑\" font-size=\"42\" fill=\"#ffffffff\" text-anchor=\"middle\" dominant-baseline=\"central\" x=\"1421\" y=\"429.5\">AI人工智能服务平台</text>\n  </g>\n</svg>",
+  "__controls": []
+}

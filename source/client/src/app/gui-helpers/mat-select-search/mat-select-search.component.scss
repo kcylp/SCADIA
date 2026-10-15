@@ -1,0 +1,55 @@
+$mat-menu-side-padding: 16px !default;
+$scrollbar-width: 10px;
+$clear-button-width: 20px;
+$multiple-check-width: 33px;
+
+.mat-select-search-hidden {
+    visibility: hidden;
+}
+.mat-select-search-inner {
+    position: absolute;
+    top: 0;
+    width: calc(100% + #{2 * 16px - $scrollbar-width});
+    border-bottom: 1px solid #cccccc;
+    background-color: var(--workPanelBackground);
+    z-index: 100;
+    &.mat-select-search-inner-multiple {
+        width: calc(
+            100% + #{2 * 16px - $scrollbar-width +
+                $multiple-check-width}
+        );
+    }
+}
+
+::ng-deep .mat-select-search-panel {
+    /* allow absolute positioning relative to outer options container */
+    transform: none !important;
+    max-height: 350px;
+}
+
+.mat-select-search-input {
+    padding: 16px;
+    padding-right: 16px + $clear-button-width;
+    box-sizing: border-box;
+    font-size: 13px;
+    border: none;
+    background-color: var(--workPanelBackground);
+    color: var(--formInputColor);
+    line-height: 28px;
+    height: 28px;
+}
+.mat-select-search-no-entries-found {
+    padding: 16px;
+    color: var(--formInputColor);
+}
+.mat-select-search-clear {
+    position: absolute;
+    right: 0;
+    top: 4px;
+    color: var(--formInputColor);
+}
+::ng-deep .cdk-overlay-pane-select-search {
+    /* correct offsetY so that the selected option is at the position of the select box when opening */
+    // margin-top: -50px;
+    margin-top: 40px;
+}

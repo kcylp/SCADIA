@@ -1,0 +1,56 @@
+# 依赖与缓存（克隆后按 README 安装/构建；.angular 缓存里有 >500MB 单文件，GitHub 必拒）
+node_modules/
+.angular/
+*.pack
+
+# 运行期产物与日志
+project/_logs/
+*.log
+*.log.err
+*.err
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# 环境与密钥
+.env
+.env.*
+*.key
+*.pem
+
+# Site data, snapshots, credentials and packaged runtimes stay local
+/project/
+/runtime/
+/models/
+/backups/
+/artifacts/
+/delivery/
+/source/client/dist/
+/source/server/_ui_verify/
+/source/server/_appdata/
+/source/server/_images/
+/source/server/_db/
+/source/server/_logs/
+**/pki/
+**/PKI/
+**/certificates/
+*.db
+*.db-*
+*.sqlite*
+*.pt
+*.onnx
+*.engine
+*.safetensors
+*.zip
+*.7z
+*.exe
+*.dll
+
+# 本地交接包含现场敏感配置，不入库
+/交接_新窗口继续_2026-10-14.md
+
+# 系统杂项
+Thumbs.db
+.DS_Store

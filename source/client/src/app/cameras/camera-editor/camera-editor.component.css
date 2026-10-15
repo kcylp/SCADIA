@@ -1,0 +1,238 @@
+.cam-editor {
+    display: flex;
+    flex-direction: column;
+    background: var(--sc-bg, #0a1017);
+    color: var(--sc-ink, #e8f0fa);
+    font-family: var(--sc-sans, sans-serif);
+    border-radius: var(--sc-r-lg, 8px);
+    overflow: hidden;
+    max-height: 90vh;
+}
+
+.cam-editor__hd {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    background: linear-gradient(180deg, #16222f, #101a26);
+    border-bottom: 1px solid var(--sc-line, #1f3145);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.cam-editor__hd mat-icon { color: var(--sc-accent, #3d9bff); }
+
+.cam-editor__spacer { flex: 1 1 auto; }
+
+.cam-editor__bd {
+    padding: 16px 18px;
+    overflow-y: auto;
+}
+
+.cam-editor__ft {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 18px;
+    background: var(--sc-panel-2, #16222f);
+    border-top: 1px solid var(--sc-line, #1f3145);
+}
+
+.cam-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 12px 14px;
+}
+
+.cam-grid--narrow { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+
+.cam-full { grid-column: 1 / -1; }
+
+.cam-section {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--sc-line, #1f3145);
+}
+
+.cam-section__title {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--sc-ink-3, #66798f);
+    margin-bottom: 12px;
+}
+
+.cam-section__title mat-icon {
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+    color: var(--sc-accent, #3d9bff);
+}
+
+/* label + input pair (no mat-form-field: keeps the console density) */
+.cam-field { display: flex; flex-direction: column; gap: 5px; }
+
+.cam-field__label {
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--sc-ink-3, #66798f);
+}
+
+.cam-field__hint {
+    font-size: 10.5px;
+    color: var(--sc-ink-3, #66798f);
+}
+
+.cam-input,
+.cam-select {
+    height: 34px;
+    padding: 0 10px;
+    background: #0c1622;
+    border: 1px solid var(--sc-line-2, #2a3f58);
+    border-radius: var(--sc-r, 5px);
+    color: var(--sc-ink, #e8f0fa);
+    font-family: var(--sc-sans, sans-serif);
+    font-size: 13px;
+    outline: none;
+    width: 100%;
+}
+
+.cam-input.sc-mono { font-family: var(--sc-mono, monospace); }
+
+.cam-input:focus,
+.cam-select:focus {
+    border-color: var(--sc-accent, #3d9bff);
+    box-shadow: 0 0 0 3px rgba(61, 155, 255, 0.12);
+}
+
+.cam-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    color: var(--sc-ink-2, #9fb2c8);
+    height: 34px;
+}
+
+.cam-check input { accent-color: var(--sc-accent, #3d9bff); width: 15px; height: 15px; }
+
+/* endpoint / probe readout */
+.cam-endpoints {
+    background: #0b1420;
+    border: 1px solid var(--sc-line, #1f3145);
+    border-radius: var(--sc-r, 5px);
+    padding: 10px 12px;
+}
+
+.cam-endpoints .sc-kv { padding: 3px 0; }
+
+.cam-probe {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: var(--sc-r, 5px);
+    font-size: 12px;
+    border: 1px solid;
+    margin-top: 10px;
+}
+
+.cam-probe--ok {
+    background: rgba(46, 204, 113, 0.10);
+    border-color: rgba(46, 204, 113, 0.4);
+    color: #9ff0bd;
+}
+
+.cam-probe--fail {
+    background: rgba(255, 84, 104, 0.10);
+    border-color: rgba(255, 84, 104, 0.4);
+    color: #ffb9c2;
+}
+
+.cam-template-toggle {
+    background: none;
+    border: none;
+    color: var(--sc-accent, #3d9bff);
+    font-size: 11.5px;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 10px;
+}
+
+.cam-preview-slot {
+    margin-top: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cam-input, .cam-select { transition: none; }
+}
+
+/* ------------------------------------------------------------ OSD editor */
+/* 视数融合 config rows. Kept compact so the dialog stays one column wide. */
+
+.cam-osd-editor {
+    margin-top: 10px;
+    border-top: 1px dashed var(--sc-rule, rgba(120, 150, 190, 0.25));
+    padding-top: 10px;
+}
+
+.cam-osd-editor__hd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--sc-muted, #8fa6c4);
+    margin-bottom: 8px;
+}
+
+.cam-osd-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+}
+
+.cam-osd-row .cam-input { min-width: 0; flex: 1 1 90px; }
+.cam-osd-row__type { flex: 0 0 84px !important; }
+.cam-osd-row__pos { flex: 0 0 92px !important; }
+.cam-osd-row__sm { flex: 0 0 76px !important; }
+.cam-osd-row__xs { flex: 0 0 56px !important; }
+
+.cam-osd-preview {
+    margin-top: 10px;
+    padding: 8px 10px;
+    border-radius: 4px;
+    background: var(--sc-panel-2, rgba(16, 26, 40, 0.6));
+    border: 1px solid var(--sc-rule, rgba(120, 150, 190, 0.2));
+}
+
+.cam-osd-preview__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--sc-mono, monospace);
+    font-size: 12px;
+    padding: 2px 0;
+}
+
+.sc-tag {
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: rgba(61, 155, 255, 0.16);
+    color: var(--sc-accent, #3d9bff);
+    white-space: nowrap;
+}
+
+.cam-bad {
+    color: var(--sc-alarm, #ff5468);
+    text-decoration: line-through;
+}
