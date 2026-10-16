@@ -29,7 +29,7 @@
         <canvas #pane (click)="pickCalibration($event,scene)" [attr.data-scene]="scene.id" [attr.aria-label]="scene.name + '实时画面'"></canvas>
         <span class="offline" *ngIf="!frameFresh(scene)">视频画面未更新，请检查本路视频源</span>
       </div>
-      <div class="scene-info"><strong>{{fresh(scene) ? statusLabel(scene) : '分析离线 · 暂停叠加'}}</strong><span>{{frameFresh(scene) ? '视频在线' : '视频离线'}} · {{source(scene)?.inferenceMs == null ? '等待检测数据' : '检测处理 ' + source(scene)?.inferenceMs + ' ms'}}</span></div>
+      <div class="scene-info"><strong>{{fresh(scene) ? statusLabel(scene) : '分析离线 · 暂停叠加'}}</strong><span>{{frameFresh(scene) ? '视频在线' : '视频离线'}} · {{(source(scene)?.inferenceMs === null || source(scene)?.inferenceMs === undefined) ? '等待检测数据' : '检测处理 ' + source(scene)?.inferenceMs + ' ms'}}</span></div>
       <p class="detail">{{state(scene)?.detail || '等待服务状态，暂不能作出正常或异常判断。'}}</p>
       <div class="review">VLM · {{reviewLabel(scene)}} · {{reviewAge(scene)}}<br>
         <span *ngIf="review(scene)?.reviewStatus !== 'completed'">{{review(scene)?.text || '暂无本场景复核证据'}} {{review(scene)?.errorCode || ''}}<br></span>

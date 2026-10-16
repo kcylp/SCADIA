@@ -3,7 +3,6 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import { EndPointApi } from '../_helpers/endpointapi';
-import { environment } from '../../environments/environment';
 import { Recipe, RecipeEntry } from '../_models/recipe';
 
 @Injectable({

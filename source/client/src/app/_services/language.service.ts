@@ -8,7 +8,6 @@ import { AuthService } from './auth.service';
 import { Language, LANGUAGE_TEXT_KEY_PREFIX, Languages, LanguageText } from '../_models/language';
 import { SHIPPED_APP_LANGUAGES, SHIPPED_APP_LANGUAGE_NAMES, SHIPPED_LOCALE_FORMATS, LocaleFormat, normalizeAppLanguage } from '../_models/settings';
 import { CONTENT_MASTER_LANGUAGE, CONTENT_SEED, ContentSeedEntry } from '../_helpers/content-seed';
-import { UserInfo } from '../users/user-edit/user-edit.component';
 
 /**
  * The single language switch for the whole product.

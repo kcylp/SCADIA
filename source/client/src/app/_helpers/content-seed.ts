@@ -1,5 +1,3 @@
-import { LanguageText } from '../_models/language';
-
 /**
  * Seed content dictionary: the master (Simplified Chinese) text an operator reads in a
  * drawing, mapped to the languages this build ships.
