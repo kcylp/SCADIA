@@ -75,7 +75,7 @@ def queue_event(cfg, track, frame, kind, scene_id, cv2, evidence=None):
         frames.append({'file': name, 'at': frame_at})
     rule = (cfg.get('entryGate') or {}) if scene_id == 'V1' else (cfg.get('scenes') or {}).get(scene_id, {})
     atomic_json(inbox / (event_id + '.json'), {
-        'eventId': event_id, 'camera': cfg['cameraId'], 'kind': kind,
+        'eventId': event_id, 'camera': cfg['cameraId'], 'source': cfg.get('streamKind', 'visible'), 'kind': kind,
         'sceneId': scene_id, 'at': at,
         'trackId': str(track.get('id', 'region')), 'shot': shot,
         'calibrationVersion': str((cfg.get('entryGate') or {}).get('calibrationVersion', 'unverified')),
@@ -89,6 +89,20 @@ def queue_event(cfg, track, frame, kind, scene_id, cv2, evidence=None):
 
 class SceneEngine:
     def __init__(self, cfg):
+        rules = cfg.get('scenes') or {}
+        if not isinstance(rules, dict):
+            raise ValueError('Invalid scene rules')
+        for scene_id, rule in rules.items():
+            if scene_id not in {s[0] for s in SCENES} or not isinstance(rule, dict):
+                raise ValueError('Invalid scene rule')
+            if 'enabled' in rule and not isinstance(rule['enabled'], bool):
+                raise ValueError('Invalid scene enable flag')
+            key = 'count' if scene_id == 'V5' else 'seconds' if scene_id == 'V6' else None
+            if key and key in rule:
+                value = rule[key]
+                minimum, maximum = (2, 100) if key == 'count' else (1, 3600)
+                if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or not minimum <= value <= maximum or int(value) != value:
+                    raise ValueError('Invalid scene threshold')
         self.cfg = cfg
         self.rules = cfg.get('scenes') or {}
         self.since = {}
@@ -122,6 +136,13 @@ class SceneEngine:
             selected = []
             metrics = {}
             status, detail = 'limited', '专项模型或标定尚未验收；VLM只做图像复核'
+            if rule.get('enabled') is False:
+                result.append({'sceneId': scene_id, 'name': name, 'modality': modality,
+                               'status': 'disabled', 'detail': '规则已停用；历史记录和证据保留',
+                               'metrics': {}, 'trackIds': []})
+                if scene_id == 'V6':
+                    self.stationary.clear()
+                continue
             if scene_id == 'V1':
                 gate = self.cfg.get('entryGate') or {}
                 status = 'trial' if gate.get('enabled') and gate.get('verified') else 'calibration_required'
@@ -145,7 +166,8 @@ class SceneEngine:
                             self.sent[key] = now
             elif scene_id == 'V5':
                 selected = tracks
-                present = len(tracks) >= 4
+                threshold = int(rule.get('count', 4))
+                present = len(tracks) >= threshold
                 key = 'V5:all'
                 if present:
                     seen.add(key)
@@ -153,8 +175,8 @@ class SceneEngine:
                         events.append(('crowding', scene_id, {'id': 'region', 'label': '人员聚集：同时%d人' % len(tracks)}))
                         self.latched.add(key)
                 status = 'active' if present else 'normal'
-                detail = '同时%d人；4人及以上立即聚集，3人及以下解除' % len(tracks)
-                metrics = {'peopleCount': len(tracks), 'threshold': 4}
+                detail = '同时%d人；%d人及以上立即聚集，%d人及以下解除' % (len(tracks), threshold, threshold - 1)
+                metrics = {'peopleCount': len(tracks), 'threshold': threshold}
             elif scene_id == 'V6':
                 selected = [t for t in tracks if t.get('tracked')]
                 seconds = max(1, float(rule.get('seconds', 30)))

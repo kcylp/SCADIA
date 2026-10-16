@@ -93,6 +93,78 @@ class GateTests(unittest.TestCase):
         g=self.gate();self.run_path(g,[(50,40),(50,40),(50,60),(50,60)])
         self.assertEqual(self.run_path(self.gate(),[(50,60)]*5,1,10),[])
 
+    def test_both_indoor_directions_after_a_crossing_count_once(self):
+        # 用户口径：跨过门口后朝镜头走、朝最远玻璃门走都算进入；跨后转向不另计。
+        for indoor in [[(50,70),(50,80),(50,90)],      # 朝镜头方向
+                       [(50,60),(62,60),(74,60)],      # 朝远玻璃门方向
+                       [(50,70),(62,80),(50,88)]]:     # 跨后转向
+            g=self.gate()
+            events=self.run_path(g,[(50,40),(50,40),(50,60),(50,60)])
+            events+=self.run_path(g,indoor,start=.4)
+            self.assertEqual(len(events),1,indoor)
+
+    def test_two_crossings_in_opposite_indoor_directions_are_two_entries(self):
+        # 两人同门进入、各自走向不同室内方向，分别计一次。
+        g=self.gate();events=[]
+        paths={1:[(50,40),(50,40),(50,60),(50,70),(50,80)],2:[(54,40),(54,40),(54,60),(62,60),(74,60)]}
+        for step in range(5):
+            frame=[track(tid,xs[step][0],xs[step][1]) for tid,xs in paths.items()]
+            events.extend(g.update(frame,100,100,step*.1)[1])
+        self.assertEqual(sorted(e['id'] for e in events),[1,2])
+
+
+class TrackerRulesTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        import importlib.util
+        from pathlib import Path
+        spec = importlib.util.spec_from_file_location('scadia_ai_tracker', Path(__file__).with_name('scadia-ai-tracker.py'))
+        cls.tracker = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.tracker)
+
+    def base_cfg(self):
+        return {'entryGate': {'enabled': True, 'verified': True, 'calibrationVersion': 'v1',
+                              'points': [[.2,.2],[.8,.2],[.8,.9],[.2,.9]],
+                              'line': [[.2,.5],[.8,.5]], 'insidePoint': [.5,.8]},
+                'scenes': {'V5': {'enabled': True, 'count': 4}, 'V6': {'enabled': True, 'seconds': 30}},
+                'rulesVersion': 'r1', 'cameraId': 'cam', 'source': {'snapshot': 'http://example'}}
+
+    def test_valid_reload_swaps_rules_and_reports_the_new_versions(self):
+        latest = {'entryGate': {'enabled': True, 'verified': True, 'calibrationVersion': 'v2',
+                                'points': [[.2,.2],[.8,.2],[.8,.9],[.2,.9]],
+                                'line': [[.2,.5],[.8,.5]], 'insidePoint': [.5,.8]},
+                  'scenes': {'V5': {'enabled': True, 'count': 6}, 'V6': {'enabled': True, 'seconds': 45}},
+                  'rulesVersion': 'r2'}
+        cfg, gate, scenes = self.tracker.reload_scene_rules(self.base_cfg(), latest)
+        self.assertEqual((cfg['rulesVersion'], cfg['entryGate']['calibrationVersion']), ('r2','v2'))
+        self.assertTrue(gate.enabled)
+        self.assertEqual(scenes.rules['V5']['count'], 6)
+        self.assertEqual(scenes.rules['V6']['seconds'], 45)
+
+    def test_invalid_geometry_or_threshold_keeps_the_previous_rules(self):
+        base = self.base_cfg()
+        for latest in [
+            {'entryGate': {'enabled': True, 'verified': True, 'calibrationVersion': 'v2',
+                           'points': [[.2,.2],[.8,.2],[.8,.9],[.2,.9]],
+                           'line': [[.2,.5],[.8,.5]], 'insidePoint': [.9,.8]},   # 室内侧点不在门内
+             'scenes': {}, 'rulesVersion': 'r2'},
+            {'entryGate': base['entryGate'], 'scenes': {'V5': {'enabled': True, 'count': 1}}, 'rulesVersion': 'r2'},
+            {'entryGate': base['entryGate'], 'scenes': {'V6': {'enabled': True, 'seconds': 0}}, 'rulesVersion': 'r2'},
+            {'entryGate': base['entryGate'], 'scenes': {'V9': {'enabled': True}}, 'rulesVersion': 'r2'},
+            {'entryGate': base['entryGate'], 'scenes': {'V4': {'enabled': 'yes'}}, 'rulesVersion': 'r2'},
+        ]:
+            with self.assertRaises(ValueError, msg=repr(latest)):
+                self.tracker.reload_scene_rules(base, latest)
+        # 调用方（主循环）在异常时保留旧对象：这里模拟同一 try/except 语义。
+        cfg, gate, scenes = base, None, None
+        try:
+            cfg, gate, scenes = self.tracker.reload_scene_rules(base, {'entryGate': base['entryGate'],
+                'scenes': {'V5': {'enabled': True, 'count': 1}}, 'rulesVersion': 'r2'})
+        except ValueError:
+            pass
+        self.assertEqual((cfg['rulesVersion'], cfg['scenes']['V5']['count']), ('r1', 4))
+
+
 
 class SceneTests(unittest.TestCase):
     def test_missing_models_never_report_healthy(self):

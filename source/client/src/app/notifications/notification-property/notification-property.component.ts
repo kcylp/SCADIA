@@ -31,7 +31,10 @@ export class NotificationPropertyComponent implements OnInit {
         private translateService: TranslateService,
         private projectService: ProjectService,
         @Inject(MAT_DIALOG_DATA) public data: NotificationPropertyData) {
-            this.notification = this.data.notification ?? new Notification(Utils.getGUID(NOTIFY_PREFIX));
+            const original = this.data.notification ?? new Notification(Utils.getGUID(NOTIFY_PREFIX));
+            this.notification = {...original, subscriptions:{...original.subscriptions},
+                sceneIds:[...(original.sceneIds || ['V1','V2','V3','V4','V5','V6','V7','T1'])],
+                scenePhases:[...(original.scenePhases || ['candidate'])], sceneKinds:[...(original.sceneKinds || [])]};
     }
 
     ngOnInit() {
@@ -42,7 +45,8 @@ export class NotificationPropertyComponent implements OnInit {
             delay: [this.notification.delay],
             interval: [this.notification.interval],
             enabled: [this.notification.enabled],
-            mode: [this.notification.mode]
+            mode: [this.notification.mode],
+            sceneKindsText: [(this.notification.sceneKinds || []).join(', '), Validators.pattern(/^\s*(?:[a-z][a-z0-9_-]{0,63}(?:\s*,\s*[a-z][a-z0-9_-]{0,63})*)?\s*$/)]
         });
         this.formGroup.controls.name.addValidators(this.isValidName());
 
@@ -56,12 +60,20 @@ export class NotificationPropertyComponent implements OnInit {
     }
 
     onOkClick(): void {
-        this.notification = {...this.notification, ...this.formGroup.getRawValue()};
+        if (this.formGroup.invalid || this.sceneSubscriptionInvalid()) { return; }
+        const { sceneKindsText, ...values } = this.formGroup.getRawValue();
+        this.notification = {...this.notification, ...values, sceneKinds: sceneKindsText.split(',').map(v=>v.trim()).filter(Boolean)};
         if (this.notification.type === this.notificationAccess) {
             this.notification.delay = 0;
             this.notification.interval = 0;
         }
         this.dialogRef.close(this.notification);
+    }
+
+    sceneSubscriptionInvalid(): boolean {
+        return this.formGroup?.value.type === 'scenes' &&
+            (!this.notification.sceneIds?.length || !this.notification.scenePhases?.length ||
+             (this.formGroup.value.sceneKindsText || '').split(',').filter(v=>v.trim()).length > 64);
     }
 
     onTypeChanged(type: NotificationsType) {

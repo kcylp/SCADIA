@@ -82,6 +82,28 @@ class ReportsApiService {
             }
         });
         /**
+         * GET last build result of a report (accepted vs really done). Admin only.
+         */
+        reportsApp.get("/api/reportStatus", this.secureFnc, (req, res, next) => {
+            var groups = this.checkGroupsFnc(req);
+            if (res.statusCode === 403) {
+                this.runtime.logger.error("api get reportStatus: Tocken Expired");
+            }
+            else if (authJwt.adminGroups.indexOf(groups) === -1) {
+                res.status(401).json({ error: "unauthorized_error", message: "Unauthorized!" });
+                this.runtime.logger.error("api get reportStatus: Unauthorized");
+            }
+            else {
+                try {
+                    res.json({ status: this.runtime.jobsMgr.getReportStatus(req.query.id) });
+                }
+                catch (error) {
+                    res.status(400).json({ error: "error", message: error });
+                    this.runtime.logger.error("api get reportStatus: " + error);
+                }
+            }
+        });
+        /**
          * POST build report
          */
         reportsApp.post("/api/reportBuild", this.secureFnc, (req, res, next) => {

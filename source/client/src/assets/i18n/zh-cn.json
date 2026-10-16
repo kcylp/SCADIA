@@ -1699,6 +1699,8 @@
   "msg.import-alarms-error": "报警导入失败！",
   "msg.export-alarms-error": "报警导出失败！",
   "msg.report-build-forced": "发送构建报告成功",
+  "msg.report-build-completed": "报表生成完成",
+  "msg.report-build-failed": "报表生成失败",
   "msg.report-build-error": "发送构建报告失败！",
   "msg.device-tags-request-result": "加载 {{current}} / {{value}}",
   "msg.chart-with-script": "定义的脚本接收图表线列表作为参数，然后返回带有数据的完成列表。脚本'模板'中的代码示例",

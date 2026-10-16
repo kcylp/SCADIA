@@ -35,7 +35,7 @@ function init(_settings, _log, _runtime) {
         });
     }).then(() => {
         const { SceneStore } = require('./scene-store');
-        sceneStore = new SceneStore(_settings.workDir, _settings.imagesFileDir);
+        sceneStore = new SceneStore(_settings.workDir, _settings.imagesFileDir, () => _runtime.events.emit('alarms-status:changed'));
         sceneStore.start(err => _log.error('Scene ledger: ' + err.message));
         _log.info('runtime init cameras successful!', true);
     });

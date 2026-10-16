@@ -41,7 +41,10 @@ m.layer = function (p, id) {
     var old = document.getElementById(id); if (old) { old.remove(); }
     var g = m.node('g', { id: id, 'pointer-events': 'none' }); p.parentNode.appendChild(g); return g;
 };
-m.load('counts', '/_images/ai-counts.json', 3000);
+var dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
+m.load('sceneToday', '/api/ai/scene-events/summary?scene=all&from=' + dayStart.getTime(), 15000, true);
+m.load('sceneTotal', '/api/ai/scene-events/summary?scene=all', 30000, true);
+m.load('sceneLatest', '/api/ai/scene-events?scene=all&limit=3', 15000, true);
 m.load('tracks', '/_images/ai-tracks.json', 3000);
 m.load('thermalTracks', '/_images/ai-tracks-thermal.json', 3000);
 m.load('alarms', '/api/alarms', 15000, true);

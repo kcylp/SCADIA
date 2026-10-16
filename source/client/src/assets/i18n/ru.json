@@ -1230,6 +1230,8 @@
      "msg.import-alarms-error": "Import alarms failed!",
      "msg.export-alarms-error": "Export alarms failed!",
      "msg.report-build-forced": "Send to build Report successful",
+     "msg.report-build-completed": "Report generation completed",
+     "msg.report-build-failed": "Report generation failed",
      "msg.report-build-error": "Send to build Report failed!",
      "msg.device-tags-request-result": "Загружено {{value}} из {{current}}",
      "gauges.property-icon-none": "Без значка",

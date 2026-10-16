@@ -396,12 +396,22 @@ def queue_entry(cfg, track, frame):
     log('门口进入已记录：轨迹 %s' % track['id'])
 
 
+def reload_scene_rules(cfg, latest):
+    """从最新配置构造替换后的 cfg/gate/scenes。
+
+    只有整体构造成功才返回；任何字段/几何无效都会抛异常，由调用方保留上一有效规则。
+    applied 版本描述的是已构造成功的规则，从不描述一次失败的尝试。
+    """
+    current = latest.get('entryGate') or {}
+    next_cfg = dict(cfg, entryGate=current, scenes=latest.get('scenes') or {},
+                    rulesVersion=latest.get('rulesVersion'))
+    return next_cfg, EntryGate.for_scenes(next_cfg), SceneEngine(next_cfg)
+
+
 def main():
     cfg = load_cfg()
     gate_config = dict(cfg.get('entryGate') or {})
-    if not gate_config.get('verified'):
-        gate_config['enabled'] = False
-    gate = EntryGate(gate_config)
+    gate = EntryGate.for_scenes(cfg)
     scenes = SceneEngine(cfg)
     evidence = EvidenceBuffer()
     visual_detector = VisualCandidates(cfg.get('streamKind') == 'thermal')
@@ -459,12 +469,7 @@ def main():
                 latest = json.loads(Path(cfg['_cfgPath']).read_text(encoding='utf-8'))
                 current = latest.get('entryGate') or {}
                 if current.get('calibrationVersion') != gate_version or latest.get('rulesVersion') != cfg.get('rulesVersion'):
-                    next_cfg = dict(cfg, entryGate=current, scenes=latest.get('scenes') or {},
-                                    rulesVersion=latest.get('rulesVersion'))
-                    next_gate = EntryGate(current if current.get('verified') else {})
-                    next_scenes = SceneEngine(next_cfg)
-                    # Applied versions describe constructed rules, never a failed attempt.
-                    cfg, gate, scenes = next_cfg, next_gate, next_scenes
+                    cfg, gate, scenes = reload_scene_rules(cfg, latest)
                     gate_version = current.get('calibrationVersion')
                     log('门口标定已更新，轨迹状态重新初始化')
                 calibration_error = None
@@ -499,6 +504,13 @@ def main():
             ok, frame = cap.read()
         if not ok or frame is None:
             log('取帧失败，等待新帧')
+            # A capture gap starts a new observation session; candidates cannot bridge it.
+            gate = EntryGate.for_scenes(cfg)
+            scenes = SceneEngine(cfg)
+            evidence = EvidenceBuffer()
+            visual_detector = VisualCandidates(cfg.get('streamKind') == 'thermal')
+            for tracker in getattr(getattr(model, 'predictor', None), 'trackers', []):
+                tracker.reset()
             if cap is not None:
                 cap.release(); cap = None
             time.sleep(1.0)
@@ -568,7 +580,8 @@ def main():
                              delivery=dict(plat.delivery), appliedCalibrationVersion=gate_version,
                              calibrationError=calibration_error,
                              appliedRulesVersion=cfg.get('rulesVersion', 'none'),
-                             entryGate={k: cfg.get('entryGate', {}).get(k) for k in ['enabled', 'points', 'line', 'insidePoint', 'calibrationVersion']})
+                             entryGate=dict({k: cfg.get('entryGate', {}).get(k) for k in ['points', 'line', 'insidePoint', 'calibrationVersion']},
+                                            enabled=gate.enabled, verified=cfg.get('entryGate', {}).get('verified') is True))
         scene_cfg = dict(cfg, publicFile='ai-scenes-thermal.json' if cfg.get('streamKind') == 'thermal' else 'ai-scenes.json')
         write_public(scene_cfg, scene_payload)
         now = time.time()

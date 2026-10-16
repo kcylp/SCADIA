@@ -81,6 +81,7 @@ export enum ReportTableColumnType {
 }
 
 export interface ReportItemAlarms extends ReportItem {
+    sceneFilter?: { scene: string; source?: string; kind?: string; camera?: string; reviewStatus?: string; verdict?: string; acknowledged?: string };
     priority: {};
     priorityText: {};
     property: {};

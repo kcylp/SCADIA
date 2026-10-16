@@ -3,8 +3,22 @@
     height: 100%;
     min-height: 0;
 
+    .alarm-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        height: 44px;
+        padding: 0 12px;
+        background: var(--headerBackground);
+        color: var(--headerColor);
+        white-space: nowrap;
+        button { min-height: 40px; flex-shrink: 0; }
+        span { overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
+    }
+
+    mat-table { min-width: 900px; }
+
     .header-panel {
-        /* z-index: 9999 !important; */
         /* position: fixed; */
         /* top: 0px; */
         /* left: 0px; */
@@ -18,7 +32,18 @@
         border-bottom: 1px solid var(--headerBorder);
     }
 
+    .alarm-message {
+        margin: 0;
+        padding: 8px 16px;
+        color: var(--headerColor);
+        background: var(--headerBackground);
+        overflow-wrap: anywhere;
+        flex: 0 0 auto;
+    }
+
     .work-panel {
+        display: flex;
+        flex-direction: column;
         position: absolute;
         top: 37px;
         left: 0px;
@@ -30,6 +55,10 @@
 
     .table-container {
         overflow: auto;
+        flex: 1 1 auto;
+        min-height: 0;
+        padding-bottom: 64px;
+        box-sizing: border-box;
         height: 100%;
     }
 
@@ -249,7 +278,16 @@
 
 }
 
-    /* Center the date-range picker overlay in the viewport (CDK overlay pane). */
+
+.scene-evidence {
+    overflow-wrap: anywhere;
+    font-size: 16px;
+    line-height: 1.6;
+
+    figure { margin: 24px 0; }
+    img { display: block; max-width: 100%; height: auto; margin-top: 8px; }
+}
+
 ::ng-deep .cdk-overlay-pane.mat-datepicker-popup {
     top: 50% !important;
     left: 50% !important;

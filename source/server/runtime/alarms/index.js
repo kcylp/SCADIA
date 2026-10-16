@@ -5,6 +5,7 @@
 'use strict';
 
 const alarmstorage = require('./alarmstorage');
+const sceneAlarms = require('./scene-alarms');
 var utils = require('./../utils');
 
 var ALARMS_CHECK_STATUS_INTERVAL = 1000;
@@ -93,8 +94,30 @@ function AlarmsManager(_runtime) {
             }).catch(function (err) {
                 reject(err);
             });
+        }).then(async result => {
+            const rows = await sceneAlarms.values(runtime, permission, { current: true });
+            for (const row of rows) { result[row.type]++; }
+            return result;
         });
     }
+
+    this.getAllAlarmsValues = async function (filter, permission) {
+        const rows = await sceneAlarms.values(runtime, permission, { current: true }, filter);
+        return this.getAlarmsValues(filter, permission).concat(rows).sort((a, b) => b.ontime - a.ontime);
+    };
+
+    this.setSceneAlarmAck = async function (name, userId, permission, expectedOntime) {
+        if (!sceneAlarms.canView(runtime, permission) || !userId) { throw { code: 403, message: 'Admin login required' }; }
+        const id = typeof name === 'string' ? name.slice(6) : '';
+        if (!/^scene:[a-f0-9]{32}$/.test(name || '') || !Number.isSafeInteger(expectedOntime)) { throw { code: 400, message: 'Invalid scene alarm identity' }; }
+        const store = runtime.cameraScenes;
+        if (!store) { throw { code: 503, message: 'Scene ledger unavailable' }; }
+        const event = await store.getEvent(id);
+        if (event.at !== expectedOntime) { throw { code: 409, message: 'Scene alarm event changed' }; }
+        const saved = await store.acknowledge(id, userId);
+        events?.emit('alarms-status:changed');
+        return saved;
+    };
 
     /**
      * Return the current active alarms values
@@ -176,7 +199,8 @@ function AlarmsManager(_runtime) {
                 logger.error('alarms.load-current.failed: ' + err);
                 reject(err);
             });
-        });
+        }).then(async history => history.concat(await sceneAlarms.values(runtime, permission, query))
+            .sort((a, b) => b.ontime - a.ontime));
     }
 
     /**

@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { SCENE_TARGETS, collectSceneEvidence, collectSceneOverview } = require('./scene-evidence');
 const MAX_TAGS = 80;
 const MAX_RANGE_MS = 86400000;
 const MAX_AGE_MS = 30000;
@@ -10,7 +11,13 @@ const MODULES = [
     { id: 'scada', name: 'SCADA / DAQ', source: '权限可见实时标签与历史', intents: [intent('current_anomalies', '当前异常', 'current'), intent('history_trend', '历史趋势', 'history'), intent('data_quality', '质量与断点', 'current')] },
     { id: 'mes', name: 'MES', source: 'MES 定义、绑定变量与历史', intents: [intent('configuration_review', '工序/订单定义与绑定审阅', 'definitions'), intent('production_trend', '生产指标历史', 'history')] },
     { id: 'ems', name: '能源管理', source: '能源定义、单位、绑定变量与历史', intents: [intent('metering_integrity', '计量完整性', 'definitions'), intent('energy_trend', '时段趋势', 'history')] },
-    { id: 'video', name: '视频与 AI', source: '检测与事件文件时间证据', intents: [intent('detection_freshness', '检测新鲜度', 'tracks'), intent('event_counts', '事件计数', 'counts')] },
+    { id: 'video', name: '视频与 AI', source: '八场景状态、事件账本与逐事件复核', intents: [
+        intent('all_scenes', '八场景综合 / 报表窗口', 'scene_overview'),
+        intent('scene_event', '单事件证据分析', 'scene_event'),
+        ...SCENE_TARGETS.map(s => intent(s.id, s.id + ' · ' + s.name, 'scene')),
+        intent('detection_freshness', '旧接口：检测新鲜度（不代表八场景记录）', 'tracks'),
+        intent('event_counts', '旧接口：相机告警计数（不代表八场景记录）', 'counts')
+    ] },
     { id: 'alarms', name: '报警', source: '权限过滤的当前与历史报警', intents: [intent('current_alarms', '当前报警', 'alarms'), intent('history_frequency', '历史频率与恢复', 'alarm_history')] },
     ...[['recipes', '配方'], ['schedules', '调度与脚本'], ['reports', '报表'], ['calibration', '标定']].map(([id, name]) => ({ id, name, source: '权限可见定义元信息（不代表已执行）', intents: [intent('definition_review', '定义完整性与关联审阅', 'definitions')] })),
     { id: 'devices', name: '设备与协议', source: '可见设备状态与标签质量', intents: [intent('connection_status', '连接状态', 'devices'), intent('tag_quality', '标签质量', 'current')] },
@@ -73,13 +80,27 @@ async function collect(runtime, req, body, permission) {
     const kind = goal.requirement;
     const from = body.from === undefined ? now - 3600000 : body.from;
     const to = body.to === undefined ? now : body.to;
-    if (typeof from !== 'number' || typeof to !== 'number' || !Number.isFinite(from) || !Number.isFinite(to) || from < 0 || to <= from || to - from > MAX_RANGE_MS || to > now + 1000) {
+    if (typeof from !== 'number' || typeof to !== 'number' || !Number.isSafeInteger(from) || !Number.isSafeInteger(to) || from < 0 || to <= from || (!['scene', 'scene_overview', 'scene_event'].includes(kind) && to - from > MAX_RANGE_MS) || to > now + 1000) {
         missing('invalid_window', '时间窗必须为有效毫秒时间戳，正向且不超过24小时', '选择过去24小时内的分析窗口'); return finish();
     }
     ctx.window = { from, to, interval: '[from,to)' };
     if (module.id === 'platform' && kind === 'runtime') {
         add('platform:runtime', 'runtime_status', { observedAt: now, uptimeSeconds: Math.floor(process.uptime()), nodeVersion: process.version });
         ctx.limitations.push('仅证明分析服务所在进程可响应，不证明外部数据库、现场设备或其他服务就绪');
+        return finish();
+    }
+    if (['scene', 'scene_overview', 'scene_event'].includes(kind)) {
+        if (kind === 'scene_event' && (!/^[a-f0-9]{32}$/.test(body.eventId || '') || !SCENE_TARGETS.some(s => s.id === body.sceneId))) {
+            missing('invalid_event', '单事件分析需要有效eventId及sceneId', '从事件记录打开分析'); return finish();
+        }
+        const result = kind === 'scene_overview'
+            ? await collectSceneOverview(runtime, permission, from, to, now, body)
+            : await collectSceneEvidence(runtime, permission, kind === 'scene_event' ? body.sceneId : goal.id, from, to, now, body);
+        for (const item of result.missing) missing(item.code, item.message, item.remediation);
+        add('scene:' + goal.id, 'scene', { ...result, missing: undefined });
+        ctx.filters = Object.fromEntries(['sceneIds', 'sceneId', 'eventId', 'source', 'kind', 'camera', 'reviewStatus', 'verdict', 'acknowledged'].filter(key => body[key] != null && body[key] !== '').map(key => [key, body[key]]));
+        ctx.limitations.push('V1–V7共享可见光镜头，T1为独立红外；巡视不等于事件。候选、VLM复核、人工确认分别保留；复核完成不代表现场结论正确。',
+            '汇总与趋势覆盖所选筛选集；明细仅最近30条，sample明确截断情况。禁止从样本推算漏报率。模型接收结构化记录，未直接读取历史图片。');
         return finish();
     }
     let project;
@@ -171,9 +192,9 @@ async function collect(runtime, req, body, permission) {
         } catch (_) { missing('video_unavailable', '视频证据文件缺失或无法读取', '检查视频采集输出目录及文件结构'); }
     } else if (kind === 'alarms' || kind === 'alarm_history') {
         try {
-            const data = kind === 'alarms' ? await runtime.alarmsMgr?.getAlarmsValues(null, permission) : await runtime.alarmsMgr?.getAlarmsHistory({ start: from, end: to }, permission);
+            const data = kind === 'alarms' ? await runtime.alarmsMgr?.getAllAlarmsValues(null, permission) : await runtime.alarmsMgr?.getAlarmsHistory({ start: from, end: to }, permission);
             if (!Array.isArray(data) || !data.length) missing('alarms_missing', '没有可见报警记录，无法据此判断系统无报警', '检查报警权限、采集和查询窗口');
-            const alarms = (Array.isArray(data) ? data : []).slice(0, 500).map(a => Object.fromEntries(['name', 'type', 'status', 'ontime', 'offtime', 'acktime', 'value', 'text', 'group'].filter(k => scalar(a[k]) && a[k] !== undefined).map(k => [k, typeof a[k] === 'string' ? text(a[k]) : a[k]])));
+            const alarms = (Array.isArray(data) ? data : []).slice(0, 500).map(a => Object.fromEntries(['name', 'eventId', 'sceneId', 'kind', 'reviewStatus', 'verdict', 'type', 'status', 'ontime', 'offtime', 'acktime', 'value', 'text', 'group'].filter(k => scalar(a[k]) && a[k] !== undefined).map(k => [k, typeof a[k] === 'string' ? text(a[k]) : a[k]])));
             add('alarms:' + kind, 'alarms', alarms);
             if (data?.length > 500) ctx.limitations.push('报警记录超过500条，仅发送前500条，不能当作完整频率统计');
         } catch (_) { missing('alarms_unavailable', '报警读取失败', '检查报警存储及权限'); }

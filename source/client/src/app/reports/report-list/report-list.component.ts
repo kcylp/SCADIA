@@ -82,11 +82,11 @@ export class ReportListComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     onStartReport(report: Report) {
-        this.reportsService.buildReport(report).pipe(
-            concatMap(() => timer(5000))
-        ).subscribe(() => {
+        // 生成请求被接受后，由真实终态（completed/failed）驱动刷新文件列表；
+        // 不再用固定 5 秒定时器把上一次产物当作本次结果展示。
+        this.reportsService.buildReport(report, () => {
             this.loadDetails(report);
-        });
+        }).subscribe(() => { }, () => { });
     }
 
     onRemoveReport(report: Report) {

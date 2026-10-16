@@ -8,5 +8,5 @@ if (m) {
     document.querySelectorAll('[data-field="engine"]').forEach(function (e) { e.textContent = fresh ? '人员检测 · 已更新' : '人员检测 · 陈旧 / 未取得'; });
     document.querySelectorAll('[data-field="data"]').forEach(function (e) { e.textContent = fresh ? '检测数据 ' + Math.round((Date.now() - tr.updatedAt) / 1000) + ' 秒前' : '检测数据未更新'; });
     document.querySelectorAll('[data-field="alarm-count"]').forEach(function (e) { e.textContent = m.data.alarms && !m.errors.alarms ? '当前报警 ' + m.data.alarms.length : '报警状态待取'; });
-    document.querySelectorAll('[data-field="connection"]').forEach(function (e) { e.textContent = m.errors.counts ? '统计读取失败' : m.data.counts ? '统计已取得' : '状态待取'; });
+    document.querySelectorAll('[data-field="connection"]').forEach(function (e) { e.textContent = m.errors.sceneToday ? '统计读取失败' : m.data.sceneToday ? '场景统计已取得' : '状态待取'; });
 }

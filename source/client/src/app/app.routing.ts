@@ -61,6 +61,7 @@ const appRoutes: Routes = [
     { path: 'video-resources', component: VideoWallComponent, canActivate: [AuthGuard] },
     { path: 'scenes', component: SceneBoardComponent, canActivate: [AuthGuard] },
     { path: 'people', component: SceneBoardComponent, canActivate: [AuthGuard] },
+    { path: 'scene-records', component: SceneBoardComponent, canActivate: [AuthGuard] },
     { path: 'mes', component: MesBoardComponent, canActivate: [AuthGuard] },
     { path: 'ems', component: EmsBoardComponent, canActivate: [AuthGuard] },
     { path: 'reports', component: ReportListComponent, canActivate: [AuthGuard] },

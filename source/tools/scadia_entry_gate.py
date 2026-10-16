@@ -15,6 +15,13 @@ def inside(point, polygon):
 
 
 class EntryGate:
+    @classmethod
+    def for_scenes(cls, cfg):
+        gate = cfg.get('entryGate') or {}
+        if cfg.get('streamKind') == 'thermal' or gate.get('verified') is not True or (cfg.get('scenes') or {}).get('V1', {}).get('enabled') is False:
+            return cls({})
+        return cls(gate)
+
     def __init__(self, config):
         self.enabled = bool(config.get('enabled'))
         self.config = config

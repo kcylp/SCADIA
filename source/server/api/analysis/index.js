@@ -127,13 +127,19 @@ async function ask(req, body) {
             model,
             temperature: 0.1,
             messages: [
-                { role: 'system', content: '你是 SCADIA 工业平台分析助手。只基于结构化证据回答，按事实/异常/可能原因/需要补证/建议人工动作组织；明确区分实时、历史、配置、陈旧、缺失和推测。不得执行控制、写设备、修改报警、执行脚本或补造数值。' },
+                { role: 'system', content: '你是 SCADIA 工业平台分析助手。只基于结构化证据回答，按事实/异常/可能原因/需要补证/建议人工动作组织；明确区分实时、历史、配置、陈旧、缺失和推测。不得执行控制、写设备、修改报警、执行脚本或补造数值。视频分析必须按目标场景与事件ID逐项引用；检测候选、巡视、事件VLM复核和人工确认分别表述。reviewStatus=completed仅表示复核任务完成，不表示事件成立；必须同时引用verdict和limitations。health只说明当前运行状态，不得用当前离线或标定变化否定历史记录，也不得将历史事件当作当前画面事实。' +
+                    '历史数据的sourceBinding=legacy_scene_mapping表示按旧场景映射推定来源，不能声称来源已经独立验真。' },
                 { role: 'user', content: JSON.stringify({ analysisGoal, module: evidence.module, intent: evidence.intent, question, evidence: evidence.evidence, evidenceQuality: evidence.evidenceQuality, limitations: evidence.limitations }) }
             ]
         }, 20000, config.apiKey);
         const text = answer?.choices?.[0]?.message?.content;
         if (typeof text !== 'string' || !text.trim()) return { configured: true, status: 'empty_upstream_response', module: evidence.module, intent: evidence.intent, evidenceIds: evidence.evidenceIds, elapsedMs: Date.now() - started };
-        return { configured: true, status: 'ok', model, elapsedMs: Date.now() - started, module: evidence.module, intent: evidence.intent, evidenceIds: evidence.evidenceIds, generatedAt: evidence.generatedAt, evidenceQuality: evidence.evidenceQuality, answer: text, evidence: evidence.evidence, limitations: evidence.limitations };
+        const result = { configured: true, status: 'ok', model, elapsedMs: Date.now() - started, module: evidence.module, intent: evidence.intent, evidenceIds: evidence.evidenceIds, generatedAt: evidence.generatedAt, window: evidence.window, filters: evidence.filters, question, evidenceQuality: evidence.evidenceQuality, answer: text, evidence: evidence.evidence, limitations: evidence.limitations };
+        if (evidence.module === 'video' && runtime.cameraScenes?.saveAnalysis) {
+            try { Object.assign(result, await runtime.cameraScenes.saveAnalysis(req.userId || 'local', result)); }
+            catch (_) { result.historyError = '分析成功，但历史保存失败'; }
+        }
+        return result;
     } catch (err) {
         return { configured: true, status: 'upstream_error', module: evidence.module, intent: evidence.intent, evidenceIds: evidence.evidenceIds, message: err.message === 'upstream_timeout' ? 'DeepSeek request timed out' : 'DeepSeek request failed' };
     } finally {
@@ -143,6 +149,14 @@ async function ask(req, body) {
 function app() {
     const analysisApp = express();
     analysisApp.get('/api/analysis/modules', secure, (_req, res) => res.json({ modules: MODULES }));
+    analysisApp.get(['/api/analysis/history', '/api/analysis/history/:id'], secure, requireAdmin, async (req, res) => {
+        try {
+            if (!runtime.cameraScenes) return fail(res, 503, 'scene_unavailable', '场景账本未就绪');
+            const rows = await runtime.cameraScenes.analysisHistory(req.params.id);
+            if (req.params.id && !rows.length) return fail(res, 404, 'analysis_not_found', '分析记录不存在');
+            res.json({ rows });
+        } catch (_) { fail(res, 400, 'history_failed', '分析历史读取失败'); }
+    });
     analysisApp.get('/api/analysis/status', secure, (_req, res) => {
         try { const s = modelConfig.status(); res.json({ configured: s.configured, model: s.model, activeRequests }); }
         catch (_) { fail(res, 503, 'model_config_unavailable', '模型配置暂不可用'); }

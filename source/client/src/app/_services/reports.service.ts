@@ -27,8 +27,8 @@ export class ReportsService {
         return  this.server.getReportsQuery(query);
     }
 
-    buildReport(report: Report): Observable<void> {
-        return  this.server.buildReport(report);
+    buildReport(report: Report, onSettled?: (status: { state: string; error?: string }) => void): Observable<void> {
+        return  this.server.buildReport(report, onSettled);
     }
 
     removeReportFile(fileName: string): Observable<void> {

@@ -1,9 +1,10 @@
 import { Component, OnDestroy, OnInit, ElementRef, NgZone } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription, timeout } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import { LoginComponent } from '../../login/login.component';
+import { AuthService } from '../../_services/auth.service';
 
 @Component({ selector: 'app-scene-board', templateUrl: './scene-board.component.html', styleUrls: ['./scene-board.component.css'] })
 export class SceneBoardComponent implements OnInit, OnDestroy {
@@ -14,6 +15,42 @@ export class SceneBoardComponent implements OnInit, OnDestroy {
         {id:'V7',name:'烟火 / 通道 / 画质',thermal:false},{id:'T1',name:'红外辅助',thermal:true}
     ];
     people = false;
+    records = false;
+    selectedScene = 'V1';
+    ruleSets: any = {};
+    ruleBusy = false;
+    sourceFilter = '';
+    kindFilter = '';
+    cameraFilter = '';
+    verdictFilter = '';
+    private fixedLedgerWindow: {from:number,to:number} = null;
+    reviewFilter = '';
+    ackFilter = '';
+    summary: any = null;
+    deliveries: any[] = [];
+    history: any[] = [];
+    selectedAnalysis: any = null;
+    loadSummary():void {
+        const identity=this.identityGeneration, seq=this.ledgerSeq, query=this.ledgerQuery();
+        this.subs.add(this.http.get<any>('/api/ai/scene-events/summary?'+query).subscribe({next:r=>{if(identity===this.identityGeneration && seq===this.ledgerSeq){this.summary=r;}},error:()=>{if(identity===this.identityGeneration && seq===this.ledgerSeq){this.summary=null;this.message='统计读取失败';}}}));
+    }
+    loadHistory():void {
+        const identity=this.identityGeneration;
+        this.subs.add(this.http.get<any>('/api/analysis/history').subscribe({next:r=>{if(identity===this.identityGeneration){this.history=r.rows;}},error:()=>{if(identity===this.identityGeneration){this.message='分析历史读取失败（需管理员权限）';}}}));
+        this.subs.add(this.http.get<any>('/api/ai/scene-events/deliveries').subscribe({next:r=>{if(identity===this.identityGeneration){this.deliveries=r.rows;}},error:()=>{if(identity===this.identityGeneration){this.message='投递记录读取失败（需管理员权限）';}}}));
+    }
+    readAnalysis(id:string):void {
+        const identity=this.identityGeneration;this.selectedAnalysis=null;
+        this.subs.add(this.http.get<any>('/api/analysis/history/'+encodeURIComponent(id)).subscribe({next:r=>{if(identity===this.identityGeneration){this.selectedAnalysis=r.rows[0];}},error:()=>{if(identity===this.identityGeneration){this.message='分析记录读取失败';}}}));
+    }
+    exportAnalysis():void {
+        if(!this.selectedAnalysis){return;}
+        const blob=new Blob([JSON.stringify(this.selectedAnalysis,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+        a.href=url;a.download='SCADIA-分析-'+this.selectedAnalysis.id+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    }
+    private ledgerSeq = 0;
+    private identityKey = '';
+    private identityGeneration = 0;
     data: any = {};
     ledger: any = {rows:[],count:0,stats:{}};
     error = '';
@@ -34,6 +71,8 @@ export class SceneBoardComponent implements OnInit, OnDestroy {
     private framesBusy: {[key:string]:boolean} = {};
     private frameUrls: {[key:string]:string} = {};
     private evidenceUrls: {[key:string]:string} = {};
+    private evidenceGeneration = 0;
+    private evidenceBusy = new Set<string>();
     private trails: {[key:string]:{at:number,points:number[][]}} = {};
     private trailSession = '';
     private frameTimer: any;
@@ -43,11 +82,28 @@ export class SceneBoardComponent implements OnInit, OnDestroy {
     private stopped = false;
     private lastDraw = 0;
     private subs = new Subscription();
-    constructor(private http: HttpClient, private router: Router, private host: ElementRef<HTMLElement>, private zone: NgZone, private dialog: MatDialog) {}
+    constructor(private http: HttpClient, private router: Router, private route: ActivatedRoute, private auth: AuthService, private host: ElementRef<HTMLElement>, private zone: NgZone, private dialog: MatDialog) {}
     login():void{this.dialog.open(LoginComponent).afterClosed().subscribe(ok=>{if(ok){this.refresh();this.loadLedger();}});}
     ngOnInit(): void {
-        this.people = this.router.url.startsWith('/people');
-        this.refresh(); if(this.people){this.loadLedger();}
+        this.records = this.router.url.startsWith('/scene-records');
+        this.people = this.records || this.router.url.startsWith('/people');
+        this.subs.add(this.route.queryParamMap.subscribe(params=>{
+            if(!this.records){return;}
+            const selected=params.get('scene');
+            if(selected==='all'||this.scenes.some(s=>s.id===selected)){this.selectedScene=selected;}
+            for(const [key,field] of [['source','sourceFilter'],['kind','kindFilter'],['camera','cameraFilter'],['reviewStatus','reviewFilter'],['verdict','verdictFilter'],['acknowledged','ackFilter']]){this[field]=params.get(key)||'';}
+            const from=Number(params.get('from')),to=Number(params.get('to'));
+            if(params.has('from')&&params.has('to')&&Number.isSafeInteger(from)&&Number.isSafeInteger(to)&&to>=from){this.fixedLedgerWindow={from,to};const dateText=(at:number)=>{const d=new Date(at);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');};this.from=dateText(from);this.to=dateText(to);}
+            this.selectScene(false);
+        }));
+        this.subs.add(this.auth.currentUser$.subscribe(user=>{
+            const key=JSON.stringify([(user as any)?.username,(user as any)?.groups,(user as any)?.info]);
+            if(key===this.identityKey){return;}this.identityKey=key;this.identityGeneration++;
+            this.data={};this.images={};this.frameAt={};this.ledgerSeq++;this.ledgerBusy=false;this.pending=false;
+            this.ledger={rows:[],count:0,stats:{}};this.clearEvidence();
+            this.history=[];this.deliveries=[];this.selectedAnalysis=null;this.summary=null;this.ruleSets={};this.ruleBusy=false;
+            this.refresh();if(this.people){this.loadLedger();}
+        }));
         this.timer = setInterval(() => { this.now=Date.now(); if (!document.hidden) { this.refresh(); if(this.people){this.loadLedger();} } },2000);
         if (!this.people) {
             this.zone.runOutsideAngular(() => {
@@ -58,12 +114,13 @@ export class SceneBoardComponent implements OnInit, OnDestroy {
     }
     private connect(key: string): void {
         if(this.stopped||this.framesBusy[key]||Date.now()<(this.retry[key]||0)){return;}
-        this.framesBusy[key]=true;
+        this.framesBusy[key]=true;const generation=this.identityGeneration;
         this.subs.add(this.http.get('/api/ai/scenes/frame/'+key,{observe:'response',responseType:'blob'}).pipe(timeout(5000)).subscribe({
             next:r=>{
+                if(generation!==this.identityGeneration){this.framesBusy[key]=false;return;}
                 const image=new Image(), url=URL.createObjectURL(r.body);
                 image.onload=()=>{
-                    if(this.stopped){URL.revokeObjectURL(url);return;}
+                    if(this.stopped||generation!==this.identityGeneration){URL.revokeObjectURL(url);this.framesBusy[key]=false;return;}
                     if(this.frameUrls[key]){URL.revokeObjectURL(this.frameUrls[key]);}
                     this.frameUrls[key]=url;this.images[key]=image;
                     this.frameAt[key]=Number(r.headers.get('X-Frame-Time'))||0;this.framesBusy[key]=false;
@@ -75,9 +132,10 @@ export class SceneBoardComponent implements OnInit, OnDestroy {
     }
     refresh(): void {
         if (this.pending || this.stopped) { return; }
-        this.pending=true;
+        this.pending=true;const generation=this.identityGeneration;
         this.subs.add(this.http.get<any>('/api/ai/scenes').pipe(timeout(7000)).subscribe({
             next: data => {
+                if(generation!==this.identityGeneration){return;}
                 this.data=data; this.error=''; this.pending=false;
                 const session=data.visible?.sessionId||'';
                 if(session!==this.trailSession){this.trails={};this.trailSession=session;}
@@ -89,7 +147,7 @@ export class SceneBoardComponent implements OnInit, OnDestroy {
                 });
                 Object.keys(this.trails).filter(k=>Date.now()-this.trails[k].at>3000).forEach(k=>delete this.trails[k]);
                 if (!this.people) { this.zone.runOutsideAngular(() => { this.connect('visible'); this.connect('thermal'); }); }
-            }, error: e => { this.pending=false; this.error=e.status===401||e.status===403?'登录或权限失效，请重新登录':'场景服务未响应，请检查连接后重试'; }
+            }, error: e => { if(generation!==this.identityGeneration){return;}this.pending=false; this.error=e.status===401||e.status===403?'登录或权限失效，请重新登录':'场景服务未响应，请检查连接后重试'; }
         }));
     }
     beginCalibration():void{
@@ -120,6 +178,14 @@ export class SceneBoardComponent implements OnInit, OnDestroy {
     source(s: any): any { return this.data[s.thermal?'thermal':'visible']; }
     state(s: any): any { return this.source(s)?.scenes?.find(x=>x.sceneId===s.id); }
     fresh(s: any): boolean { return !this.error && !!this.source(s)?.updatedAt && this.now-this.source(s).updatedAt<8000; }
+    entryGateLabel(): string {
+        const source=this.data.visible, gate=source?.entryGate;
+        if(!this.fresh(this.scenes[0])){return '进入检测暂停 · 分析离线';}
+        if(source.calibrationError){return '门口标定应用异常 · 请检查';}
+        if(!gate?.enabled || gate.verified!==true || !gate.calibrationVersion || gate.calibrationVersion==='none' || gate.line?.length!==2){return '门口位置待标定';}
+        if(source.appliedCalibrationVersion!==gate.calibrationVersion){return '门口标定待应用';}
+        return '门口进入 · 朝镜头 / 远处玻璃门均计';
+    }
     statusLabel(s: any): string { return ({trial:'检测运行·待现场验收',limited:'能力受限',calibration_required:'待标定',normal:'未触发',active:'已触发',candidate:'疑似候选·待复核'})[this.state(s)?.status]||'等待结果'; }
     review(s: any): any { return this.data.reviews?.byScene?.[s.id]; }
     frameFresh(s: any): boolean { const at=this.frameAt[s.thermal?'thermal':'visible'];return !!at && this.now-at<8000; }
@@ -160,7 +226,7 @@ export class SceneBoardComponent implements OnInit, OnDestroy {
                         ctx.strokeStyle='#ffda83';ctx.lineWidth=2;ctx.beginPath();
                         g.line.forEach((p,i)=>i?ctx.lineTo(x+p[0]*iw,y+p[1]*ih):ctx.moveTo(x+p[0]*iw,y+p[1]*ih));ctx.stroke();
                     }
-                    ctx.fillStyle='#ffda83';ctx.font='14px sans-serif';ctx.fillText('← 右向左进入 · '+(g?.enabled?'方向线已应用':'门口位置待标定'),x+10,y+22);
+                    ctx.fillStyle='#ffda83';ctx.font='14px sans-serif';ctx.fillText(this.entryGateLabel(),x+10,y+22);
                 }
                 if(!this.fresh(scene)){return;}
                 (this.state(scene)?.metrics?.regions||[]).forEach(d=>{
@@ -184,23 +250,77 @@ export class SceneBoardComponent implements OnInit, OnDestroy {
         }
         this.raf=requestAnimationFrame(this.draw);
     };
-    loadLedger(): void {
-        if(this.ledgerBusy){return;}
-        const from=this.from?new Date(this.from+'T00:00:00').getTime():0;
-        const to=this.to?new Date(this.to+'T23:59:59.999').getTime():Date.now();
-        if(to<from){this.message='结束日期不能早于开始日期';return;}
-        this.ledgerBusy=true;
-        this.subs.add(this.http.get<any>('/api/ai/scene-events?scene=V1&offset='+this.offset+'&from='+from+'&to='+to).pipe(timeout(7000)).subscribe({
-            next:d=>{this.ledger=d;this.ledgerBusy=false;if(this.message==='事件读取失败，请查询重试'){this.message='';}this.loadEvidence(d.rows);},error:()=>{this.message='事件读取失败，请查询重试';this.ledgerBusy=false;}
+    selectScene(syncUrl=true):void{
+        if(syncUrl&&this.records){void this.router.navigate([], {relativeTo:this.route,queryParams:{scene:this.selectedScene},queryParamsHandling:'merge',replaceUrl:true});}
+        this.summary=null;
+        this.ledgerSeq++;this.ledgerBusy=false;this.offset=0;this.ledger={rows:[],count:0,stats:{}};
+        this.clearEvidence();
+        this.loadLedger();
+    }
+    datesChanged():void{this.fixedLedgerWindow=null;this.summary=null;this.selectScene(false);}
+    filtersChanged():void{this.summary=null;this.selectScene(false);}
+    loadRules():void{
+        for(const source of ['visible','thermal']){
+            const generation=this.identityGeneration;
+            this.subs.add(this.http.get<any>('/api/ai/scenes/rules/'+source).subscribe({next:r=>{if(generation===this.identityGeneration){this.ruleSets[source]=r;}},error:()=>{if(generation===this.identityGeneration){this.message='规则读取失败，请检查管理员权限';}}}));
+        }
+    }
+    saveRules(source:string):void{
+        if(this.ruleBusy){return;}this.ruleBusy=true;
+        const generation=this.identityGeneration;
+        this.subs.add(this.http.put<any>('/api/ai/scenes/rules/'+source,this.ruleSets[source]).subscribe({
+            next:r=>{if(generation!==this.identityGeneration){return;}this.ruleSets[source]=r;this.ruleBusy=false;this.message='规则已保存；请核对下方worker应用版本';},
+            error:e=>{if(generation!==this.identityGeneration){return;}this.ruleBusy=false;this.message=e.status===409?'规则已变更，请重新读取后编辑':'规则保存失败，请检查阈值和权限';}
         }));
     }
-    page(delta:number):void{this.offset=Math.max(0,this.offset+delta*30);this.loadLedger();}
+    ledgerQuery():string{
+        const from=this.fixedLedgerWindow?.from ?? (this.from?new Date(this.from+'T00:00:00').getTime():0);
+        const to=this.fixedLedgerWindow?.to ?? (this.to?new Date(this.to+'T23:59:59.999').getTime():Date.now());
+        return Object.entries({scene:this.selectedScene,from:String(from),to:String(to),source:this.sourceFilter,kind:this.kindFilter,camera:this.cameraFilter,verdict:this.verdictFilter,reviewStatus:this.reviewFilter,acknowledged:this.ackFilter}).map(([key,value])=>key+'='+encodeURIComponent(value)).join('&');
+    }
+    analyze(row?:any):void{
+        const params:any={module:'video',intent:row?'scene_event':this.selectedScene==='all'?'all_scenes':this.selectedScene};
+        if(row){params.sceneId=row.sceneId;params.eventId=row.eventId;params.from=row.at;params.to=row.at+1;}
+        else {params.from=this.ledger.window?.from;params.to=(this.ledger.window?.to||Date.now())+1;params.source=this.sourceFilter;params.kind=this.kindFilter;params.camera=this.cameraFilter;params.verdict=this.verdictFilter;params.reviewStatus=this.reviewFilter;params.acknowledged=this.ackFilter;}
+        void this.router.navigate(['/analysis'],{queryParams:params});
+    }
+    exportLedger():void{
+        this.subs.add(this.http.get('/api/ai/scene-events/export?'+this.ledgerQuery(),{responseType:'blob'}).subscribe({next:blob=>{
+            const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='SCADIA-场景事件.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+        },error:()=>this.message='导出失败，请缩小时间窗或检查权限'}));
+    }
+    reviewStatus(row:any):string{return ({pending:'等待复核',running:'正在复核',completed:'复核完成',failed:'复核失败',timeout:'复核超时',unavailable:'证据不可用'})[row.reviewStatus]||'尚无复核';}
+    loadLedger(): void {
+        if(this.ledgerBusy){return;}
+        const from=this.fixedLedgerWindow?.from ?? (this.from?new Date(this.from+'T00:00:00').getTime():0);
+        const to=this.fixedLedgerWindow?.to ?? (this.to?new Date(this.to+'T23:59:59.999').getTime():Date.now());
+        if(!Number.isFinite(from)||!Number.isFinite(to)||to<from){this.ledgerSeq++;this.ledger={rows:[],count:0,stats:{}};this.message='结束日期不能早于开始日期';return;}
+        this.ledgerBusy=true;const seq=++this.ledgerSeq;
+        this.subs.add(this.http.get<any>('/api/ai/scene-events?'+this.ledgerQuery()+'&offset='+this.offset).pipe(timeout(7000)).subscribe({
+            next:d=>{if(seq!==this.ledgerSeq){return;}this.ledger=d;this.ledgerBusy=false;if(['事件读取失败，请查询重试','结束日期不能早于开始日期'].includes(this.message)){this.message='';}this.loadEvidence(d.rows);},error:()=>{if(seq!==this.ledgerSeq){return;}this.message='事件读取失败，请查询重试';this.ledgerBusy=false;this.ledger={rows:[],count:0,stats:{}};this.clearEvidence();}
+        }));
+    }
+    page(delta:number):void{if(this.ledgerBusy){return;}this.offset=Math.max(0,this.offset+delta*30);this.loadLedger();}
+    private clearEvidence():void{
+        this.evidenceGeneration++;this.evidenceBusy.clear();
+        Object.values(this.evidenceUrls).forEach(url=>URL.revokeObjectURL(url));this.evidenceUrls={};
+    }
     private loadEvidence(rows:any[]):void{
-        const ids=new Set(rows.map(r=>r.eventId));
+        const ids=new Set(rows.map(r=>r.eventId)),generation=this.evidenceGeneration;
         Object.keys(this.evidenceUrls).filter(id=>!ids.has(id)).forEach(id=>{URL.revokeObjectURL(this.evidenceUrls[id]);delete this.evidenceUrls[id];});
-        rows.forEach(row=>{if(this.evidenceUrls[row.eventId]){return;}
-            this.subs.add(this.http.get('/api/ai/scene-events/'+row.eventId+'/evidence',{responseType:'blob'}).pipe(timeout(7000)).subscribe({
-                next:blob=>{this.evidenceUrls[row.eventId]=URL.createObjectURL(blob);},error:()=>{row.shotError=true;}
+        // A normal ledger poll must not invalidate a slower image for the same event.
+        rows.forEach(row=>{const id=row.eventId;if(this.evidenceUrls[id]||this.evidenceBusy.has(id)){return;}
+            this.evidenceBusy.add(id);
+            this.subs.add(this.http.get('/api/ai/scene-events/'+id+'/evidence',{responseType:'blob'}).pipe(timeout(7000)).subscribe({
+                next:blob=>{
+                    if(generation!==this.evidenceGeneration||this.stopped){return;}
+                    this.evidenceBusy.delete(id);
+                    if(this.ledger.rows.some(r=>r.eventId===id)){this.evidenceUrls[id]=URL.createObjectURL(blob);}
+                },error:()=>{
+                    if(generation!==this.evidenceGeneration||this.stopped){return;}
+                    this.evidenceBusy.delete(id);
+                    const current=this.ledger.rows.find(r=>r.eventId===id);if(current){current.shotError=true;}
+                }
             }));
         });
     }

@@ -1,11 +1,21 @@
 <main class="scene-page">
   <header>
-    <div><h1>{{people ? '门口进入记录' : '八场景视频分析'}}</h1><p>{{people ? '仅指定门口向内过线；工位和室内走动不纳入统计。' : '7个可见光场景共享一个镜头与检测结果，红外为独立源。'}}</p></div>
-    <nav aria-label="分析导航"><a routerLink="/scenes" routerLinkActive="active">八场景</a><a routerLink="/people" routerLinkActive="active">人员统计</a><a routerLink="/alarms">报警确认</a><a routerLink="/home/v_zc_home">总览</a><button type="button" data-login (click)="login()">登录 / 切换账号</button></nav>
+    <div><h1>{{records ? '八场景 AI 分析记录' : people ? '门口进入记录' : '八场景视频分析'}}</h1><p>{{records ? '按场景保存检测候选、事件复核与历史证据，巡视结果不计入事件。' : people ? '仅指定门口向内过线；工位和室内走动不纳入统计。' : '7个可见光场景共享一个镜头与检测结果，红外为独立源。'}}</p></div>
+    <nav aria-label="分析导航"><a routerLink="/scenes" routerLinkActive="active">八场景</a><a routerLink="/scene-records" routerLinkActive="active">场景记录</a><a routerLink="/people" routerLinkActive="active">人员统计</a><a routerLink="/alarms">报警确认</a><a routerLink="/home/v_zc_home">总览</a><button type="button" data-login (click)="login()">登录 / 切换账号</button></nav>
   </header>
   <p class="error" role="alert" *ngIf="error">{{error}}</p>
   <p class="message" role="status" *ngIf="message">{{message}}</p>
   <div *ngIf="!people"><button type="button" (click)="beginCalibration()">门口标定（管理员）</button></div>
+  <details *ngIf="!people" (toggle)="$any($event.target).open && loadRules()"><summary>八场景规则配置（管理员）</summary>
+    <section *ngFor="let key of ['visible','thermal']"><ng-container *ngIf="ruleSets[key] as rules">
+      <h2>{{key==='visible'?'共享可见光':'独立红外'}}</h2>
+      <ng-container *ngFor="let scene of scenes"><label *ngIf="rules.scenes[scene.id]"><input type="checkbox" [(ngModel)]="rules.scenes[scene.id].enabled">{{scene.id}} · {{scene.name}}</label></ng-container>
+      <label *ngIf="rules.scenes.V5">聚集人数阈值 <input type="number" min="2" max="100" [(ngModel)]="rules.scenes.V5.count"></label>
+      <label *ngIf="rules.scenes.V6">原位静止秒数 <input type="number" min="1" max="3600" [(ngModel)]="rules.scenes.V6.seconds"></label>
+      <p>保存版本 {{rules.version}}<br>worker应用版本 {{data[key]?.appliedRulesVersion || '尚未回读'}}<br>{{data[key]?.calibrationError}}</p>
+      <button type="button" (click)="saveRules(key)" [disabled]="ruleBusy">保存{{key==='visible'?'可见光':'红外'}}规则</button>
+    </ng-container></section><p>V1启用仍需完成门口标定；关闭规则保留已有事件与证据。</p>
+  </details>
   <section *ngIf="calibrating" aria-label="门口标定">
     <p>在V1画面依次点击门口四角 → 方向线两点 → 室内参考点。当前：{{calibrationStep === 'points' ? '门口区域' : calibrationStep === 'line' ? '方向线' : '室内参考点'}}。缩放后的黑边不参与标定。</p>
     <label><input type="checkbox" [(ngModel)]="calibrationConfirmed">已核对门口区域和向内方向，工位不在统计区域</label>
@@ -14,7 +24,7 @@
   </section>
   <section *ngIf="!people" class="scenes" [class.focused]="focus">
     <article *ngFor="let scene of scenes" [hidden]="focus && focus !== scene.id">
-      <div class="scene-head"><h2>{{scene.id}} · {{scene.name}}</h2><button type="button" (click)="focus = focus ? '' : scene.id">{{focus ? '返回八窗' : '放大'}}</button></div>
+      <div class="scene-head"><h2>{{scene.id}} · {{scene.name}}</h2><a routerLink="/scene-records" [queryParams]="{scene:scene.id}">事件记录</a><a routerLink="/analysis" [queryParams]="{module:'video',intent:scene.id}">AI分析</a><button type="button" (click)="focus = focus ? '' : scene.id">{{focus ? '返回八窗' : '放大'}}</button></div>
       <div class="picture" (dblclick)="focus = focus ? '' : scene.id">
         <canvas #pane (click)="pickCalibration($event,scene)" [attr.data-scene]="scene.id" [attr.aria-label]="scene.name + '实时画面'"></canvas>
         <span class="offline" *ngIf="!frameFresh(scene)">视频画面未更新，请检查本路视频源</span>
@@ -28,12 +38,26 @@
     </article>
   </section>
   <section *ngIf="people" class="people">
-    <div class="summary"><h2>进入次数</h2><p>今日 <strong>{{ledger.stats?.today ?? '—'}}</strong>　累计 <strong>{{ledger.stats?.total ?? '—'}}</strong>　筛选结果 {{ledger.count ?? '—'}} 条</p><p>{{ledger.stats?.timezone || '等待站点时区'}} · 清零保留历史记录和证据；无完整出入口覆盖，不推算室内总人数。</p><p>{{state(scenes[0])?.detail || '等待门口标定状态'}}</p></div>
-    <form (ngSubmit)="offset=0; loadLedger()"><label>开始日期 <input type="date" name="from" [(ngModel)]="from"></label><label>结束日期 <input type="date" name="to" [(ngModel)]="to"></label><button type="submit" [disabled]="ledgerBusy">查询</button><button type="button" (click)="reset()">全部计数清零</button></form>
-    <div class="table-wrap"><table><caption>门口向内进入事件账本</caption><thead><tr><th>发生时间</th><th>事件 / 轨迹</th><th>证据</th><th>标定版本</th><th>操作员确认</th></tr></thead><tbody>
-      <tr *ngFor="let row of ledger.rows"><td>{{row.at | date:'yyyy-MM-dd HH:mm:ss'}}</td><td>{{row.label}}<br>{{row.trackId}}</td><td><a *ngIf="shot(row)" [href]="shot(row)" target="_blank" rel="noopener"><img [src]="shot(row)" alt="进入事件抓拍" loading="lazy"></a><span *ngIf="!shot(row)">{{row.shotError ? '抓拍不可用' : '正在读取证据'}}</span></td><td>{{row.calibrationVersion}}</td><td><button type="button" (click)="ack(row)" [disabled]="row.ackAt || row.busy">{{row.ackAt ? '已确认' : '确认此事件'}}</button><br><time *ngIf="row.ackAt">{{row.ackAt | date:'MM-dd HH:mm:ss'}}</time></td></tr>
-      <tr *ngIf="!ledger.rows.length"><td colspan="5">{{ledgerBusy ? '正在读取…' : '当前范围没有进入记录；未标定时不会生成记录。'}}</td></tr>
+    <label *ngIf="records">场景 <select [(ngModel)]="selectedScene" (ngModelChange)="selectScene()"><option value="all">全部八场景</option><option *ngFor="let scene of scenes" [value]="scene.id">{{scene.id}} · {{scene.name}}</option></select></label>
+    <div class="summary"><h2>{{records ? selectedScene + ' · 事件次数' : '进入次数'}}</h2><p>今日 <strong>{{ledger.stats?.today ?? '—'}}</strong>　累计 <strong>{{ledger.stats?.total ?? '—'}}</strong>　筛选结果 {{ledger.count ?? '—'}} 条</p><p *ngIf="ledger.window">查询窗口 {{ledger.window.from | date:'yyyy-MM-dd HH:mm:ss'}} 至 {{ledger.window.to | date:'yyyy-MM-dd HH:mm:ss'}}（含结束毫秒）；日期留空时从历史起点查询。</p><p>{{ledger.stats?.timezone || '等待站点时区'}} · 清零保留历史记录和证据；无完整出入口覆盖，不推算室内总人数。</p><p *ngIf="!records">{{state(scenes[0])?.detail || '等待门口标定状态'}}</p></div>
+    <form (ngSubmit)="offset=0; loadLedger()"><label>开始日期 <input type="date" name="from" [(ngModel)]="from" (ngModelChange)="datesChanged()"></label><label>结束日期 <input type="date" name="to" [(ngModel)]="to" (ngModelChange)="datesChanged()"></label><button type="submit" [disabled]="ledgerBusy">查询</button><button type="button" (click)="reset()">全部计数清零</button></form>
+    <div class="actions"><label>视频源 <select [(ngModel)]="sourceFilter" (ngModelChange)="filtersChanged()"><option value="">全部</option><option value="visible">可见光</option><option value="thermal">红外</option></select></label><label>事件类型 <input aria-label="事件子类型" [(ngModel)]="kindFilter" (ngModelChange)="filtersChanged()" placeholder="全部；如 doorentry"></label><label>镜头 <input aria-label="镜头标识" [(ngModel)]="cameraFilter" (ngModelChange)="filtersChanged()" placeholder="全部镜头"></label><label>结论 <select [(ngModel)]="verdictFilter" (ngModelChange)="filtersChanged()"><option value="">全部</option><option value="支持">支持候选</option><option value="不支持">不支持候选</option><option value="证据不足">证据不足</option></select></label><label>复核状态 <select [(ngModel)]="reviewFilter" (ngModelChange)="filtersChanged()"><option value="">全部</option><option value="pending">等待复核</option><option value="running">正在复核</option><option value="completed">复核完成</option><option value="failed">失败</option><option value="timeout">超时</option><option value="unavailable">不可用</option></select></label><label>人工知晓 <select [(ngModel)]="ackFilter" (ngModelChange)="filtersChanged()"><option value="">全部</option><option value="true">已确认</option><option value="false">待确认</option></select></label><button type="button" (click)="exportLedger()">导出全部筛选记录</button><button type="button" (click)="analyze()">分析此窗口</button></div>
+    <div class="table-wrap"><table><caption>{{records ? selectedScene + ' · 持久事件账本' : '门口向内进入事件账本'}}</caption><thead><tr><th>发生时间</th><th>事件 / 轨迹</th><th>事件复核</th><th>证据</th><th>标定版本</th><th>操作员确认</th></tr></thead><tbody>
+      <tr *ngFor="let row of ledger.rows"><td>{{row.at | date:'yyyy-MM-dd HH:mm:ss'}}</td><td>{{row.sceneId}} · {{row.label}}<br>{{row.camera}}<br>{{row.trackId}}<br><button type="button" (click)="analyze(row)">分析此事件</button></td><td>{{reviewStatus(row)}}<br>{{row.review?.verdict}} · {{row.review?.text}}<br>{{row.review?.limitations || row.review?.errorCode}}</td><td><a *ngIf="shot(row)" [href]="shot(row)" target="_blank" rel="noopener"><img [src]="shot(row)" [alt]="row.sceneId + ' · ' + row.label + '历史抓拍'" loading="lazy"></a><span *ngIf="!shot(row)">{{row.shotError ? '抓拍不可用' : '正在读取证据'}}</span></td><td>{{row.calibrationVersion}}</td><td><button type="button" (click)="ack(row)" [disabled]="row.ackAt || row.busy">{{row.ackAt ? '已确认' : '确认此事件'}}</button><br><time *ngIf="row.ackAt">{{row.ackAt | date:'MM-dd HH:mm:ss'}}</time></td></tr>
+      <tr *ngIf="!ledger.rows.length"><td colspan="6">{{ledgerBusy ? '正在读取…' : (records ? '当前场景与时间范围没有事件；请检查检测能力和筛选，不代表现场正常。' : '当前范围没有进入记录；未标定时不会生成记录。')}}</td></tr>
     </tbody></table></div>
+    <details><summary (click)="loadSummary()">筛选窗口统计、复核分布及小时趋势</summary><button type="button" (click)="loadSummary()">刷新统计</button>
+      <ng-container *ngIf="summary"><p>全筛选集 {{summary.count}} 条 · {{summary.timezone}} · 生成 {{summary.generatedAt | date:'yyyy-MM-dd HH:mm:ss'}}</p>
+        <div class="table-wrap"><table><caption>候选分布（非独立事故数）</caption><tr><th>场景</th><th>类型</th><th>复核状态</th><th>结论</th><th>知晓</th><th>数量</th></tr><tr *ngFor="let group of summary.groups"><td>{{group.sceneId}}</td><td>{{group.kind}}</td><td>{{group.reviewStatus}}</td><td>{{group.verdict || '未得出'}}</td><td>{{group.acknowledged?'已确认':'待确认'}}</td><td>{{group.count}}</td></tr></table></div>
+        <div class="table-wrap"><table><caption>小时趋势</caption><tr><th>小时起点</th><th>场景</th><th>数量</th></tr><tr *ngFor="let point of summary.trend"><td>{{point.at | date:'yyyy-MM-dd HH:mm'}}</td><td>{{point.sceneId}}</td><td>{{point.count}}</td></tr></table></div>
+      </ng-container>
+    </details>
+    <details (toggle)="$any($event.target).open && loadHistory()"><summary>分析历史与通知投递记录（管理员）</summary><button type="button" (click)="loadHistory()">刷新记录</button>
+      <p>最近100条分析，固定保留当时证据与结果，不重新读取当前事件替代。</p>
+      <div *ngFor="let item of history"><button type="button" (click)="readAnalysis(item.id)">{{item.at | date:'yyyy-MM-dd HH:mm:ss'}} · {{item.intent}}</button></div>
+      <section *ngIf="selectedAnalysis"><p>{{selectedAnalysis.id}}</p><pre>{{selectedAnalysis.result.answer}}</pre><button type="button" (click)="exportAnalysis()">导出此分析及原始证据</button></section>
+      <div class="table-wrap"><table><caption>最近100条投递 · sent=传输服务接收，非收件人阅读</caption><tr><th>事件ID</th><th>订阅 / 阶段</th><th>状态 / 尝试次数</th><th>更新时间 / 错误</th></tr><tr *ngFor="let item of deliveries"><td>{{item.eventId}}</td><td>{{item.subscription}} / {{item.phase}}</td><td>{{item.status}} / {{item.attempts}}</td><td>{{item.updatedAt | date:'yyyy-MM-dd HH:mm:ss'}} {{item.error}}</td></tr></table></div>
+    </details>
     <div class="pagination"><button type="button" [disabled]="offset === 0 || ledgerBusy" (click)="page(-1)">上一页</button><span>{{offset + 1}} – {{offset + ledger.rows.length}} / {{ledger.count || 0}}</span><button type="button" [disabled]="offset + 30 >= ledger.count || ledgerBusy" (click)="page(1)">下一页</button></div>
   </section>
 </main>

@@ -16,6 +16,7 @@
                 <span>*{{'notification.property-type' | translate}}</span>
                 <mat-select formControlName="type" (selectionChange)="onTypeChanged($event.value)" style="width: 207px">
                     <mat-option [value]=""> </mat-option>
+                    <mat-option value="scenes">八场景事件</mat-option>
                     <mat-option [value]="notificationAlarm"> {{ notificationsType[notificationAlarm] }} </mat-option>
                     <mat-option [value]="notificationAccess"> {{ notificationsType[notificationAccess] }} </mat-option>
                 </mat-select>
@@ -33,6 +34,14 @@
                 <mat-slide-toggle color="primary" formControlName="enabled" style="vertical-align: middle;"></mat-slide-toggle>
             </div>
         </div>
+        <section *ngIf="formGroup.value.type === 'scenes'">
+            <label>订阅场景 <select multiple [(ngModel)]="notification.sceneIds" [ngModelOptions]="{standalone:true}"><option *ngFor="let id of ['V1','V2','V3','V4','V5','V6','V7','T1']" [value]="id">{{id}}</option></select></label>
+            <label>通知阶段 <select multiple [(ngModel)]="notification.scenePhases" [ngModelOptions]="{standalone:true}"><option value="candidate">候选产生（未判定）</option><option value="review">最终复核结果</option></select></label>
+            <label>事件子类型 <input formControlName="sceneKindsText" placeholder="留空为全部；多个类型用英文逗号分隔"></label>
+            <p *ngIf="sceneSubscriptionInvalid()">至少选择一个场景和一个阶段，子类型最多64项。</p>
+            <p>填写邮箱接收地址。启用、重新启用或修改订阅范围后只处理新产生事件；每个事件的每个阶段去重，投递失败最多尝试3次。网络超时可能重复收到，请按eventId核对。子类型使用账本中的类型标识。</p>
+            <a routerLink="/scene-records" (click)="onNoClick()">查看事件与投递记录</a>
+        </section>
         <div class="my-form-field block mt10" *ngIf="formGroup.value.type === notificationAlarm">
             <span>{{'notification.property-mode' | translate}}</span>
             <mat-select formControlName="mode" style="width: 207px">
@@ -49,6 +58,6 @@
     </div>
     <div mat-dialog-actions class="dialog-action mt10">
         <button mat-raised-button (click)="onNoClick()">{{'dlg.cancel' | translate}}</button>
-        <button mat-raised-button [disabled]="formGroup.invalid" (click)="onOkClick()" color="primary">{{'dlg.ok' | translate}}</button>
+        <button mat-raised-button [disabled]="formGroup.invalid || sceneSubscriptionInvalid()" (click)="onOkClick()" color="primary">{{'dlg.ok' | translate}}</button>
     </div>
 </form>

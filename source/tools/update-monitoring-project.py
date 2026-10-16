@@ -58,19 +58,21 @@ def video_content(g):
 def data_content(g):
     for e in list(g):
         g.remove(e)
-    label(g, 40, 58, '事件统计 · 今日与累计', size=26)
+    label(g, 40, 58, '八场景候选统计 · 站点今日与历史', size=26)
     label(g, 40, 100, '—', id='db_time', size=16, color='#b6c8dc')
-    for i, name in enumerate(['区域入侵', '遮挡报警', '移动侦测', '视频丢失']):
-        y = 170+i*130
-        node(g, 'rect', x=40, y=y-42, width=1650, height=108, rx=6, fill='#102a44', stroke='#385877')
-        label(g, 65, y, name, size=22)
-        label(g, 610, y, '今日 UTC', size=16, color='#b6c8dc')
-        label(g, 800, y, '—', id='db_today_'+str(i), size=24)
-        label(g, 1130, y, '累计', size=16, color='#b6c8dc')
-        label(g, 1340, y, '—', id='db_total_'+str(i), size=24)
-    label(g, 40, 744, '—', id='db_other', size=18)
-    label(g, 40, 804, '统计事件次数，不代表当前报警或当前检测人数。', size=17, color='#b6c8dc')
-    label(g, 40, 850, '历史趋势：本页尚未绑定真实历史序列。', size=17, color='#b6c8dc')
+    for i, name in enumerate(['V1 门口进入', 'V2 蹲下 / 跌倒候选', 'V3 点烟 / 吸烟候选', 'V4 戴安全帽事件', 'V5 人员聚集', 'V6 原位静止', 'V7 火苗 / 通道 / 画质', 'T1 红外辅助']):
+        y = 164+i*76
+        node(g, 'rect', x=40, y=y-34, width=1650, height=66, rx=6, fill='#102a44', stroke='#385877')
+        label(g, 65, y, name, size=20)
+        label(g, 530, y, '今日', size=16, color='#b6c8dc')
+        label(g, 610, y, '—', id='db_today_'+str(i), size=24)
+        label(g, 800, y, '历史', size=16, color='#b6c8dc')
+        label(g, 880, y, '—', id='db_total_'+str(i), size=24)
+        label(g, 1080, y, '今日支持 / 待知晓', size=16, color='#b6c8dc')
+        label(g, 1360, y, '—', id='db_review_'+str(i), size=22)
+    label(g, 40, 800, '—', id='db_other', size=18)
+    label(g, 40, 850, '候选不等于事故，知晓不等于恢复；清零不删除历史。', size=17, color='#b6c8dc')
+    label(g, 40, 906, '打开筛选记录、小时趋势、复核分布与完整导出 →', id='db_detail', size=20, color='#a2e8ff')
 
 
 def changed_view(v):

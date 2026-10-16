@@ -1,3 +1,8 @@
+<div class="alarm-toolbar" *ngIf="fullview && !showInContainer">
+    <button mat-button (click)="onShowAlarms()">当前报警</button>
+    <button mat-button (click)="picker.open()">选择历史时间</button>
+    <span>场景事件确认后保留在历史中</span>
+</div>
 <div class="header-panel">
     <div *ngIf="showType === alarmShowType.alarms">
         {{'alarms.view-title' | translate}}
@@ -6,7 +11,8 @@
         {{'alarms.history-title' | translate}}
     </div>
 </div>
-<div class="work-panel" [ngStyle]="{'height': (!showInContainer && (fullview || currentShowMode === 'expand')) ? 'calc(100% - 83px)' : 'calc(100% - 37px)'}">
+<div class="work-panel" [style.top]="fullview && !showInContainer ? '81px' : '37px'" [ngStyle]="{'height': fullview && !showInContainer ? 'calc(100% - 81px)' : (!showInContainer && currentShowMode === 'expand') ? 'calc(100% - 83px)' : 'calc(100% - 37px)'}">
+    <p *ngIf="message" class="alarm-message" role="status" aria-live="polite">{{message}}</p>
     <div class="table-container">
         <mat-table #table [dataSource]="dataSource" matSort>
             <ng-container matColumnDef="ontime">
@@ -44,7 +50,7 @@
                     </button>
                 </mat-header-cell>
                 <mat-cell *matCellDef="let element" [style.color]="element.color">
-                    <button mat-icon-button (click)="onAckAlarm(element)" *ngIf="element.toack >= 0" [disabled]="element.toack === 0" class="remove">
+                    <button mat-icon-button (click)="onAckAlarm(element)" *ngIf="element.toack >= 0" [disabled]="element.toack === 0 || ackPending.has(element.name)" aria-label="确认此条报警" class="remove">
                         <mat-icon>check_circle_outline</mat-icon>
                     </button>
                 </mat-cell>
@@ -76,7 +82,9 @@
                         </div>
                     </div>
                 </mat-header-cell>
-                <mat-cell *matCellDef="let element" [style.color]="element.color" [style.flex]="(showInContainer) ? '0 0 10px' : '0 0 120px'"></mat-cell>
+                <mat-cell *matCellDef="let element" [style.color]="element.color" [style.flex]="(showInContainer) ? '0 0 10px' : '0 0 120px'">
+                    <button mat-button *ngIf="element.eventId" (click)="openEvidence(element)" aria-label="查看此事件历史证据">历史证据</button>
+                </mat-cell>
             </ng-container>
             <mat-header-row *matHeaderRowDef="displayColumns; sticky: true" class="my-header-row"></mat-header-row>
             <mat-row *matRowDef="let element; columns: displayColumns;" class="my-mat-row" [style.background-color]="element.bkcolor"></mat-row>
@@ -97,3 +105,20 @@
         </mat-date-range-picker-actions>
     </mat-date-range-picker>
 </div>
+<ng-template #sceneEvidence>
+    <h2 mat-dialog-title>事件历史证据</h2>
+    <mat-dialog-content class="scene-evidence">
+        <p>{{evidence?.group}} · {{evidence?.text}} · {{evidence?.ontime | date: dateTimePattern}}</p>
+        <p role="status" aria-live="polite">{{evidenceMessage}}</p>
+        <figure *ngFor="let frame of evidenceFrames; let i = index">
+            <figcaption>证据 {{i + 1}} · {{frame.at | date: dateTimePattern}}</figcaption>
+            <p *ngIf="frame.loading">图片读取中…</p>
+            <p *ngIf="frame.error">{{frame.error}}</p>
+            <img *ngIf="frame.url && !frame.error" [src]="frame.url" [alt]="'历史证据 ' + (i + 1)" (error)="frame.error = '图片无法解码，请刷新重试'">
+        </figure>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+        <button mat-button (click)="loadEvidence()">刷新证据</button>
+        <button mat-button mat-dialog-close>关闭</button>
+    </mat-dialog-actions>
+</ng-template>

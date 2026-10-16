@@ -29,9 +29,9 @@ if (m && root) {
     bind('aq_refresh',function () { m.at.alarms=0; m.at.history=0; });
     bind('aq_prev',function () { q.page=Math.max(0,q.page-1); });
     bind('aq_next',function () { q.page=Math.min(pages-1,q.page+1); });
-    var prio = {highhigh:'高高限',high:'高',low:'低',lowlow:'低低限',message:'提示'};
+    var prio = {highhigh:'高高限',high:'高',low:'低',lowlow:'低低限',info:'提示',message:'提示'};
     for (var i=0;i<10;i++) {
-        var a=rows[q.page*10+i], kind=a ? String(a.name||'').split('^~^')[0] : '';
+        var a=rows[q.page*10+i], kind=a ? (a.sceneId ? a.sceneId + ' · ' + a.sceneName + ' · ' + (a.verdict || '候选待复核') : String(a.name||'').split('^~^')[0]) : '';
         var current=a && (m.data.alarms||[]).some(function (x) { return x.name===a.name && Number(x.ontime)===Number(a.ontime); });
         var values=a ? [new Date(Number(a.ontime)).toLocaleString('zh-CN',{hour12:false}),kind,prio[a.type]||a.type||'—',isAcked(a)?'已确认':current?'待确认':'历史未确认'] : ['—','—','—','—'];
         values.forEach(function (value,f) { var e=document.getElementById('aq_r'+i+'_'+f); if(e) { e.textContent=value.length>30?value.slice(0,29)+'…':value; e.setAttribute('aria-label',value); } });
@@ -42,6 +42,7 @@ if (m && root) {
             bind('aq_ack'+index,function () { if(row && m.openAlarms) { m.openAlarms(row.name,row.ontime); } });
             bind('aq_pic'+index,function () {
                 if(!row) { return; }
+                if(row.eventId) { if(m.openSceneEvidence) { m.openSceneEvidence(row); } else { m.set('aq_hint','证据详情尚未就绪，请刷新页面重试。'); } return; }
                 var kind=String(row.name||'').split('^~^')[0];
                 var shot=((m.data.shots||{}).shots||[]).filter(function (s) { return s.label===kind && Math.abs(Number(s.at)-Number(row.ontime))<15000 && /^\/_images\/alarm-shots\/[^/]+\.(jpg|png)$/i.test(s.url); }).sort(function (a,b) { return Math.abs(a.at-row.ontime)-Math.abs(b.at-row.ontime); })[0];
                 if(shot) { window.open(shot.url,'_blank','noopener'); } else { m.set('aq_hint','此条报警无时间和类型匹配的抓拍；不会显示其他报警图片。'); }

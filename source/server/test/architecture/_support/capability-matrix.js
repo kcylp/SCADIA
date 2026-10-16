@@ -29,7 +29,7 @@ const registry = require(path.join(arch.SERVER_ROOT, 'runtime', 'storage', 'regi
 
 const PROJECT_ROOT = path.resolve(arch.SERVER_ROOT, '..', '..');
 const MATRIX_JSON = path.join(PROJECT_ROOT, '19_能力矩阵_存储后端.json');
-const MATRIX_MD = path.join(PROJECT_ROOT, '19_能力矩阵_存储后端.md');
+const MATRIX_MD = path.join(PROJECT_ROOT, 'docs', 'archive', '19_能力矩阵_存储后端.md');
 
 /** The default backend whose verdicts are re-proven by a live probe. */
 const PROBED_BACKEND = 'sqlite';

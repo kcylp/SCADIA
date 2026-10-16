@@ -32,46 +32,55 @@ function dom() {
 }
 function cards(data, errors = {}) {
     const d = dom();
-    const m = { data, errors, node: d.node, load() {} };
-    const run = () => vm.runInNewContext(script('video-cards'), { window: { __monitor: m }, document: d.document });
+    const m = { data, errors, node: d.node, load() {}, headers:()=>({}),
+        set:(id,text)=>{const e=d.ids.get(id);if(e)e.textContent=text;}, sceneShots:{} };
+    const requested=[], revoked=[];
+    const run = () => vm.runInNewContext(script('video-cards'), { window: { __monitor: m }, document: d.document,
+        AbortSignal, URL:{createObjectURL:()=> 'blob:event',revokeObjectURL:url=>revoked.push(url)},
+        fetch:url=>{requested.push(url);return Promise.resolve({ok:false});} });
     run();
-    return { ...d, m, run };
+    return { ...d, m, run, requested, revoked };
 }
 const alarm = (name, time) => ({ name, type: 'highhigh', ontime: time, text: '视频事件：移动侦测（相机原生事件，经事件桥接器写入）' });
 
 describe('Monitoring UI script contracts', () => {
-    it('deduplicates current/history suffixes and keeps the next distinct alarm', () => {
-        const time = Date.now();
-        const d = cards({ alarms: [alarm('移动侦测^~^highhigh', time)], history: [alarm('移动侦测', time), alarm('区域入侵', time - 30000)] });
-        assert.equal(d.ids.get('vc_value_0_2').textContent, '移动侦测 · 高高限');
-        assert.equal(d.ids.get('vc_value_1_2').textContent, '区域入侵 · 高高限');
-        assert.equal(d.ids.get('vc_value_2_2').textContent, '—');
-        assert.equal(d.ids.get('vc_value_0_1').textContent, '未关联');
+    const event = (i=1) => ({eventId:String(i).padStart(32,'a'),sceneId:'V3',source:'visible',camera:'camera',at:Date.now(),label:'吸烟候选',reviewStatus:'pending'});
+    it('reads durable scene identities only and never matches legacy alarms or nearby shots', async () => {
+        const row=event(),d=cards({sceneLatest:{rows:[row]},alarms:[alarm('移动侦测',row.at)],shots:{shots:[{at:row.at,url:'/wrong.jpg'}]}});
+        assert.equal(d.ids.get('vc_value_0_2').textContent,'吸烟候选 · pending');
+        assert.deepEqual(d.requested,['/api/ai/scene-events/'+row.eventId+'/evidence']);
+        d.run();assert.equal(d.requested.length,1);
+        await new Promise(r=>setImmediate(r));d.run();
+        assert(d.ids.get('vc_empty_0').textContent.includes('缺失或读取失败'));
+        assert.equal(d.ids.get('vc_shot_0').getAttribute('href'),undefined);
     });
-    it('does not duplicate visible text with the accessible full description on redraw', () => {
-        const d = cards({ alarms: [alarm('移动侦测', Date.now())] });
-        d.run();
-        const field = d.ids.get('vc_value_0_3');
-        assert.equal(field.textContent, field.getAttribute('aria-label'));
-        assert(field.children.every(c => c.tag === 'tspan'));
-        assert.equal(d.ids.get('vc_title_0_3').textContent, field.textContent);
-        assert.equal(d.ids.get('vc_value_0_0').children.length, 1);
+    it('does not duplicate visible text or buttons on redraw and binds the exact evidence identity', () => {
+        const row=event(),d=cards({sceneLatest:{rows:[row]}});let opened;
+        d.m.openSceneEvidence=r=>opened=r;d.run();d.ids.get('vc_ack_0').firstChild.onclick();
+        assert.equal(opened.eventId,row.eventId);assert.equal(opened.sceneId,'V3');
+        assert.equal(d.ids.get('vc_value_0_3').textContent,row.eventId);
+        assert.equal(d.ids.get('vc_value_0_3').getAttribute('aria-label'),row.eventId);
+        assert.equal(d.ids.get('vc_card_0').children.length,1);
     });
-    it('shows shot load failures, recovers on load and does not invent a missing shot', () => {
-        const time = Date.now();
-        const d = cards({ alarms: [alarm('移动侦测', time)], shots: { shots: [{ label: '移动侦测', at: time, url: '/_images/alarm-shots/motion.jpg' }] } });
-        const image = d.ids.get('vc_shot_0'), empty = d.ids.get('vc_empty_0');
-        image.onerror(); assert.equal(empty.textContent, '抓拍加载失败'); assert.equal(empty.style.display, '');
-        image.onload(); assert.equal(empty.style.display, 'none');
-        d.m.data.shots.shots = []; d.run(); assert.equal(empty.textContent, '暂无对应抓拍'); assert.equal(empty.style.display, '');
+    it('shows image decode failures, recovers on load and revokes evidence after the event disappears', () => {
+        const row=event(),d=cards({sceneLatest:{rows:[row]}});
+        d.m.sceneShots[row.eventId]={url:'blob:saved'};d.run();
+        const image=d.ids.get('vc_shot_0'),empty=d.ids.get('vc_empty_0');
+        image.onerror();assert(empty.textContent.includes('无法显示'));assert.equal(empty.style.display,'');
+        image.onload();assert.equal(empty.style.display,'none');
+        d.m.data.sceneLatest.rows=[];d.run();assert.equal(image.getAttribute('href'),undefined);
+        assert.deepEqual(d.revoked,['blob:saved']);assert(empty.textContent.includes('暂无场景事件'));
     });
-    it('distinguishes a read failure from no alarms and renders unsafe text as text', () => {
-        const d = cards({ alarms: [] }, { history: 'HTTP 403' });
-        assert(d.ids.get('vc_value_0_3').textContent.includes('读取失败'));
-        const a = alarm('移动侦测', Date.now()); a.text = '<script>alert(1)</script>';
-        d.m.data.alarms = [a]; d.run();
-        assert.equal(d.ids.get('vc_value_0_3').getAttribute('aria-label'), a.text);
-        assert(d.ids.get('vc_value_0_3').children.every(c => c.tag === 'tspan'));
+    it('hides cached evidence on a read failure and renders unsafe labels only as text', () => {
+        const row=event(),d=cards({sceneLatest:{rows:[row]}});
+        row.label='<script>alert(1)</script>';d.run();
+        assert(d.ids.get('vc_value_0_2').getAttribute('aria-label').includes(row.label));
+        assert.equal(d.ids.get('vc_value_0_2').children.length,0);
+        d.m.sceneShots[row.eventId]={url:'blob:cached'};d.m.errors.sceneLatest='HTTP 403';d.run();
+        assert(d.ids.get('vc_state_0').textContent.includes('读取失败'));
+        assert.equal(d.ids.get('vc_shot_0').getAttribute('href'),undefined);
+        assert.equal(d.ids.get('vc_ack_0').firstChild.disabled,true);
+        assert.deepEqual(d.revoked,['blob:cached']);
     });
     it('keeps thermal coordinates and trails isolated from visible light and mismatched cameras', () => {
         const d = dom();

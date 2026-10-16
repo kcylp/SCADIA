@@ -40,7 +40,8 @@ const ERR_HTTP = {
     GB_TIMEOUT: 504,
     AI_NOT_CONFIGURED: 503,
     AI_DISABLED: 503,
-    AI_BAD_PAYLOAD: 400
+    AI_BAD_PAYLOAD: 400,
+    AI_RULES_CONFLICT: 409
 };
 
 function sendError(res, err) {
@@ -81,35 +82,18 @@ function requireAction(req, res, action) {
     return auth;
 }
 
-function requireSceneAdmin(req, res) {
-    if (runtime.settings?.secureEnabled) {
-        if (!req.isAuthenticated) {
-            res.status(401).json({ error: 'CAM_UNAUTHENTICATED', message: 'Login required' });
-            return null;
-        }
-        return requireAction(req, res, 'admin');
-    }
-    // Open viewing does not authenticate writes. Validate the supplied login token explicitly.
-    const token = req.headers['x-access-token'];
-    if (!token) {
+function requireSceneView(req, res) {
+    // Global scene files have no per-camera ACL; match the unified analysis boundary.
+    if (!runtime.settings?.secureEnabled) { return authContext(req); }
+    if (!req.isAuthenticated) {
         res.status(401).json({ error: 'CAM_UNAUTHENTICATED', message: 'Login required' });
         return null;
     }
-    try {
-        const decoded = require('jsonwebtoken').verify(token, authJwt.secretCode, { algorithms: ['HS256'] });
-        const user = runtime.users?.getUserCache(decoded.id);
-        if (!user || decoded.type === 'refresh' || !authJwt.haveAdminPermission(user.groups)) {
-            res.status(403).json({ error: 'CAM_FORBIDDEN', message: 'Admin permission required' });
-            return null;
-        }
-        req.isAuthenticated = true;
-        req.userId = decoded.id;
-        req.userGroups = user.groups;
-        return { isAdmin: true, userId: decoded.id };
-    } catch (_) {
-        res.status(401).json({ error: 'CAM_UNAUTHENTICATED', message: 'Login again before managing scene events' });
-        return null;
-    }
+    return requireAction(req, res, 'admin');
+}
+
+function requireSceneAdmin(req, res) {
+    return require('../scene-auth').requireSceneAdmin(req, res, runtime, checkGroupsFnc);
 }
 
 function handle(promise, res, ok, op) {
@@ -494,7 +478,7 @@ module.exports = {
 
         let sceneStore;
         const scenes = () => {
-            const active = require('../../runtime/cameras').scenes;
+            const active = runtime.cameraScenes || require('../../runtime/cameras').scenes;
             if (active) { return active; }
             if (!sceneStore) {
                 const { SceneStore } = require('../../runtime/cameras/scene-store');
@@ -509,6 +493,15 @@ module.exports = {
             }
             return sceneCalibration;
         };
+        const rules = new (require('../../runtime/cameras/scene-rules').SceneRules)(runtime.settings.workDir);
+        camApp.get('/api/ai/scenes/rules/:source', secureFnc, (req, res) => {
+            if (!requireSceneView(req, res)) { return; }
+            handle(Promise.resolve().then(() => rules.read(req.params.source)), res, r => res.json(r), 'scene-rules');
+        });
+        camApp.put('/api/ai/scenes/rules/:source', secureFnc, (req, res) => {
+            if (!requireSceneAdmin(req, res)) { return; }
+            handle(Promise.resolve().then(() => rules.save(req.params.source, req.body, req.userId)), res, r => res.json(r), 'scene-rules-save');
+        });
         camApp.get('/api/ai/scenes/calibration', secureFnc, (req, res) => {
             if (!requireSceneAdmin(req, res)) { return; }
             handle(Promise.resolve().then(() => calibration().read()), res, r => res.json(r), 'scene-calibration');
@@ -518,11 +511,11 @@ module.exports = {
             handle(Promise.resolve().then(() => calibration().save(req.body, req.userId || 'unknown')), res, r => res.json(r), 'scene-calibration-save');
         });
         camApp.get('/api/ai/scenes', secureFnc, (req, res) => {
-            if (!requireAction(req, res, 'view')) { return; }
+            if (!requireSceneView(req, res)) { return; }
             handle(Promise.resolve().then(() => scenes().status()), res, r => res.json(r), 'scenes');
         });
         camApp.get('/api/ai/scenes/frame/:source', secureFnc, (req, res) => {
-            if (!requireAction(req, res, 'view')) { return; }
+            if (!requireSceneView(req, res)) { return; }
             const source = { visible: 'kuangqu1', thermal: 'kuangqu1-thermal' }[req.params.source];
             if (!source) { return res.sendStatus(404); }
             const upstream = require('http').get('http://127.0.0.1:1886/snapshot/' + source, response => {
@@ -535,13 +528,33 @@ module.exports = {
             upstream.on('error', () => { if (!res.headersSent) { res.sendStatus(503); } else { res.destroy(); } });
             res.on('close', () => upstream.destroy());
         });
+        const eventFrames = event => {
+            const frames = [{ file: event.shot, at: event.at }, ...(event.evidenceFrames || [])];
+            return frames.filter((f, i) => new RegExp('^scene-' + event.eventId + '(?:-[0-2])?\\.jpg$').test(f.file) &&
+                frames.findIndex(other => other.file === f.file) === i);
+        };
+        camApp.get('/api/ai/scene-events/:id/evidence-manifest', secureFnc, (req, res) => {
+            if (!requireSceneView(req, res)) { return; }
+            handle(Promise.resolve().then(() => scenes().getEvent(req.params.id)), res, event => {
+                const frames = eventFrames(event).map((f, index) => ({ at: f.at,
+                    available: require('fs').existsSync(require('path').join(runtime.settings.workDir, 'scene-evidence', f.file)),
+                    url: '/api/ai/scene-events/' + event.eventId + '/evidence?frame=' + index }));
+                res.set('Cache-Control', 'private, no-store');
+                res.json({ eventId: event.eventId, sceneId: event.sceneId, at: event.at,
+                    ackAt: event.ackAt, ackBy: event.ackBy, reviewStatus: event.reviewStatus, review: event.review, frames });
+            }, 'scene-evidence-manifest');
+        });
         camApp.get('/api/ai/scene-events/:id/evidence', secureFnc, (req, res) => {
-            if (!requireAction(req, res, 'view')) { return; }
-            if (!/^[a-f0-9]{32}$/.test(req.params.id)) { return res.sendStatus(400); }
-            res.set('Cache-Control', 'private, no-store');
-            res.sendFile(require('path').join(runtime.settings.workDir, 'scene-evidence', 'scene-' + req.params.id + '.jpg'), err => {
-                if (err && !res.headersSent) { res.sendStatus(404); }
-            });
+            if (!requireSceneView(req, res)) { return; }
+            if (req.query.frame !== undefined && !/^[0-3]$/.test(req.query.frame)) { return res.sendStatus(400); }
+            handle(Promise.resolve().then(() => scenes().getEvent(req.params.id)), res, event => {
+                const frame = eventFrames(event)[Number(req.query.frame || 0)];
+                if (!frame) { return res.sendStatus(404); }
+                res.set('Cache-Control', 'private, no-store');
+                res.sendFile(require('path').join(runtime.settings.workDir, 'scene-evidence', frame.file), err => {
+                    if (err && !res.headersSent) { res.sendStatus(404); }
+                });
+            }, 'scene-evidence');
         });
         camApp.post('/api/ai/scene-review-tasks/claim', secureFnc, (req, res) => {
             if (!requireSceneAdmin(req, res)) { return; }
@@ -551,8 +564,23 @@ module.exports = {
             if (!requireSceneAdmin(req, res)) { return; }
             handle(Promise.resolve().then(() => scenes().finishReview(req.params.id, req.body)), res, r => res.json(r), 'scene-review-result');
         });
+        camApp.get('/api/ai/scene-events/deliveries', secureFnc, (req, res) => {
+            if (!requireSceneAdmin(req, res)) { return; }
+            handle(scenes().deliveries(), res, rows => res.json({ rows }), 'scene-deliveries');
+        });
+        camApp.get('/api/ai/scene-events/summary', secureFnc, (req, res) => {
+            if (!requireSceneView(req, res)) { return; }
+            handle(Promise.resolve().then(() => scenes().aggregate(req.query)), res, r => res.json(r), 'scene-summary');
+        });
+        camApp.get('/api/ai/scene-events/export', secureFnc, (req, res) => {
+            if (!requireSceneView(req, res)) { return; }
+            handle(Promise.resolve().then(() => scenes().exportEvents(req.query)), res, r => {
+                res.set('Content-Disposition', 'attachment; filename="scadia-scene-events.json"');
+                res.json(r);
+            }, 'scene-export');
+        });
         camApp.get('/api/ai/scene-events', secureFnc, (req, res) => {
-            if (!requireAction(req, res, 'view')) { return; }
+            if (!requireSceneView(req, res)) { return; }
             handle(Promise.resolve().then(() => scenes().list(req.query)), res, r => res.json(r), 'scene-events');
         });
         camApp.post('/api/ai/scene-events/:id/ack', secureFnc, (req, res) => {

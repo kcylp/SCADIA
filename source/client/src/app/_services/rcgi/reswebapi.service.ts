@@ -1,7 +1,7 @@
 
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { map, Observable, of, switchMap } from 'rxjs';
+import { catchError, map, Observable, of, switchMap, take, takeWhile, timer } from 'rxjs';
 
 import { EndPointApi } from '../../_helpers/endpointapi';
 import { ProjectData, ProjectDataCmdType, UploadFile } from '../../_models/project';
@@ -232,7 +232,7 @@ export class ResWebApiService implements ResourceStorageService {
         return this.http.get<ReportFile[]>(this.endPointConfig + '/api/reportsQuery', { headers: header, params: params });
     }
 
-    buildReport(report: Report): Observable<void> {
+    buildReport(report: Report, onSettled?: (status: { state: string; error?: string }) => void): Observable<void> {
         return new Observable((observer) => {
                 let header = new HttpHeaders({ 'Content-Type': 'application/json' });
                 let params = report;
@@ -241,6 +241,7 @@ export class ResWebApiService implements ResourceStorageService {
                     var msg = '';
                     this.translateService.get('msg.report-build-forced').subscribe((txt: string) => { msg = txt; });
                     this.toastr.success(msg);
+                    this.pollReportStatus(report.id, onSettled);
                 }, err => {
                     console.error(err);
                     observer.error(err);
@@ -253,6 +254,35 @@ export class ResWebApiService implements ResourceStorageService {
         let header = new HttpHeaders({ 'Content-Type': 'application/json' });
         let params = { fileName };
         return this.http.post<any>(this.endPointConfig + '/api/reportRemoveFile', { headers: header, params: params });
+    }
+
+    getReportStatus(reportId: string): Observable<{ state: string; at?: number; error?: string }> {
+        let header = new HttpHeaders({ 'Content-Type': 'application/json' });
+        return this.http.get<{ status: { state: string; at?: number; error?: string } }>(this.endPointConfig + '/api/reportStatus',
+            { headers: header, params: { id: reportId } }).pipe(map(r => r.status));
+    }
+
+    /**
+     * reportBuild 200 只代表任务被接受；这里轮询真实结果，异步失败必须可见，不能永远显示成功。
+     */
+    private pollReportStatus(reportId: string, onSettled?: (status: { state: string; error?: string }) => void) {
+        timer(2000, 2000).pipe(
+            switchMap(() => this.getReportStatus(reportId).pipe(catchError(() => of({ state: 'unknown' })))),
+            take(30),
+            takeWhile((s: { state: string }) => s.state === 'running' || s.state === 'unknown', true)
+        ).subscribe((status: { state: string; error?: string }) => {
+            if (status.state === 'failed') {
+                var msg = '';
+                this.translateService.get('msg.report-build-failed').subscribe((txt: string) => { msg = txt; });
+                this.toastr.error(msg, status.error || '', { timeOut: 0, closeButton: true });
+                if (onSettled) { onSettled(status); }
+            } else if (status.state === 'completed') {
+                var msg = '';
+                this.translateService.get('msg.report-build-completed').subscribe((txt: string) => { msg = txt; });
+                this.toastr.success(msg);
+                if (onSettled) { onSettled(status); }
+            }
+        });
     }
 
     private notifyError(err: any) {

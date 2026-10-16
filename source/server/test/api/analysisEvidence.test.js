@@ -36,7 +36,7 @@ function fixture(imagesFileDir) {
             querySeries: async ids => ({ status: Object.fromEntries(ids.map(id => [id, 'ok'])), series: Object.fromEntries(ids.map(id => [id, [{ t: Date.now() - 1000, v: 1 }, { t: Date.now() - 500, v: 2 }]])), gaps: {} })
         },
         alarmsMgr: {
-            getAlarmsValues: async () => [{ name: 'A1', status: 1, text: '高压' }],
+            getAllAlarmsValues: async () => [{ name: 'A1', status: 1, text: '高压' }],
             getAlarmsHistory: async () => [{ name: 'A1', status: 1, ontime: Date.now() - 1000 }]
         },
         calibrationService: { getProfiles: async () => [{ id: 'cal-1', name: '标定', sourceTagId: 'tag1', model: 'linear' }] },

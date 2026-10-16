@@ -108,6 +108,10 @@ export class NotificationListComponent implements OnInit, AfterViewInit, OnDestr
                 });
                 return result;
             }
+            if (notification.type === 'scenes') {
+                // 订阅范围必须在列表里可见，保存后才能核对页面显示与内存一致。
+                return (notification.sceneIds ?? []).join(', ') + ' / ' + (notification.scenePhases ?? []).join(', ') + (notification.sceneKinds?.length ? ' / ' + notification.sceneKinds.join(',') : '');
+            }
         }
         return '';
     }

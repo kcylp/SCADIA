@@ -3,6 +3,59 @@ if (m) {
     if (window.__aiOpsPoll) { clearInterval(window.__aiOpsPoll); window.__aiOpsPoll = null; }
     ['aiops-clear', 'aiops-mask', 'aiops-style'].forEach(function (id) { var old = document.getElementById(id); if (old) { old.remove(); } });
     m.isAcked = function (a) { return Number(a.acktime) > 0 || String(a.status || '').indexOf('A') >= 0; };
+    m.openSceneEvidence = function (row) {
+        if (!/^[a-f0-9]{32}$/.test(row.eventId || '') || document.getElementById('scene-evidence-dialog')) { return; }
+        var d = document.createElement('dialog'); d.id = 'scene-evidence-dialog';
+        d.setAttribute('aria-label', '事件历史证据');
+        d.style.cssText = 'box-sizing:border-box;width:min(960px,94vw);max-height:88vh;overflow:auto;background:#14243a;color:#eef5ff;border:1px solid #6a87a4;padding:24px;font:16px Microsoft YaHei,sans-serif';
+        d.innerHTML = '<h2>事件历史证据</h2><p data-event></p><p role="status" aria-live="polite">正在读取历史记录…</p><div data-frames></div><button type="button" data-retry>刷新证据</button> <button type="button" data-close>关闭</button>';
+        d.querySelector('[data-event]').textContent = (row.sceneId || '') + ' · ' + (row.text || '') + ' · ' + new Date(Number(row.ontime)).toLocaleString('zh-CN', { hour12:false });
+        d.querySelectorAll('button').forEach(function (b) { b.style.cssText = 'min-height:40px;padding:8px 16px;background:#214f79;color:#fff;border:1px solid #92b6d8;cursor:pointer'; });
+        var message = d.querySelector('[role=status]'), frames = d.querySelector('[data-frames]');
+        var signature = function () { return JSON.stringify(m.headers()); }, identity = signature();
+        var identityTimer = setInterval(function () { if (signature() !== identity || !d.isConnected) { d.close(); } }, 500);
+        var urls = [], controller, loading = false, retry = d.querySelector('[data-retry]');
+        var release = function () { urls.forEach(function (url) { URL.revokeObjectURL(url); }); urls = []; };
+        var load = async function () {
+            if (loading) { return; } loading = true; retry.disabled = true;
+            controller = new AbortController(); release(); frames.replaceChildren();
+            var get = function (url) { return fetch(url, { headers:m.headers(), cache:'no-store', signal:AbortSignal.any([controller.signal,AbortSignal.timeout(8000)]) }); };
+            try {
+                message.textContent = '正在读取历史记录…';
+                var base = '/api/ai/scene-events/' + row.eventId;
+                var response = await get(base + '/evidence-manifest');
+                if (!response.ok) { throw new Error('事件读取失败：HTTP ' + response.status); }
+                var event = await response.json();
+                if (signature() !== identity) { d.close(); return; }
+                if (event.eventId !== row.eventId || Number(event.at) !== Number(row.ontime) || !Array.isArray(event.frames)) { throw new Error('事件证据身份不匹配'); }
+                var missing = 0;
+                for (var i = 0; i < event.frames.length; i++) {
+                    if (controller.signal.aborted) { return; }
+                    var frame = event.frames[i], figure = document.createElement('figure'), caption = document.createElement('figcaption');
+                    figure.style.cssText = 'margin:24px 0';
+                    caption.textContent = '证据 ' + (i + 1) + ' · ' + new Date(Number(frame.at)).toLocaleString('zh-CN', { hour12:false });
+                    figure.appendChild(caption); frames.appendChild(figure);
+                    if (!frame.available || frame.url !== base + '/evidence?frame=' + i) { caption.textContent += ' · 原图缺失'; missing++; continue; }
+                    try {
+                        var shot = await get(frame.url);
+                        if (!shot.ok) { throw new Error('HTTP ' + shot.status); }
+                        var blob = await shot.blob();
+                        if (controller.signal.aborted || signature() !== identity) { return; }
+                        var url = URL.createObjectURL(blob), image = document.createElement('img'); urls.push(url);
+                        image.alt = caption.textContent; image.style.cssText = 'display:block;max-width:100%;height:auto;margin-top:8px';
+                        image.onerror = function () { this.replaceWith(document.createTextNode('图片无法解码，请刷新证据。')); };
+                        image.src = url; figure.appendChild(image);
+                    } catch (err) { if (controller.signal.aborted) { return; } caption.textContent += ' · 图片读取失败，可刷新重试'; missing++; }
+                }
+                message.textContent = (event.ackAt ? '人工已确认。' : '人工尚未确认。') + ' 复核：' + (event.review?.verdict || event.reviewStatus || '尚无结果') +
+                    (event.review?.text ? ' · ' + event.review.text : '') + '。登记证据 ' + event.frames.length + ' 帧，缺失或读取失败 ' + missing + ' 帧。';
+            } catch (err) { if (!controller.signal.aborted) { message.textContent = err.message + '，请检查登录或连接后刷新证据。'; } }
+            finally { loading = false; retry.disabled = false; }
+        };
+        retry.onclick = load; d.querySelector('[data-close]').onclick = function () { d.close(); };
+        d.onclose = function () { clearInterval(identityTimer); controller?.abort(); release(); d.remove(); };
+        (document.fullscreenElement || document.body).appendChild(d); d.showModal(); load();
+    };
     m.openAlarms = function (name, ontime) {
         if (document.getElementById('alarm-confirm-dialog')) { return; }
         var d = document.createElement('dialog'); d.id = 'alarm-confirm-dialog';
@@ -47,8 +100,16 @@ if (m) {
                             }
                             if (!await load()) { throw new Error('确认请求已提交，但服务器回读失败，请刷新核验'); }
                             var saved = (m.data.alarms || []).find(function (x) { return x.name === a.name && Number(x.ontime) === Number(a.ontime); });
-                            if (saved && !m.isAcked(saved)) { throw new Error('回读尚未确认，请刷新核验'); }
-                            status.textContent = saved ? '已确认，服务器回读通过。现场是否恢复请继续核实。' : '确认请求已提交，当前报警已变化，请核验历史记录。';
+                            if (a.eventId) {
+                                var readback = await fetch('/api/ai/scene-events/' + a.eventId + '/evidence-manifest', { headers:m.headers(), cache:'no-store', signal:AbortSignal.timeout(8000) });
+                                if (!readback.ok) { throw new Error('确认请求已提交，但事件回读失败：HTTP ' + readback.status); }
+                                var ledger = await readback.json();
+                                if (ledger.eventId !== a.eventId || Number(ledger.at) !== Number(a.ontime) || !Number(ledger.ackAt)) { throw new Error('事件账本尚未确认，请刷新核验'); }
+                                status.textContent = '已确认，事件账本回读通过。现场是否恢复请继续核实。';
+                            } else {
+                                if (saved && !m.isAcked(saved)) { throw new Error('回读尚未确认，请刷新核验'); }
+                                status.textContent = saved ? '已确认，服务器回读通过。现场是否恢复请继续核实。' : '确认请求已提交，当前报警已变化，请核验历史记录。';
+                            }
                             m.at.history = 0;
                         } catch (e) { status.textContent = '确认失败：' + e.message + '。可刷新后重试。'; b.disabled = false; b.textContent = '重试确认'; }
                     };

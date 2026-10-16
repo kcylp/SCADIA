@@ -2,15 +2,31 @@
     <h1 mat-dialog-title style="display:inline-block;cursor:move;" mat-dialog-draggable>{{'report.item-alarms-title' | translate}}</h1>
     <mat-icon (click)="onNoClick()" class="dialog-close-btn">clear</mat-icon>
     <div mat-dialog-content>
+        <label>数据来源 <select [ngModel]="data.sceneFilter ? 'scene':'alarm'" (ngModelChange)="onSourceChanged($event)"><option value="alarm">设备报警历史</option><option value="scene">八场景候选事件</option></select></label>
+        <section *ngIf="data.sceneFilter as filter">
+            <div class="my-form-field">
+                <span>场景（可多选）</span>
+                <mat-checkbox [checked]="allScenesSelected()" (change)="toggleAllScenes($event.checked)">全部八场景</mat-checkbox>
+                <mat-checkbox *ngFor="let id of sceneIds" [checked]="sceneSelected[id]" (change)="toggleScene(id, $event.checked)" style="margin: 4px 10px; display: inline-block;">{{id}}</mat-checkbox>
+                <span *ngIf="sceneError" style="color: #d32f2f;">{{sceneError}}</span>
+            </div>
+            <label>视频源 <select [(ngModel)]="filter.source"><option value="">全部</option><option value="visible">可见光</option><option value="thermal">红外</option></select></label>
+            <label>事件类型 <input [(ngModel)]="filter.kind" placeholder="留空为全部，如 smoking"></label>
+            <label>镜头 <input [(ngModel)]="filter.camera" placeholder="留空为全部镜头"></label>
+            <label>人工知晓 <select [(ngModel)]="filter.acknowledged"><option value="">全部</option><option value="true">已确认</option><option value="false">待确认</option></select></label>
+            <label>复核状态 <select [(ngModel)]="filter.reviewStatus"><option value="">全部</option><option value="pending">待复核</option><option value="running">正在复核</option><option value="completed">复核完成</option><option value="failed">失败</option><option value="timeout">超时</option><option value="unavailable">不可用</option></select></label>
+            <label>复核结论 <select [(ngModel)]="filter.verdict"><option value="">全部</option><option>支持</option><option>不支持</option><option>证据不足</option></select></label>
+            <p>包含全窗汇总、趋势及完整事件明细；PDF预览、下载和定时生成使用相同筛选。候选数不代表独立事故数。</p>
+        </section>
         <div class="my-form-field">
             <span>{{'report.item-daterange' | translate}}</span>
-            <mat-select [(value)]="data.range" style="width: 200px" [disabled]="true">
+            <mat-select [(value)]="data.range" style="width: 200px" [disabled]="false">
                 <mat-option *ngFor="let ev of dateRangeType | enumToArray" [value]="ev.key">
                     {{ ev.value }}
                 </mat-option>
             </mat-select>
         </div>
-        <div class="alarms">
+        <div class="alarms" *ngIf="!data.sceneFilter">
             <div class="my-form-field">
                 <span>{{'report.alarms-priority' | translate}}</span>
                 <mat-checkbox *ngFor="let item of alarmsType" (change)="onPriorityChanged(item, $event.checked)" [checked]="getPriorityValue(item)" style="margin: 7px 10px 7px 10px;">
