@@ -3,7 +3,9 @@ const { createHash } = require('crypto');
 const { IDS, validateSubscription } = require('../../scene-subscription');
 async function deliverScenes(store, subscriptions, send, now=Date.now()) {
     await store.ingest();
-    for (const sub of subscriptions.filter(s=>s.type==='scenes')) {
+    // 项目无订阅时 getNotifications() 解析为 undefined；这里按空集合处理，
+    // 避免每个调度周期抛 TypeError 并被上层吞成一条“scene.delivery.failed”告警，掩盖真实失败。
+    for (const sub of (subscriptions||[]).filter(s=>s.type==='scenes')) {
         try { validateSubscription(sub); } catch (_) { continue; }
         const ids = sub.sceneIds || IDS, phases = sub.scenePhases || ['candidate'], kinds=sub.sceneKinds||[];
         const fingerprint=createHash('sha256').update(JSON.stringify([!!sub.enabled,[...ids].sort(),[...phases].sort(),[...kinds].sort(),sub.receiver||''])).digest('hex');

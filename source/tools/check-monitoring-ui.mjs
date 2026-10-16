@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { login } from './ui-session.mjs';
 const root = path.resolve(import.meta.dirname, '../..');
+fs.mkdirSync(path.join(root, 'project/_logs'), {recursive:true});
 const reportName = process.env.SCADIA_UI_ACTIONS_ONLY?'ui-actions-regression.json':process.env.SCADIA_UI_ROUTES?'ui-focused-regression.json':'ui-regression.json';
 const tab = await (await fetch('http://127.0.0.1:9222/json/new?about:blank', { method: 'PUT' })).json();
 const ws = new WebSocket(tab.webSocketDebuggerUrl);

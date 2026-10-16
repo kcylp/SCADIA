@@ -33,6 +33,7 @@ function NotificatorManager(_runtime) {
         return new Promise(function (resolve, reject) {
             logger.info('notificator check start', true);
             if (sceneTimer) clearInterval(sceneTimer);
+            if (notifyCheckStatus) clearInterval(notifyCheckStatus);
             sceneTimer = setInterval(async () => {
                 if (sceneWorking) return;
                 sceneWorking = true;
@@ -48,6 +49,7 @@ function NotificatorManager(_runtime) {
             notifyCheckStatus = setInterval(function () {
                 _checkStatus();     // check in 20 seconds interval
             }, 20000);
+            resolve();
         });
     }
 

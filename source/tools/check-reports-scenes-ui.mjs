@@ -24,6 +24,7 @@ const apiInPage=async(url,body)=>ev(`(async()=>{const r=await fetch(${JSON.strin
     headers:{'x-access-token':window.scadiaAccessToken,'Content-Type':'application/json'},${body===undefined?'':`body:JSON.stringify(${JSON.stringify(body)}),`}signal:AbortSignal.timeout(30000)});
     let data={};try{data=await r.json()}catch(_){}return {status:r.status,data};})()`);
 const results=[];
+fs.mkdirSync(path.join(root,'project/_logs'),{recursive:true});
 const NAME='UI-报表闭环-'+Date.now();
 const checked=()=>`[...document.querySelectorAll('app-report-item-alarms mat-checkbox')].filter(c=>(c.querySelector('input')?.checked===true)).map(c=>c.textContent.trim()).filter(t=>/^(全部八场景|V[1-7]|T1)$/.test(t))`;
 async function cleanup(){
@@ -31,11 +32,11 @@ async function cleanup(){
     try{
         const proj=await apiInPage('/api/project');
         const reports=((proj.data&&proj.data.reports)||[]);
-        const mine=reports.filter(r=>r&&r.name&&String(r.name).startsWith('UI-报表闭环-'));
+        const mine=reports.filter(r=>r&&r.name===NAME);
         for(const rpt of mine){await apiInPage('/api/projectData',{cmd:'del-report',data:rpt});}
-        const files=await apiInPage('/api/reportsQuery?query='+encodeURIComponent(JSON.stringify({name:NAME.split('-').slice(0,2).join('-')})));
+        const files=await apiInPage('/api/reportsQuery?query='+encodeURIComponent(JSON.stringify({name:NAME})));
         const list=(files.data&&files.data.data)||files.data||[];
-        if(Array.isArray(list)){for(const f of list){if(String(f.fileName||'').includes(NAME.slice(0,12))){await apiInPage('/api/reportRemoveFile',{params:{fileName:f.fileName}});}}}
+        if(Array.isArray(list)){for(const f of list){if(String(f.fileName||'').startsWith(NAME+'_')){await apiInPage('/api/reportRemoveFile',{params:{fileName:f.fileName}});}}}
         return mine.length;
     }catch(_){return -1;}
 }
@@ -114,12 +115,19 @@ try{
  const reportId=await ev(`(async()=>{const r=await fetch('/api/project',{headers:{'x-access-token':window.scadiaAccessToken}});
     const j=await r.json();const d=j.data||j;const hit=((d&&d.reports)||[]).find(x=>x.name==='${NAME}');return hit?hit.id:null;})()`);
  if(!reportId)throw new Error('saved report id not found in project');
- const playPos=await ev(`(()=>{const row=[...document.querySelectorAll('tr.my-mat-row')].find(r=>r.textContent.includes('${NAME}'));
+ await ev(`(()=>{const row=[...document.querySelectorAll('tr.my-mat-row')].find(r=>r.textContent.includes('${NAME}'));
     if(!row)throw new Error('row missing');
     const b=[...row.querySelectorAll('button')].find(b=>b.querySelector('mat-icon')?.textContent?.trim()==='play_arrow');
-    const r=b.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
- await clickAt(playPos);
- results.push({step:'build-accepted-immediately-after-save',reportId,pass:true});
+    if(!b||b.disabled)throw new Error('generate button unavailable');
+    b.click();})()`);
+ let accepted=null;
+ for(let i=0;i<20;i++){
+     const r=await apiInPage('/api/reportStatus?id='+encodeURIComponent(reportId));
+     if(r.status===200&&['running','completed','failed'].includes(r.data?.status?.state)){accepted=r.data.status;break;}
+     await sleep(250);
+ }
+ results.push({step:'build-accepted-after-reopen',reportId,pass:!!accepted});
+ if(!accepted)throw new Error('Generate click did not produce an accepted server request');
  // 轮询真实终态（页面上下文内调用 API，凭据不落地）
  let terminal=null;
  for(let i=0;i<60;i++){
@@ -130,13 +138,15 @@ try{
  }
  results.push({step:'build-terminal-state',terminal,pass:!!terminal&&terminal.state==='completed'&&!!terminal.file});
  // 展开行详情，核对本次文件出现在列表
- const rowPos=await ev(`(()=>{const row=[...document.querySelectorAll('tr.my-mat-row')].find(r=>r.textContent.includes('${NAME}'));
-    const r=row.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
- await clickAt(rowPos);
+ await ev(`(()=>{const row=[...document.querySelectorAll('tr.my-mat-row')].find(r=>r.textContent.includes('${NAME}'));
+    const b=row?.querySelector('.mat-column-expand button');
+    if(!b)throw new Error('expand button missing');
+    if(b.querySelector('mat-icon')?.textContent?.trim()==='expand_more')b.click();})()`);
  await sleep(2500);
  const details=await ev(`(()=>{const row=[...document.querySelectorAll('tr.my-mat-row')].find(r=>r.textContent.includes('${NAME}'));
     const det=row.nextElementSibling;return {expanded:!!det&&(det.textContent.includes('.pdf')),text:(det?.textContent||'').slice(0,200)};})()`);
- results.push({step:'details-show-this-run-pdf',details,pass:!!details.expanded&&details.text.includes('.pdf')});
+ const generatedName=terminal?.file?.split(/[\\/]/).pop();
+ results.push({step:'details-show-this-run-pdf',details,generatedName,pass:!!details.expanded&&!!generatedName&&details.text.includes(generatedName)});
  // UI 删除：remove 列（clear 图标，行内最后一个按钮）→ 确认对话框 → 行消失 → 重载仍不存在
  const delPos=await ev(`(()=>{const row=[...document.querySelectorAll('tr.my-mat-row')].find(r=>r.textContent.includes('${NAME}'));
     const btns=[...row.querySelectorAll('button')];const b=btns[btns.length-1];
