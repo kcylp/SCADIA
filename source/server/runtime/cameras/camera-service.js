@@ -64,6 +64,11 @@ function toPublic(camera) {
     if (!camera) { return null; }
     const copy = Object.assign({}, camera);
     delete copy.password;
+    // Custom URL templates are editable metadata, but may contain userinfo. Keep the
+    // fields for the editor while applying the same mask as resolved endpoints.
+    for (const key of ['rtspTemplate', 'snapshotTemplate', 'mjpegTemplate']) {
+        if (typeof copy[key] === 'string') { copy[key] = maskUrl(copy[key]); }
+    }
     copy.hasPassword = !!camera.password;
     copy.endpoints = publicEndpoints(camera);
     copy.statusTagLinked = !!camera.statusTagId;
@@ -83,8 +88,14 @@ async function save(payload) {
     if (payload.id) {
         const existing = await storage.getCamera(payload.id);
         assert(existing, 'CAM_NOT_FOUND', 'camera not found: ' + payload.id);
-        // keep the stored password when the client sends none (masked edit)
+        // Keep secrets when the editor submits masked values. The public projection is
+        // intentionally not round-trippable as a credential-bearing template.
         if (!payload.password) { cam.password = existing.password; }
+        for (const key of ['rtspTemplate', 'snapshotTemplate', 'mjpegTemplate']) {
+            if (typeof payload[key] === 'string' && payload[key].includes('***:***@')) {
+                cam[key] = existing[key];
+            }
+        }
     }
     const saved = await storage.save(cam);
     return toPublic(saved);

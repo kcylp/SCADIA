@@ -721,6 +721,10 @@ export class ProjectService {
                 exist.text = notification.text;
                 exist.type = notification.type;
                 exist.mode = notification.mode;
+                // 八场景订阅字段：编辑既有订阅时必须同步，否则保存后场景选择会被静默丢弃。
+                exist.sceneIds = notification.sceneIds;
+                exist.scenePhases = notification.scenePhases;
+                exist.sceneKinds = notification.sceneKinds;
             } else {
                 this.projectData.notifications.push(notification);
             }

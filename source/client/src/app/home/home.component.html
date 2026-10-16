@@ -3,7 +3,7 @@
 	</mat-progress-bar>
 </div>
 <mat-sidenav-container class="sidenav-container" [hasBackdrop]="false">
-	<mat-sidenav #matsidenav *ngIf="showNavigation && showSidenav" class="sidenav" [mode]="showSidenav"
+	<mat-sidenav #matsidenav *ngIf="showNavigation && !router.url.startsWith('/home/v_zc_') && showSidenav" class="sidenav" [mode]="showSidenav"
 		[disableClose]="showSidenav === 'side'">
 		<app-sidenav #sidenav [sidenav]="matsidenav" (goToPage)="onGoToPage($event)" (goToLink)="onGoToLink($event)"></app-sidenav>
 	</mat-sidenav>
@@ -12,7 +12,7 @@
 		[style.--header-button-height]="layoutHeader.buttonHeight ? layoutHeader.buttonHeight + 'px' : null"
 		[style.background-color]="backgroudColor"
 		(click)="checkToCloseSideNav()">
-		<div *ngIf="showNavigation"
+		<div *ngIf="showNavigation && !router.url.startsWith('/home/v_zc_')"
 			 class="header"
 			 [style.--header-height]="layoutHeader.height ? layoutHeader.height + 'px' : null"
 			 [style.--header-button-height]="layoutHeader.buttonHeight ? layoutHeader.buttonHeight + 'px' : null"
@@ -138,6 +138,12 @@
 					</mat-menu>
 				</div>
 				<div class="header-language">
+					<button mat-button title="{{'header.ai-analysis' | translate}}" (click)="onOpenAiAnalysis()">
+						<mat-icon aria-hidden="true">query_stats</mat-icon>
+						<span>{{'header.ai-analysis' | translate}}</span>
+					</button>
+				</div>
+				<div class="header-language">
 					<button mat-icon-button title="{{'header.help-manual' | translate}}" (click)="onOpenManual()">
 						<mat-icon aria-label="Manual">menu_book</mat-icon>
 					</button>
@@ -164,8 +170,8 @@
 			</div>
 		</div>
 		<div id="container"
-			 [ngClass]="showNavigation?'home-container-nav':'home-container'"
-			 [style.top.px]="showNavigation ? (layoutHeader.height || defaultHeaderHeight) : 0"
+			 [ngClass]="showNavigation && !router.url.startsWith('/home/v_zc_')?'home-container-nav':'home-container'"
+			 [style.top.px]="showNavigation && !router.url.startsWith('/home/v_zc_') ? (layoutHeader.height || defaultHeaderHeight) : 0"
 			 #container
 			 (click)="checkToCloseSideNav()">
 			<ng-container *ngIf="!showHomeLink && homeView">

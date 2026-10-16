@@ -456,6 +456,10 @@ export class DeviceListComponent implements OnInit, AfterViewInit {
         return channel ? channel.name : id;
     }
 
+    trackChannelById(_index: number, channel: { id: string }): string {
+        return channel.id;
+    }
+
     /** Options for the channel filter dropdown ('__all__' and '' are the sentinels). */
     channelFilterOptions(): Array<{ id: string, name: string }> {
         const options = [{ id: this.channelAll, name: '__all__' }];

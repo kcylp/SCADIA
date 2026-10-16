@@ -40,6 +40,7 @@ export class LoginComponent {
 	}
 
 	onOkClick(): void {
+		if (this.submitLoading || !this.isValidate()) { return; }
 		this.errorEnabled = true;
 		this.messageError = '';
 		this.signIn();
@@ -60,7 +61,10 @@ export class LoginComponent {
 			this.projectService.reload();
 		}, error => {
 			this.submitLoading = false;
-			this.translateService.get('msg.signin-failed').subscribe((txt: string) => this.messageError = txt);
+			const key = error.status === 401 ? 'msg.signin-failed'
+				: error.status === 429 ? 'msg.signin-rate-limit'
+				: error.status === 0 ? 'msg.signin-network-error' : 'msg.signin-server-error';
+			this.translateService.get(key).subscribe((txt: string) => this.messageError = txt);
 		});
 	}
 

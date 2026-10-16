@@ -81,7 +81,12 @@ export abstract class ResourceStorageService {
 
     public abstract removeReportFile(fileName: string): Observable<void>;
 
-    public abstract buildReport(report: Report): Observable<void>;
+    public abstract buildReport(report: Report, onSettled?: (status: { state: string; error?: string }) => void): Observable<void>;
+
+    /** 最后一次生成的真实状态：running / completed / failed；不支持轮询的实现返回 error。 */
+    public getReportStatus(reportId: string): Observable<{ state: string; at?: number; error?: string }> {
+        return new Observable(observer => observer.error(new Error('Not supported')));
+    }
 
     public static defileProject(source: ProjectData): ProjectData {
         if (!source) {return source;}

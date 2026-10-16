@@ -102,7 +102,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     constructor(private projectService: ProjectService,
         private changeDetector: ChangeDetectorRef,
         public dialog: MatDialog,
-        private router: Router,
+        public router: Router,
         private route: ActivatedRoute,
         private hmiService: HmiService,
         private toastr: ToastrService,
@@ -124,6 +124,16 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
             .then(r => { if (!r.ok) { throw new Error('HTTP ' + r.status); } return r.json(); })
             .then(prj => { this.projectService.setProject(prj, true); })
             .catch(err => { console.error('demo switch failed: ' + err); });
+    }
+
+    /** Open the same-origin AI evidence workspace without putting the auth token in the URL. */
+    onOpenAiAnalysis() {
+        const popup = window.open('/ai-analysis', 'scadia-ai-analysis', 'popup,width=1180,height=820,resizable=yes,scrollbars=yes');
+        if (popup) {
+            popup.focus();
+        } else {
+            this.toastr.warning('分析窗口被浏览器拦截；请允许弹窗，或直接访问 /ai-analysis', '', { timeOut: 8000 });
+        }
     }
 
     /** 90-AH: open the user manual (web copy of the shipped CHM) in a new tab. */
@@ -253,6 +263,11 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     async onGoToPage(viewId: string, force: boolean = false, options: any = {}) {
+        const monitorRoute = { v_zc_g1: '/scenes', v_zc_home: '/monitor-home', v_zc_g4: '/video', v_zc_g7: '/analysis' }[viewId];
+        if (monitorRoute) {
+            await this.router.navigateByUrl(monitorRoute);
+            return;
+        }
         if (viewId === this.viewAsAlarms) {
             this.onAlarmsShowMode('expand');
             this.checkToCloseSideNav();
@@ -489,7 +504,8 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
             if (!viewToShow) {
                 viewToShow = this.hmi.views[0];
             }
-            let startView = this.hmi.views.find(x => x.name === this.route.snapshot.queryParamMap.get('viewName')?.trim());
+            const requestedView = (this.route.snapshot.paramMap.get('viewName') || this.route.snapshot.queryParamMap.get('viewName'))?.trim();
+            let startView = this.hmi.views.find(x => x.id === requestedView || x.name === requestedView);
             if (startView) {
                 viewToShow = startView;
             }
@@ -508,6 +524,8 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
                 console.error('loadHmi: failed to load view ' + viewToShow?.id, err);
                 this.toastr.error('view "' + (viewToShow && viewToShow.name) + '" could not be loaded', '', { timeOut: 5000 });
             }
+            const monitorRoute = {v_zc_g1:'/scenes',v_zc_home:'/monitor-home',v_zc_g4:'/video',v_zc_g7:'/analysis'}[viewToShow.id];
+            if (monitorRoute && !Utils.isKioskMode()) { await this.router.navigateByUrl(monitorRoute); return; }
             this.homeView = viewToShow;
             this.setBackground();
             // check sidenav
@@ -535,7 +553,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
                 } else {
                     this.showSidenav = 'over';
                 }
-                this.sidenav.setLayout(this.hmi.layout);
+                this.sidenav?.setLayout(this.hmi.layout);
             }
             if (this.hmi.layout) {
                 if (this.hmi.layout.header) {

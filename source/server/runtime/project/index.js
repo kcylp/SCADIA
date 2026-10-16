@@ -287,6 +287,7 @@ function setProjectData(cmd, value) {
                 section.name = value.id;
                 toremove = removeRecipe(value);
             } else if (cmd === ProjectDataCmdType.SetNotification) {
+                if (value.type === 'scenes') require('../../scene-subscription').validateSubscription(value);
                 section.table = prjstorage.TableType.NOTIFICATIONS;
                 section.name = value.id;
                 setNotification(value);

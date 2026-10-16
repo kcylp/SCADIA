@@ -21,7 +21,7 @@ const arch = require('./architecture');
 const matrix = require('./capability-matrix');
 
 const PROJECT_ROOT = matrix.PROJECT_ROOT;
-const CONTRACT_MD = path.join(PROJECT_ROOT, '22_契约06_存储平面五域契约.md');
+const CONTRACT_MD = path.join(PROJECT_ROOT, 'docs', 'archive', '22_契约06_存储平面五域契约.md');
 const CONTRACT_JS = path.join(arch.SERVER_ROOT, 'runtime', 'storage', 'contract.js');
 
 const BT = String.fromCharCode(96);

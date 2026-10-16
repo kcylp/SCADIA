@@ -112,6 +112,43 @@ describe('Alarms status authorization', () => {
         manager.stop();
     }
 
+    it('acknowledges only the selected event and persists operator identity', async () => {
+        await initManager({ secureEnabled: true }, [makeProjectAlarm('selected', 'tag-a', {})]);
+        const row = manager.getAlarmsValues(null, -1)[0];
+        expect(await manager.setAlarmAck(row.name, 'operator-test', -1, row.ontime)).to.equal(true);
+        const saved = manager.getAlarmsValues(null, -1)[0];
+        expect(saved.acktime).to.be.greaterThan(0);
+        const history = await manager.getAlarmsHistory({}, -1);
+        expect(history.find(a => a.name === 'selected' && a.type === row.type).userack).to.equal('operator-test');
+    });
+
+    it('rejects a stale event identity without acknowledging the current event', async () => {
+        await initManager({ secureEnabled: true }, [makeProjectAlarm('selected', 'tag-a', {})]);
+        const row = manager.getAlarmsValues(null, -1)[0];
+        let failure;
+        try { await manager.setAlarmAck(row.name, 'operator-test', -1, row.ontime - 1); } catch (e) { failure = e; }
+        expect(failure.code).to.equal(409);
+        expect(manager.getAlarmsValues(null, -1)[0].acktime).to.equal(0);
+    });
+
+    it('rejects invalid event identity and keeps the legacy ACK signature working', async () => {
+        await initManager({ secureEnabled: true }, [makeProjectAlarm('selected', 'tag-a', {})]);
+        const row = manager.getAlarmsValues(null, -1)[0];
+        let failure;
+        try { await manager.setAlarmAck(null, 'operator-test', -1, row.ontime); } catch (e) { failure = e; }
+        expect(failure.code).to.equal(400);
+        expect(await manager.setAlarmAck(row.name, 'operator-test', -1)).to.equal(true);
+    });
+
+    it('keeps ACK permission checks with a matching event identity', async () => {
+        await initManager({ secureEnabled: true, userRole: false }, [makeProjectAlarm('selected', 'tag-a', {permission:2})]);
+        const row = manager.getAlarmsValues(null, -1)[0];
+        let failure;
+        try { await manager.setAlarmAck(row.name, 'operator-test', 1, row.ontime); } catch (e) { failure = e; }
+        expect(failure.code).to.equal(401);
+        expect(manager.getAlarmsValues(null, -1)[0].acktime).to.equal(0);
+    });
+
     it('filters alarm status counts by group permission bitmask', async () => {
         const alarmA = makeProjectAlarm('visible-alarm', 'device-a^~^tag-a', { permission: 1 << 8 });
         const alarmB = makeProjectAlarm('hidden-alarm', 'device-a^~^tag-b', { permission: 2 << 8 });

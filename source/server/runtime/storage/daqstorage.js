@@ -245,14 +245,17 @@ async function querySeries(tagIds, fromTs, toTs, options) {
     for (const tagId of queryable) {
         if (opts.signal && opts.signal.cancelled) { envelope.status[tagId] = QUERY_STATUS.CANCELLED; continue; }
         let rows = null;
+        let timeoutId;
         try {
             rows = await Promise.race([
                 getNodeValues(tagId, fromTs, toTs),
-                new Promise((_res, rej) => setTimeout(() => rej(new Error("QUERY_TIMEOUT")), limits.timeoutMs))
+                new Promise((_res, rej) => { timeoutId = setTimeout(() => rej(new Error("QUERY_TIMEOUT")), limits.timeoutMs); })
             ]);
         } catch (err) {
             envelope.status[tagId] = (err && err.message === "QUERY_TIMEOUT") ? QUERY_STATUS.TIMEOUT : QUERY_STATUS.BACKEND_ERROR;
             continue;
+        } finally {
+            if (timeoutId) { clearTimeout(timeoutId); }
         }
         if (!Array.isArray(rows) || !rows.length) {
             envelope.status[tagId] = QUERY_STATUS.NO_DATA;

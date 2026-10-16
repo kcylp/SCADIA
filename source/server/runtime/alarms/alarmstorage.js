@@ -227,9 +227,11 @@ function removeAlarm(alarm) {
  * Close the database
  */
 function close() {
-    if (db_alarms) {
-        db_alarms.close();
-    }
+    const db = db_alarms;
+    db_alarms = null;
+    if (!db) { return Promise.resolve(); }
+    // sqlite3.close is asynchronous; callers must be able to await release before reopening.
+    return new Promise((resolve, reject) => db.close(err => err ? reject(err) : resolve()));
 }
 
 module.exports = {

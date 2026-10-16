@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   可靠启动 开诚智枢 SCADIA 服务端（含前置检查与可选沙箱模式）。
 
@@ -108,28 +108,28 @@ Write-Step '4.5/5 启动实时视频代理（可选）'
 $proxyScript = Join-Path $repo 'source\tools\mjpeg-proxy.cjs'
 $proxyProc = $null
 $ff = Get-Command ffmpeg -ErrorAction SilentlyContinue
-if ($ff -and (Test-Path $proxyScript)) {
-    # 一个源只拉一次 RTSP，多个画面窗共享；没有 ffmpeg 就跳过（画面回落抓拍模式）
+if (-not $Sandbox -and $ff -and (Test-Path $proxyScript)) {
+    # 一个源只拉一次 RTSP，多个画面窗共享；缺依赖时明确标记不可用。
     # 路径里有空格与中文：Start-Process 不会自动加引号，参数必须自己包起来，
     # 否则 node 收到的是被截断的路径，进程直接起不来（实测踩过这个坑）。
     $proxyLog = Join-Path $projectDir '_logs\mjpeg-proxy.log'
     New-Item -ItemType Directory -Force -Path (Split-Path $proxyLog) | Out-Null
-    $proxyArgs = @('"' + $proxyScript + '"')
+    $proxyArgs = @('"' + $proxyScript + '"', '"' + (Join-Path $runDir '_appdata\mjpeg-sources.json') + '"')
     $proxyProc = Start-Process -FilePath $nodeExe -ArgumentList $proxyArgs -PassThru -WindowStyle Hidden -RedirectStandardOutput $proxyLog -RedirectStandardError ($proxyLog + '.err')
     Write-Ok "实时视频代理已启动 :1886（MJPEG，供画面里的视频窗使用）"
 } else {
-    Write-Host '    (未找到 ffmpeg，跳过实时视频代理：画面将使用抓拍模式，约 1~2 帧/秒)' -ForegroundColor Yellow
+    Write-Host '    (未启动视频代理：沙箱不启动现场辅助服务；缺少 ffmpeg 时实时视频和检测不可用，页面会显示离线)' -ForegroundColor Yellow
 }
 
 Write-Step '4.6/5 启动相机事件桥接器（可选）'
 $bridgeScript = Join-Path $repo 'source\tools\scadia-event-bridge.cjs'
-$bridgeCfg = Join-Path $projectDir '_appdata\video-events.json'
+$bridgeCfg = Join-Path $runDir '_appdata\video-events.json'
 $bridgeProc = $null
-if ((Test-Path $bridgeScript) -and (Test-Path $bridgeCfg)) {
+if (-not $Sandbox -and (Test-Path $bridgeScript) -and (Test-Path $bridgeCfg)) {
     # 把相机自带事件（遮挡/区域入侵/移动/视频丢失）送进平台：报警、计数、画面出框都靠它。
     # 与视频代理同样：路径含空格与中文，参数必须自己加引号。
     $bridgeLog = Join-Path $projectDir '_logs\event-bridge.log'
-    $bridgeArgs = @('"' + $bridgeScript + '"')
+    $bridgeArgs = @('"' + $bridgeScript + '"', '"' + $bridgeCfg + '"')
     $bridgeProc = Start-Process -FilePath $nodeExe -ArgumentList $bridgeArgs -PassThru -WindowStyle Hidden -RedirectStandardOutput $bridgeLog -RedirectStandardError ($bridgeLog + '.err')
     Write-Ok '相机事件桥接器已启动（遮挡/入侵/移动 → 平台报警与计数）'
 } else {
@@ -138,7 +138,7 @@ if ((Test-Path $bridgeScript) -and (Test-Path $bridgeCfg)) {
 
 Write-Step '4.7/5 启动人体检测与轨迹追踪服务（可选）'
 $trackerScript = Join-Path $repo 'source\tools\scadia-ai-tracker.py'
-$trackerCfg = Join-Path $projectDir '_appdata\ai-tracker.json'
+$trackerCfg = Join-Path $runDir '_appdata\ai-tracker.json'
 $trackerProc = $null
 # 找可用的 Python：本机 'python' 可能是 WindowsApps 的商店占位符（能查到路径但一跑就报错），
 # 所以必须真的执行一次 --version 验证，而不是只看 Get-Command 有没有结果。
@@ -150,7 +150,7 @@ foreach ($cand in @(@('py', '-3'), @('python', ''), @('python3', ''))) {
     $v = & $exe @extra --version 2>&1
     if ($LASTEXITCODE -eq 0 -and ($v -join ' ') -match 'Python 3') { $pyExe = $exe; $pyArgs = $extra; break }
 }
-if ($pyExe -and (Test-Path $trackerScript) -and (Test-Path $trackerCfg)) {
+if (-not $Sandbox -and $pyExe -and (Test-Path $trackerScript) -and (Test-Path $trackerCfg)) {
     # 人体检测 + 轨迹追踪：相机原生给不了"人在哪、走过哪条线"，必须外接模型。
     # 依赖：pip install ultralytics opencv-python；有 N 卡的工作站装 CUDA 版 torch 即自动用卡。
     $trackerLog = Join-Path $projectDir '_logs\ai-tracker.log'
@@ -163,9 +163,39 @@ if ($pyExe -and (Test-Path $trackerScript) -and (Test-Path $trackerCfg)) {
     Write-Host '    依赖安装：pip install ultralytics opencv-python   （有显卡的工作站装 CUDA 版 torch 即可自动用卡）' -ForegroundColor Yellow
 }
 
+$thermalTrackerProc = $null
+$thermalTrackerCfg = Join-Path $runDir '_appdata\ai-tracker-thermal.json'
+if (-not $Sandbox -and $pyExe -and (Test-Path $trackerScript) -and (Test-Path $thermalTrackerCfg)) {
+    $thermalLog = Join-Path $projectDir '_logs\ai-tracker-thermal.log'
+    $thermalArgs = $pyArgs + @('"' + $trackerScript + '"', '"' + $thermalTrackerCfg + '"')
+    $thermalTrackerProc = Start-Process -FilePath $pyExe -ArgumentList $thermalArgs -PassThru -WindowStyle Hidden -RedirectStandardOutput $thermalLog -RedirectStandardError ($thermalLog + '.err')
+    Write-Ok '红外独立辅助检测已启动（独立通道、轨迹文件；不套用可见光围栏或安全帽检测）'
+}
+
+Write-Step '4.8/5 启动 VLM 视觉理解服务（可选）'
+$vlmScript = Join-Path $repo 'source\tools\scadia-scene-review.py'
+$vlmCfg = Join-Path $runDir '_appdata\vlm.json'
+$vlmProc = $null
+# VLM 是"事件级"视觉理解（对报警抓拍图出中文描述），与逐帧的追踪器互补。
+# 依赖本地模型目录（vlm.json 的 model_dir），运行期不联网；缺模型就跳过，不影响主程序。
+$vlmModelDir = $null
+if (Test-Path $vlmCfg) {
+    # vlm.json 是无 BOM 的 UTF-8（含中文 prompt），PS 5.1 默认按 GBK 读会乱码，必须显式 -Encoding UTF8
+    try { $vlmModelDir = (Get-Content $vlmCfg -Raw -Encoding UTF8 | ConvertFrom-Json).model_dir } catch { $vlmModelDir = $null }
+}
+if (-not $Sandbox -and $pyExe -and (Test-Path $vlmScript) -and (Test-Path $vlmCfg) -and $vlmModelDir -and (Test-Path $vlmModelDir)) {
+    $vlmLog = Join-Path $projectDir '_logs\vlm.log'
+    New-Item -ItemType Directory -Force -Path (Split-Path $vlmLog) | Out-Null
+    $vlmFull = $pyArgs + @('"' + $vlmScript + '"', '"' + $vlmCfg + '"')
+    $vlmProc = Start-Process -FilePath $pyExe -ArgumentList $vlmFull -PassThru -WindowStyle Hidden -RedirectStandardOutput $vlmLog -RedirectStandardError ($vlmLog + '.err')
+    Write-Ok 'VLM 八场景复核主管已启动（单工作进程、事件优先与周期轮询、硬超时回收）'
+} else {
+    Write-Host '    (跳过 VLM 服务：缺 Python 3 / source\tools\scadia-vlm.py / project/_appdata/vlm.json，或模型目录不存在)' -ForegroundColor Yellow
+}
+
 Write-Step '5/5 启动服务端'
 Write-Host "    地址: http://127.0.0.1:$Port/" -ForegroundColor White
-Write-Host '    登录: admin / 123456（安全默认为关闭，通常无需登录）' -ForegroundColor White
+Write-Host '    登录: 使用工程配置的授权账号' -ForegroundColor White
 Write-Host '    停止: Ctrl+C' -ForegroundColor White
 Write-Host ''
 
@@ -176,5 +206,7 @@ try {
     if ($proxyProc -and -not $proxyProc.HasExited) { Stop-Process -Id $proxyProc.Id -Force -ErrorAction SilentlyContinue }
     if ($bridgeProc -and -not $bridgeProc.HasExited) { Stop-Process -Id $bridgeProc.Id -Force -ErrorAction SilentlyContinue }
     if ($trackerProc -and -not $trackerProc.HasExited) { Stop-Process -Id $trackerProc.Id -Force -ErrorAction SilentlyContinue }
+    if ($thermalTrackerProc -and -not $thermalTrackerProc.HasExited) { Stop-Process -Id $thermalTrackerProc.Id -Force -ErrorAction SilentlyContinue }
+    if ($vlmProc -and -not $vlmProc.HasExited) { Stop-Process -Id $vlmProc.Id -Force -ErrorAction SilentlyContinue }
     Pop-Location
 }

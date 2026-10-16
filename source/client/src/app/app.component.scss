@@ -27,13 +27,15 @@
     .work-editor {
         background-color: #0a1017;
         height: calc(100% - (46px));
-        min-width: 800px;
+        margin-top: 46px;
+        min-width: 0;
+        overflow: auto;
     }
 
     .work-home {
         background-color: #0a1017;
         height: 100%;
-        min-width: 640px;
+        min-width: 0;
     }
 
     .header {

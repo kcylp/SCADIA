@@ -9,6 +9,9 @@ export class Notification {
     text: string;
     type: string;
     subscriptions = {};
+    sceneIds: string[] = ['V1','V2','V3','V4','V5','V6','V7','T1'];
+    scenePhases: string[] = ['candidate'];
+    sceneKinds: string[] = [];
     options: any;
     mode: NotificationMode = NotificationMode.all;
 
@@ -23,6 +26,7 @@ export enum NotificationMode {
 }
 
 export enum NotificationsType {
+    scenes = '八场景事件',
     alarms = 'notification.type-alarm',
     trigger = 'notification.type-trigger',
     access = 'notification.type-access'

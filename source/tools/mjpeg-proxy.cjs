@@ -63,6 +63,9 @@ function startFfmpeg(st) {
     while (idx > 0) {
       const frame = pending.slice(0, idx);
       pending = pending.slice(idx);
+      const jpegStart = frame.indexOf(Buffer.from([0xff, 0xd8]));
+      const jpegEnd = frame.lastIndexOf(Buffer.from([0xff, 0xd9]));
+      if (jpegStart >= 0 && jpegEnd > jpegStart) { st.jpeg = frame.subarray(jpegStart, jpegEnd + 2); st.updatedAt = Date.now(); }
       st.frames++;
       for (const res of st.clients) {
         try {
@@ -81,13 +84,13 @@ function startFfmpeg(st) {
 }
 
 http.createServer((req, res) => {
-  const m = /^\/(mjpeg|tile)\/([A-Za-z0-9_-]+)/.exec(req.url || '');
+  const m = /^\/(mjpeg|tile|snapshot)\/([A-Za-z0-9_-]+)(?:[?]|$)/.exec(req.url || '');
   if (!m) {
     if ((req.url || '').indexOf('/stats') === 0) {
       const out = { port: PORT, sources: {} };
       // clientIds: 画面脚本用 ?c=<窗 id> 自报身份；页面读这个名单判断"我这条连接是不是已经死了"
       // （实测：Chrome 对断掉的 MJPEG 流永不自动重连，只能靠页面自己发现并换地址重连）
-      for (const [k, v] of sources) { out.sources[k] = { clients: v.clients.size, clientIds: Array.from(v.clients).map(c => c.__cid).filter(Boolean), frames: v.frames, seconds: Math.round((Date.now() - v.since) / 1000), fps: Math.round(v.frames / Math.max(1, (Date.now() - v.since) / 1000) * 10) / 10 }; }
+      for (const [k, v] of sources) { out.sources[k] = { cameraId: loadSources().find(s => s.name === k)?.cameraId || null, updatedAt: v.updatedAt || 0, clients: v.clients.size, clientIds: Array.from(v.clients).map(c => c.__cid).filter(Boolean), frames: v.frames, seconds: Math.round((Date.now() - v.since) / 1000), fps: Math.round(v.frames / Math.max(1, (Date.now() - v.since) / 1000) * 10) / 10 }; }
       res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }); res.end(JSON.stringify(out)); return;
     }
     res.writeHead(404); res.end('not found'); return;
@@ -96,6 +99,13 @@ http.createServer((req, res) => {
   const def = loadSources().find(s => s.name === name);
   if (!def) { res.writeHead(404); res.end('source not configured: ' + name); return; }
   const st = ensureSource(def);
+  if (kind === 'snapshot') {
+    if (!st.jpeg || Date.now() - st.updatedAt > 5000) {
+      res.writeHead(503, { 'Retry-After': '1' }); res.end('Waiting for a fresh frame'); return;
+    }
+    res.writeHead(200, { 'Content-Type': 'image/jpeg', 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*', 'X-Frame-Time': String(st.updatedAt) });
+    res.end(st.jpeg); return;
+  }
   if (kind === 'tile') {
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end('<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:0;background:#000;overflow:hidden}img{width:100%;height:100%;object-fit:cover;display:block}</style></head><body><img src="/mjpeg/' + name + '"></body></html>');

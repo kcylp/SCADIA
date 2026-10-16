@@ -843,6 +843,7 @@ var runtime = module.exports = {
     get cameraFusion() { return cameras.fusion },
     get cameraGb28181() { return cameras.gb28181 },
     get cameraAi() { return cameras.ai },
+    get cameraScenes() { return cameras.scenes },
     get opcuaServer() { return opcuaServer },
     get alarmsMgr() { return alarmsMgr },
     get notificatorMgr() { return notificatorMgr },

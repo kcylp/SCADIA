@@ -21,6 +21,14 @@
         width: 120px;
     }
 
+    .header-actions {
+        display: flex;
+        align-items: center;
+        width: auto;
+        max-width: 100%;
+        height: 46px;
+    }
+
     .header-help {
         float: right;
         height: 36px;

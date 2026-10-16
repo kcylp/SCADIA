@@ -18,7 +18,7 @@
         <div class="my-form-field" style="padding-right: 10px;">
             <span>{{'device.list-channel' | translate}}</span>
             <mat-select [value]="channelFilter" style="width: 200px" (selectionChange)="onChannelFilterChange($event.value)">
-                <mat-option *ngFor="let ch of channelFilterOptions()" [value]="ch.id">
+                <mat-option *ngFor="let ch of channelFilterOptions(); trackBy: trackChannelById" [value]="ch.id">
                     <ng-container *ngIf="ch.name === '__all__'">{{'device.channels-filter-all' | translate}}</ng-container>
                     <ng-container *ngIf="ch.name === '__default__'">{{'device.channels-filter-default' | translate}}</ng-container>
                     <ng-container *ngIf="ch.name !== '__all__' && ch.name !== '__default__'">{{ ch.name }}</ng-container>

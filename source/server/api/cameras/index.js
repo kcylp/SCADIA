@@ -40,7 +40,8 @@ const ERR_HTTP = {
     GB_TIMEOUT: 504,
     AI_NOT_CONFIGURED: 503,
     AI_DISABLED: 503,
-    AI_BAD_PAYLOAD: 400
+    AI_BAD_PAYLOAD: 400,
+    AI_RULES_CONFLICT: 409
 };
 
 function sendError(res, err) {
@@ -79,6 +80,20 @@ function requireAction(req, res, action) {
         return null;
     }
     return auth;
+}
+
+function requireSceneView(req, res) {
+    // Global scene files have no per-camera ACL; match the unified analysis boundary.
+    if (!runtime.settings?.secureEnabled) { return authContext(req); }
+    if (!req.isAuthenticated) {
+        res.status(401).json({ error: 'CAM_UNAUTHENTICATED', message: 'Login required' });
+        return null;
+    }
+    return requireAction(req, res, 'admin');
+}
+
+function requireSceneAdmin(req, res) {
+    return require('../scene-auth').requireSceneAdmin(req, res, runtime, checkGroupsFnc);
 }
 
 function handle(promise, res, ok, op) {
@@ -456,18 +471,130 @@ module.exports = {
         // ingest one detection payload (bridge / engine webhook / manual test).
         // MQTT and WebSocket transports call the same service entry point.
         camApp.post('/api/ai/events', secureFnc, (req, res) => {
-            const auth = requireAction(req, res, 'operate');
+            const auth = runtime.settings?.secureEnabled ? requireAction(req, res, 'operate') : requireSceneAdmin(req, res);
             if (!auth) { return; }
             handle(ai().ingest(req.body, 'http'), res, r => res.json(r), 'ai-ingest');
+        });
+
+        let sceneStore;
+        const scenes = () => {
+            const active = runtime.cameraScenes || require('../../runtime/cameras').scenes;
+            if (active) { return active; }
+            if (!sceneStore) {
+                const { SceneStore } = require('../../runtime/cameras/scene-store');
+                sceneStore = new SceneStore(runtime.settings.workDir, runtime.settings.imagesFileDir);
+            }
+            return sceneStore;
+        };
+        let sceneCalibration;
+        const calibration = () => {
+            if (!sceneCalibration) {
+                sceneCalibration = new (require('../../runtime/cameras/scene-calibration').Calibration)(runtime.settings.workDir);
+            }
+            return sceneCalibration;
+        };
+        const rules = new (require('../../runtime/cameras/scene-rules').SceneRules)(runtime.settings.workDir);
+        camApp.get('/api/ai/scenes/rules/:source', secureFnc, (req, res) => {
+            if (!requireSceneView(req, res)) { return; }
+            handle(Promise.resolve().then(() => rules.read(req.params.source)), res, r => res.json(r), 'scene-rules');
+        });
+        camApp.put('/api/ai/scenes/rules/:source', secureFnc, (req, res) => {
+            if (!requireSceneAdmin(req, res)) { return; }
+            handle(Promise.resolve().then(() => rules.save(req.params.source, req.body, req.userId)), res, r => res.json(r), 'scene-rules-save');
+        });
+        camApp.get('/api/ai/scenes/calibration', secureFnc, (req, res) => {
+            if (!requireSceneAdmin(req, res)) { return; }
+            handle(Promise.resolve().then(() => calibration().read()), res, r => res.json(r), 'scene-calibration');
+        });
+        camApp.post('/api/ai/scenes/calibration', secureFnc, (req, res) => {
+            if (!requireSceneAdmin(req, res)) { return; }
+            handle(Promise.resolve().then(() => calibration().save(req.body, req.userId || 'unknown')), res, r => res.json(r), 'scene-calibration-save');
+        });
+        camApp.get('/api/ai/scenes', secureFnc, (req, res) => {
+            if (!requireSceneView(req, res)) { return; }
+            handle(Promise.resolve().then(() => scenes().status()), res, r => res.json(r), 'scenes');
+        });
+        camApp.get('/api/ai/scenes/frame/:source', secureFnc, (req, res) => {
+            if (!requireSceneView(req, res)) { return; }
+            const source = { visible: 'kuangqu1', thermal: 'kuangqu1-thermal' }[req.params.source];
+            if (!source) { return res.sendStatus(404); }
+            const upstream = require('http').get('http://127.0.0.1:1886/snapshot/' + source, response => {
+                if (response.statusCode !== 200) { response.resume(); return res.sendStatus(503); }
+                res.set('Cache-Control', 'no-store'); res.type('jpeg');
+                res.set('X-Frame-Time', response.headers['x-frame-time'] || '0');
+                response.on('error', () => res.destroy()); response.pipe(res);
+            });
+            upstream.setTimeout(4000, () => upstream.destroy());
+            upstream.on('error', () => { if (!res.headersSent) { res.sendStatus(503); } else { res.destroy(); } });
+            res.on('close', () => upstream.destroy());
+        });
+        const eventFrames = event => {
+            const frames = [{ file: event.shot, at: event.at }, ...(event.evidenceFrames || [])];
+            return frames.filter((f, i) => new RegExp('^scene-' + event.eventId + '(?:-[0-2])?\\.jpg$').test(f.file) &&
+                frames.findIndex(other => other.file === f.file) === i);
+        };
+        camApp.get('/api/ai/scene-events/:id/evidence-manifest', secureFnc, (req, res) => {
+            if (!requireSceneView(req, res)) { return; }
+            handle(Promise.resolve().then(() => scenes().getEvent(req.params.id)), res, event => {
+                const frames = eventFrames(event).map((f, index) => ({ at: f.at,
+                    available: require('fs').existsSync(require('path').join(runtime.settings.workDir, 'scene-evidence', f.file)),
+                    url: '/api/ai/scene-events/' + event.eventId + '/evidence?frame=' + index }));
+                res.set('Cache-Control', 'private, no-store');
+                res.json({ eventId: event.eventId, sceneId: event.sceneId, at: event.at,
+                    ackAt: event.ackAt, ackBy: event.ackBy, reviewStatus: event.reviewStatus, review: event.review, frames });
+            }, 'scene-evidence-manifest');
+        });
+        camApp.get('/api/ai/scene-events/:id/evidence', secureFnc, (req, res) => {
+            if (!requireSceneView(req, res)) { return; }
+            if (req.query.frame !== undefined && !/^[0-3]$/.test(req.query.frame)) { return res.sendStatus(400); }
+            handle(Promise.resolve().then(() => scenes().getEvent(req.params.id)), res, event => {
+                const frame = eventFrames(event)[Number(req.query.frame || 0)];
+                if (!frame) { return res.sendStatus(404); }
+                res.set('Cache-Control', 'private, no-store');
+                res.sendFile(require('path').join(runtime.settings.workDir, 'scene-evidence', frame.file), err => {
+                    if (err && !res.headersSent) { res.sendStatus(404); }
+                });
+            }, 'scene-evidence');
+        });
+        camApp.post('/api/ai/scene-review-tasks/claim', secureFnc, (req, res) => {
+            if (!requireSceneAdmin(req, res)) { return; }
+            handle(Promise.resolve().then(() => scenes().claimReview()), res, r => res.json({ task: r }), 'scene-review-claim');
+        });
+        camApp.post('/api/ai/scene-review-tasks/:id/result', secureFnc, (req, res) => {
+            if (!requireSceneAdmin(req, res)) { return; }
+            handle(Promise.resolve().then(() => scenes().finishReview(req.params.id, req.body)), res, r => res.json(r), 'scene-review-result');
+        });
+        camApp.get('/api/ai/scene-events/deliveries', secureFnc, (req, res) => {
+            if (!requireSceneAdmin(req, res)) { return; }
+            handle(scenes().deliveries(), res, rows => res.json({ rows }), 'scene-deliveries');
+        });
+        camApp.get('/api/ai/scene-events/summary', secureFnc, (req, res) => {
+            if (!requireSceneView(req, res)) { return; }
+            handle(Promise.resolve().then(() => scenes().aggregate(req.query)), res, r => res.json(r), 'scene-summary');
+        });
+        camApp.get('/api/ai/scene-events/export', secureFnc, (req, res) => {
+            if (!requireSceneView(req, res)) { return; }
+            handle(Promise.resolve().then(() => scenes().exportEvents(req.query)), res, r => {
+                res.set('Content-Disposition', 'attachment; filename="scadia-scene-events.json"');
+                res.json(r);
+            }, 'scene-export');
+        });
+        camApp.get('/api/ai/scene-events', secureFnc, (req, res) => {
+            if (!requireSceneView(req, res)) { return; }
+            handle(Promise.resolve().then(() => scenes().list(req.query)), res, r => res.json(r), 'scene-events');
+        });
+        camApp.post('/api/ai/scene-events/:id/ack', secureFnc, (req, res) => {
+            if (!requireSceneAdmin(req, res)) { return; }
+            handle(Promise.resolve().then(() => scenes().acknowledge(req.params.id, req.userId || 'unknown')), res, r => res.json(r), 'scene-ack');
         });
 
         // 报警计数清零：**当日与累计全部清空**（用户口径："所有都清除"）。
         // 计数文件由事件桥接器维护，平台不持有它们，所以这里是平台代写这两份 JSON。
         // 只清"次数"，不删报警记录本身 —— 报警记录在 /api/alarms，另有确认/删除流程。
         camApp.post('/api/ai/events/reset', secureFnc, (req, res) => {
-            const auth = requireAction(req, res, 'operate');
+            const auth = requireSceneAdmin(req, res);
             if (!auth) { return; }
-            handle(Promise.resolve(resetEventCounters(req)), res, r => res.json(r), 'ai-events-reset');
+            handle(resetEventCounters(req), res, r => res.json(r), 'ai-events-reset');
         });
 
         return camApp;
@@ -475,44 +602,8 @@ module.exports = {
     sendError: sendError
 };
 
-/**
- * 把报警计数清零（当日 + 累计）。
- *
- * 为什么在平台侧做：计数文件是事件桥接器写的（project/_appdata/video-events-count.json 私有、
- * project/_images/ai-counts.json 公开给画面读），浏览器不能直接写文件，所以由平台代写。
- * 桥接器每次 bump 都是"读文件 -> 加一 -> 写回"，所以清零后它自然从 1 重新开始，不用重启它。
- *
- * @param {object} req 取 req.userId 作为操作人，写进结果与公开文件的审计字段
- * @returns {{cleared:string[], at:string, by:string, error:string|null}}
- */
 function resetEventCounters(req) {
-    const fs = require('fs');
-    const path = require('path');
-    const out = {
-        cleared: [],
-        at: new Date().toISOString(),
-        by: (req && req.userId) || 'unknown',
-        error: null
-    };
-    const workDir = runtime.settings.workDir;
-    const imagesDir = runtime.settings.imagesFileDir;
-    const today = new Date().toISOString().slice(0, 10);
-    const targets = [
-        // 私有计数：直接清成空对象 —— 历史一并清除（用户明确要求"所有都清除"）
-        { file: path.join(workDir, 'video-events-count.json'), body: {} },
-        // 公开计数：画面读它，必须给出形状完整的零值，否则画面脚本会读到 undefined
-        {
-            file: path.join(imagesDir, 'ai-counts.json'),
-            body: { today: today, byKind: {}, total: {}, updatedAt: Date.now(), clearedAt: Date.now(), clearedBy: out.by }
-        }
-    ];
-    for (const t of targets) {
-        try {
-            fs.writeFileSync(t.file, JSON.stringify(t.body, null, 1), 'utf8');
-            out.cleared.push(path.basename(t.file));
-        } catch (err) {
-            out.error = (out.error ? out.error + '; ' : '') + path.basename(t.file) + ': ' + (err.message || err);
-        }
-    }
-    return out;
+    return require('../../runtime/cameras/event-counters').reset(
+        runtime.settings.workDir, runtime.settings.imagesFileDir, req.userId || 'unknown'
+    );
 }

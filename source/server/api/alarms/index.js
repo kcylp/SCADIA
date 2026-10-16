@@ -28,14 +28,14 @@ module.exports = {
          * GET current Alarms
          * Take from alarms storage and reply
          */
-        alarmsApp.get("/api/alarms", secureFnc, function(req, res) {
+        alarmsApp.get("/api/alarms", secureFnc, async function(req, res) {
             const permission = checkGroupsFnc(req);
 			 if (res.statusCode === 403) {
                 runtime.logger.error("api get alarms: Tocken Expired");
             } else {
                 try {
                     var filter = req.query.filter ? JSON.parse(req.query.filter) : null;
-                    var result = runtime.alarmsMgr.getAlarmsValues(filter, permission);
+                    var result = await runtime.alarmsMgr.getAllAlarmsValues(filter, permission);
                     // res.header("Access-Control-Allow-Origin", "*");
                     // res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
                     if (result) {
@@ -91,11 +91,15 @@ module.exports = {
 			 if (res.statusCode === 403) {
                 runtime.logger.error("api post alarms: Tocken Expired");
             } else {
-                runtime.alarmsMgr.setAlarmAck(req.body.params, req.userId, permission).then(function(data) {
+                const scene = typeof req.body.params === 'string' && req.body.params.startsWith('scene:');
+                if (scene && !require('../scene-auth').requireSceneAdmin(req, res, runtime, checkGroupsFnc)) { return; }
+                const ack = scene ? runtime.alarmsMgr.setSceneAlarmAck(req.body.params, req.userId, req.userGroups, req.body.expectedOntime) :
+                    runtime.alarmsMgr.setAlarmAck(req.body.params, req.userId, permission, req.body.expectedOntime);
+                ack.then(function(data) {
                     res.end();
                 }).catch(function(err) {
                     if (err.code) {
-                        res.status(err.code).json({error:err.code, message: err.message});
+                        res.status(Number.isInteger(err.code) ? err.code : err.code === 'CAM_NOT_FOUND' ? 404 : 400).json({error:err.code, message: err.message});
                     } else {
                         res.status(400).json({error:"unexpected_error", message:err.toString()});
                     }

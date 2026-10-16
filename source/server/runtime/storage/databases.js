@@ -79,7 +79,8 @@ const DOMAIN_DB_FILES = {
     cameras: 'cameras.scadiap.db',
     recipes: 'recipes.scadiap.db',
     scheduler: 'scheduler.scadiap.db',
-    calibration: 'calibration.scadiap.db'
+    calibration: 'calibration.scadiap.db',
+    'scene-events': 'scene-events.scadiap.db'
 };
 
 /**

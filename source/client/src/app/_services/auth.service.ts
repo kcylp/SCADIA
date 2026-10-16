@@ -23,7 +23,12 @@ export class AuthService {
 		private settings: SettingsService
 	) {
 		this.useRefreshCookieAuth = !!this.settings.getSettings()?.enableRefreshCookieAuth;
-		let user = JSON.parse(sessionStorage.getItem('currentUser'));
+		let user: UserProfile = null;
+		try {
+			user = JSON.parse(sessionStorage.getItem('currentUser'));
+		} catch (_) {
+			sessionStorage.removeItem('currentUser');
+		}
 		if (user) {
 			this.currentUser = user;
 			if (!this.useRefreshCookieAuth && this.isTokenExpired(this.currentUser?.token)) {
@@ -71,7 +76,10 @@ export class AuthService {
 		});
 		return this.http.post(this.endPointConfig + '/api/signin', { username: username, password: password }, { headers: header }).pipe(
 			tap((result: any) => {
-				if (result) {
+				if (result?.status !== 'success' || !result?.data?.token) {
+					throw new Error('Invalid sign-in response');
+				}
+				if (result.data) {
 					this.currentUser = <UserProfile>result.data;
 					if (this.currentUser.info) {
 						this.currentUser.infoRoles = JSON.parse(this.currentUser.info)?.roles;

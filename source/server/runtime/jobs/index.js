@@ -4,6 +4,7 @@
 
 var Report = require('./report');
 var Cleaner = require('./cleaner');
+var fs = require('fs');
 
 'use strict';
 
@@ -20,6 +21,9 @@ function JobsManager(_runtime) {
     var status = JobsStatusEnum.INIT;   // Current status (StateMachine)
     var lastCheck = 0;                  // Timestamp to check intervall only in IDLE
     var forceCheck = true;              // Flag to manage the forcing of check jobs
+    var reportStatus = {};              // report.id -> last build result (accepted vs really done)
+    var pendingForced = {};             // report.id -> 已接受但尚未执行的强制请求代号（在配置重载中存活）
+    var reportGeneration = 0;           // 每次接受请求递增；终态回调只允许写自己代号的状态
 
     /**
      * Start TimerInterval to check Jobs
@@ -54,16 +58,27 @@ function JobsManager(_runtime) {
     }
 
     this.forceReport = function (report) {
-        var found = false;
-        jobsList.forEach(item => {    
-            let jp = item.job.getProperty();
-            if (item.type === JobType.Report && jp.id === report.id) {
-                item.force = true;
-                forceCheck = true;
-                found = true;
-            }
-        });
-        return found;
+        if (!report || !report.id) { return false; }
+        var found = jobsList.some(item => item.type === JobType.Report && item.job.getProperty().id === report.id);
+        if (!found && status !== JobsStatusEnum.LOAD && status !== JobsStatusEnum.INIT) {
+            // 稳态下不在任务列表：真正的未知报表，维持原有 not_found 语义。
+            return false;
+        }
+        // 重载窗口（LOAD/INIT）内先接受请求：重载完成后若报表仍不存在，_loadJobs 的孤儿检查会显式失败，
+// 而不是像旧实现那样把 force 挂在即将被替换的 Job 对象上、重载后静默丢失。
+        reportGeneration += 1;
+        pendingForced[report.id] = reportGeneration;
+        reportStatus[report.id] = { state: 'running', at: new Date().getTime(), gen: reportGeneration };
+        forceCheck = true;
+        return true;
+    }
+
+    /**
+     * Last build result of a forced/scheduled report run: {state: running|completed|failed, at, error?}
+     */
+    this.getReportStatus = function (id) {
+        var entry = reportStatus[id];
+        return entry ? { state: entry.state, at: entry.at, error: entry.error, file: entry.file } : { state: 'unknown' };
     }
 
     /**
@@ -83,6 +98,7 @@ function JobsManager(_runtime) {
             if (_checkWorking(true)) {
                 _loadJobs().then(function () {
                     status = JobsStatusEnum.IDLE;
+                    _failOrphanedForcedRequests();
                     _checkWorking(false);
                 }).catch(function (err) {
                     _checkWorking(false);
@@ -157,6 +173,27 @@ function JobsManager(_runtime) {
     }
 
     /**
+     * 重载完成后，为已接受但无法继续的强制请求给出显式失败终态：
+     * 报表已删除或调度为 none 都不会被加载进任务列表，请求不能永远留在 running。
+     */
+    var _failOrphanedForcedRequests = function () {
+        var loaded = {};
+        jobsList.forEach(function (item) {
+            if (item.type === JobType.Report) { loaded[item.job.getProperty().id] = true; }
+        });
+        Object.keys(pendingForced).forEach(function (id) {
+            if (loaded[id]) { return; }
+            var gen = pendingForced[id];
+            delete pendingForced[id];
+            var entry = reportStatus[id];
+            if (entry && entry.state === 'running' && entry.gen === gen) {
+                reportStatus[id] = { state: 'failed', at: new Date().getTime(), gen: gen,
+                    error: '报表未加载：已删除或调度类型为 none，无法生成' };
+            }
+        });
+    }
+
+    /**
      * Check Jobs status
      */
     var _checkJobs = function () {
@@ -165,7 +202,43 @@ function JobsManager(_runtime) {
             try {
                 jobsList.forEach(item => {
                     if (item.job['execute']) {
-                        jobsExecute.push(item.job['execute'](new Date(), item.force));
+                        var forced = false, gen = 0;
+                        if (item.type === JobType.Report) {
+                            var reportId = item.job.getProperty().id;
+                            if (pendingForced[reportId] != null) {
+                                // 消费已接受的强制请求（可能在配置重载期间提交，因此不能依赖 Job 对象上的标志）。
+                                gen = pendingForced[reportId];
+                                delete pendingForced[reportId];
+                                forced = true;
+                                reportStatus[reportId] = { state: 'running', at: new Date().getTime(), gen: gen };
+                            }
+                        }
+                        var run = item.job['execute'](new Date(), forced);
+                        if (item.type === JobType.Report) {
+                            (function (rid, rgen, rforced) {
+                                run.then(function (value) {
+                                    var entry = reportStatus[rid];
+                                    // 仅本次请求自己的回调可以写终态：旧请求晚到不得串改新请求。
+                                    if (!entry || entry.state !== 'running' || entry.gen !== rgen) { return; }
+                                    if (!rforced) {
+                                        // 非强制轮空（resolve(true) 的“本次不执行”）不改写请求状态。
+                                        return;
+                                    }
+                                    if (typeof value === 'string' && fs.existsSync(value)) {
+                                        reportStatus[rid] = { state: 'completed', at: new Date().getTime(), gen: rgen, file: value };
+                                    } else {
+                                        // 强制请求却拿到轮空/无文件：这是丢失或异常，必须显式失败。
+                                        reportStatus[rid] = { state: 'failed', at: new Date().getTime(), gen: rgen,
+                                            error: '报表生成未产生可读取的文件（' + (value === true ? '调度轮空' : '写盘失败') + '）' };
+                                    }
+                                }, function (err) {
+                                    var entry = reportStatus[rid];
+                                    if (!entry || entry.state !== 'running' || entry.gen !== rgen) { return; }
+                                    reportStatus[rid] = { state: 'failed', at: new Date().getTime(), gen: rgen, error: String(err && err.message || err) };
+                                });
+                            })(reportId, gen, forced);
+                        }
+                        jobsExecute.push(run);
                         item.force = false;
                     }
                 });

@@ -252,6 +252,9 @@ import { CameraListComponent } from './cameras/camera-list/camera-list.component
 import { CameraEditorComponent } from './cameras/camera-editor/camera-editor.component';
 import { CameraViewComponent } from './cameras/camera-view/camera-view.component';
 import { VideoWallComponent } from './cameras/video-wall/video-wall.component';
+import { SceneBoardComponent } from './cameras/scene-board/scene-board.component';
+import { WorkspaceShellComponent } from './workspace-shell.component';
+import { AnalysisWorkspaceComponent } from './analysis-workspace.component';
 import { RecipeEditorComponent } from './recipes/recipe-editor/recipe-editor.component';
 import { RecipeProgressComponent } from './recipes/recipe-progress/recipe-progress.component';
 import { HtmlRecipeViewComponent, HtmlRecipeComponent } from './gauges/controls/html-recipe/html-recipe.component';
@@ -458,6 +461,9 @@ export const myCustomTooltipDefaults: MatTooltipDefaultOptions = {
         CameraEditorComponent,
         CameraViewComponent,
         VideoWallComponent,
+        SceneBoardComponent,
+        WorkspaceShellComponent,
+        AnalysisWorkspaceComponent,
         RecipeEditorComponent,
         RecipeProgressComponent,
         HtmlRecipeViewComponent,

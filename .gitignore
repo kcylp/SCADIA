@@ -20,6 +20,37 @@ __pycache__/
 *.key
 *.pem
 
+# Site data, snapshots, credentials and packaged runtimes stay local
+/project/
+/runtime/
+/models/
+/backups/
+/artifacts/
+/delivery/
+/source/client/dist/
+/source/server/_ui_verify/
+/source/server/_appdata/
+/source/server/_images/
+/source/server/_db/
+/source/server/_logs/
+**/pki/
+**/PKI/
+**/certificates/
+*.db
+*.db-*
+*.sqlite*
+*.pt
+*.onnx
+*.engine
+*.safetensors
+*.zip
+*.7z
+*.exe
+*.dll
+
+# 本地交接包含现场敏感配置，不入库
+/交接_新窗口继续_2026-10-14.md
+
 # 系统杂项
 Thumbs.db
 .DS_Store

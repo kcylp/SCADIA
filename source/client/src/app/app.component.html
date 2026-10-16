@@ -7,6 +7,8 @@
     </div>
     <mat-progress-bar *ngIf="isLoading" mode="indeterminate" color="warn" style="position: absolute; top: 0px; left: 0px; right: 0px; z-index: 99999;">
     </mat-progress-bar>
+    <app-workspace-shell *ngIf="workspace(); else legacy"><router-outlet></router-outlet></app-workspace-shell>
+    <ng-template #legacy>
     <app-header class="header" [hidden]="isHidden()"></app-header>
     <div [ngClass]="getClass()">
         <router-outlet></router-outlet>
@@ -16,4 +18,5 @@
             <ngx-fab-item-button color="rgba(68,138,255, 1)" content="{{'app.home' | translate}}" (click)="onGoTo('home')" (touchend)="onGoTo('home')"></ngx-fab-item-button>
         </ngx-fab-button>
     </div>
+    </ng-template>
 </div>

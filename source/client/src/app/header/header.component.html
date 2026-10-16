@@ -19,7 +19,8 @@
 
 </div>
 
-<div class="header-right" *ngIf="!editorMode">
+<div class="header-right header-actions" *ngIf="!editorMode">
+    <button mat-button (click)="onOpenAiAnalysis()"><mat-icon aria-hidden="true">query_stats</mat-icon>{{'header.ai-analysis' | translate}}</button>
     <button mat-button title="{{'wall.title' | translate}}" class="main-btn" (click)="onGoToVideoWall()">
         <mat-icon aria-label="Video wall">video_settings</mat-icon>
     </button>

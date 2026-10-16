@@ -11,6 +11,7 @@ const media = require('./media-gateway');
 const fusion = require('./fusion');
 const gb28181 = require('./gb28181');
 const ai = require('./ai');
+let sceneStore;
 
 function init(_settings, _log, _runtime) {
     return storage.init(_settings, _log).then(() => {
@@ -33,6 +34,9 @@ function init(_settings, _log, _runtime) {
             return { enabled: false, error: err.message };
         });
     }).then(() => {
+        const { SceneStore } = require('./scene-store');
+        sceneStore = new SceneStore(_settings.workDir, _settings.imagesFileDir, () => _runtime.events.emit('alarms-status:changed'));
+        sceneStore.start(err => _log.error('Scene ledger: ' + err.message));
         _log.info('runtime init cameras successful!', true);
     });
 }
@@ -43,7 +47,8 @@ function stop() {
         .catch(() => {})
         .then(() => gb28181.stop())
         .catch(() => {})
-        .then(() => storage.close());
+        .then(() => sceneStore ? sceneStore.close() : undefined)
+        .then(() => { sceneStore = null; return storage.close(); });
 }
 
 module.exports = {
@@ -55,5 +60,6 @@ module.exports = {
     media: media,
     fusion: fusion,
     gb28181: gb28181,
-    ai: ai
+    ai: ai,
+    get scenes() { return sceneStore; }
 };

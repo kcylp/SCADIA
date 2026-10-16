@@ -55,7 +55,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 		// browser still running an older bundle, and nothing on the page could tell them apart. The
 		// stamp is in the console AND in the tab title, so 'which build is this' is answered by looking
 		// at either, without DevTools.
-		const BUILD = 'b-20261007-0245';
+		const BUILD = 'b-20261015-workspace';
 		// eslint-disable-next-line no-console
 		console.log(`SCADIA v${environment.version}  client build ${BUILD}`);
 		this.document.title = this.document.title + '  [' + BUILD + ']';
@@ -163,6 +163,15 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 		this.securityEnabled = this.projectService.isSecurityEnabled();
 	}
 
+    workspace(): boolean {
+        const route = this.location.path().split('?')[0];
+        if (!this.projectService.getViewFromId('v_zc_g1')) { return false; }
+        if (Utils.isKioskMode() || route === '/view' || this.isArViewRoute(route) || route === '/editor' || route === '/lab') { return false; }
+        if (!route || route === '/home') { return false; }
+        if (route.startsWith('/home/')) { return /^\/home\/v_zc_(g[1-6]|home)$/.test(route); }
+        return true;
+    }
+
 	isHidden() {
 		const urlEnd = this.location.path();
 		if (!urlEnd || urlEnd.startsWith('/home') || urlEnd === '/lab' || this.isArViewRoute(urlEnd)) {
@@ -187,7 +196,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
         if (route.startsWith('/view') || this.isArViewRoute(route) || Utils.isKioskMode()) {
             return false;
         }
-        return this.showdev;
+        return this.showdev && !this.workspace();
     }
 
     private isArViewRoute(route: string): boolean {

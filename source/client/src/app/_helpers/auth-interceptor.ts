@@ -47,7 +47,8 @@ export class AuthInterceptor implements HttpInterceptor {
             tap((event: HttpEvent<any>) => {
             }, (err: any) => {
                 if (err instanceof HttpErrorResponse) {
-                    if (!skipError && (err.status === 401 || err.status === 403)) {
+                    // A forbidden action is not an expired session; keep the operator signed in.
+                    if (!skipError && err.status === 401 && authService.getUserToken()) {
                         authService.signOut();
                         const projectService = this.injector.get(ProjectService);
                         projectService.reload();

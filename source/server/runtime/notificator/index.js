@@ -22,6 +22,8 @@ function NotificatorManager(_runtime) {
     var clearNotifications = false;     // Flag to clear current notifications from DB
     var lastCheck = 0;                  // Timestamp to check intervall only in IDLE
     var subscriptionStatus = {};        // Status of subscription, to check if there are some change
+    var sceneWorking = false;
+    var sceneTimer = null;
     var notificationsFound = 0;         // Notifications found to check
 
     /**
@@ -30,6 +32,19 @@ function NotificatorManager(_runtime) {
     this.start = function () {
         return new Promise(function (resolve, reject) {
             logger.info('notificator check start', true);
+            if (sceneTimer) clearInterval(sceneTimer);
+            sceneTimer = setInterval(async () => {
+                if (sceneWorking) return;
+                sceneWorking = true;
+                try {
+                    const current = await runtime.project.getNotifications();
+                    await require('./scenes').deliverScenes(runtime.cameraScenes, current, async (sub, text) => {
+                        if (_isValidEmail(sub.receiver)) await runtime.notificatorMgr.sendMail(new MailMessage(null, sub.receiver, sub.name, text), null);
+                        else throw new Error('Scene subscriptions require an email receiver');
+                    });
+                } catch (_) { logger.warn('notificator.scene.delivery.failed'); }
+                finally { sceneWorking = false; }
+            }, 15000);
             notifyCheckStatus = setInterval(function () {
                 _checkStatus();     // check in 20 seconds interval
             }, 20000);
@@ -42,6 +57,7 @@ function NotificatorManager(_runtime) {
     this.stop = function () {
         return new Promise(function (resolve, reject) {
             logger.info('notificator.stop-checkstatus!', true);
+            if (sceneTimer) { clearInterval(sceneTimer); sceneTimer = null; }
             if (notifyCheckStatus) {
                 clearInterval(notifyCheckStatus);
                 notifyCheckStatus = null;

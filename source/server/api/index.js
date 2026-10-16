@@ -27,6 +27,7 @@ var camerasApi = require('./cameras');
 var opcuaServerApi = require('./opcua-server');
 var devicesApi = require('./devices');
 var reportingApi = require('./reporting');
+var analysisApi = require('./analysis');
 const reports = require('../dist/reports.service');
 const reportsApi = new reports.ReportsApiService();
 const verifyApiOrToken = require('./apikeys/verify-api-or-token');
@@ -66,12 +67,13 @@ function init(_server, _runtime) {
             const limiter = rateLimit({
                 windowMs: runtime.settings.apiRateLimitWindowMs || 5 * 60 * 1000,
                 max: runtime.settings.apiRateLimitMax || 1000,
-                skip: (req) => req.path === '/api/version'
+                skip: (req) => req.path === '/api/version' || /^\/api\/ai\/scenes\/frame\/(visible|thermal)$/.test(req.path)
             });
 
             // Apply before route handlers so sub-routers are covered too.
             apiApp.use(authLimiter);
             apiApp.use(limiter);
+            apiApp.use(rateLimit({ windowMs:60000, max:1500, skip:req=>!/^\/api\/ai\/scenes\/frame\/(visible|thermal)$/.test(req.path) }));
 
             prjApi.init(runtime, authMiddleware, verifyGroups);
             apiApp.use(prjApi.app());
@@ -111,6 +113,8 @@ function init(_server, _runtime) {
             apiApp.use(apiKeysApi.app());
             reportingApi.init(runtime, authMiddleware);
             apiApp.use(reportingApi.app());
+            analysisApi.init(runtime, authMiddleware, verifyGroups);
+            apiApp.use(analysisApi.app());
 
             apiApp.use((err, req, res, next) => {
                 if (err?.type === 'entity.too.large') {

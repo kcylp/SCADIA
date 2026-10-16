@@ -57,6 +57,8 @@ export const DEFAULT_NAVIGATION: NaviItem[] = [
         page('n-view', 'nav.view', 'image', 'home')
     ]),
     group('g-monitor', 'nav.group-monitor', 'visibility', [
+        page('n-scenes', '八场景检测', 'center_focus_strong', 'scenes'),
+        page('n-people', '人员统计', 'groups', 'people'),
         page('n-video', 'nav.video', 'video_settings', 'video'),
         page('n-alarms', 'nav.alarms', 'notifications_active', 'alarms')
     ]),

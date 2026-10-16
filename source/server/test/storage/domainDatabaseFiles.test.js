@@ -39,7 +39,8 @@ const DOMAIN_STORES = {
     cameras: 'runtime/cameras/camera-storage.js',
     recipes: 'runtime/recipes/recipe-storage.js',
     scheduler: 'runtime/scheduler/scheduler-storage.js',
-    calibration: 'runtime/calibration/calibration-storage.js'
+    calibration: 'runtime/calibration/calibration-storage.js',
+    'scene-events': 'runtime/cameras/scene-store.js'
 };
 
 /**
@@ -55,7 +56,7 @@ function storeModulesOnDisk() {
         for (const e of entries) {
             const full = path.join(dir, e.name);
             if (e.isDirectory()) { walk(full); continue; }
-            if (!/storage\.js$/i.test(e.name)) { continue; }
+            if (!/(?:storage|scene-store)\.js$/i.test(e.name)) { continue; }
             const rel = path.relative(SERVER_ROOT, full).split(path.sep).join('/');
             if (rel.startsWith('runtime/storage/')) { continue; }
             found.push(rel);
@@ -205,7 +206,7 @@ describe('domain database files (contract 05 G-MIG-2)', () => {
             const rel = DOMAIN_STORES[id];
             const text = fs.readFileSync(path.join(SERVER_ROOT, rel), 'utf8');
             expect(text, rel + ' must ask the storage plane for its database file')
-                .to.contain("storage.resolveDbFile(settings.workDir, '" + id + "'");
+                .to.contain("storage.resolveDbFile(" + (id === 'scene-events' ? 'workDir' : 'settings.workDir') + ", '" + id + "'");
         }
     });
 

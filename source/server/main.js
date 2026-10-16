@@ -498,6 +498,8 @@ const SHELL_ROUTES = [
     '/calibrations/:id',
     '/cameras',
     '/video',
+    '/scenes',
+    '/people',
     '/mes',
     '/ems',
     '/reports',
@@ -532,7 +534,57 @@ for (const shellPath of SHELL_ROUTES) {
 }
 app.use(BASE_PATH + '/' + settings.httpUploadFileStatic, express.static(settings.uploadFileDir));
 app.use(BASE_PATH + '/_images', express.static(settings.imagesFileDir));
+
+// 同源、免鉴权的 MJPEG 反向代理：/live/<name> -> 本机 mjpeg-proxy(:1886)/mjpeg/<name>。
+// 为什么需要（现场实测）：演示画面的视频窗是 <svg image>，它无法携带登录 token，href 指向
+// /api/cameras/:id/snapshot 必然 401 而黑屏；直连跨端口的 :1886 又依赖画面脚本改钉，脆弱。
+// 这个同源路径让视频窗无需脚本即可出图，且是 MJPEG（低延迟 ~20fps）。
+const MJPEG_PROXY_PORT = Number(process.env.SCADIA_MJPEG_PORT || 1886);
+app.get(BASE_PATH + '/live/:name', function (req, res) {
+    const name = String(req.params.name || '').replace(/[^A-Za-z0-9_-]/g, '');
+    if (!name) { res.status(400).end('bad name'); return; }
+    // 透传原查询串（如 ?c=w1）给 mjpeg-proxy，保留窗 id 以便看门狗判断在线名单
+    const qi = req.originalUrl.indexOf('?');
+    const qs = qi >= 0 ? req.originalUrl.substring(qi) : '';
+    const preq = http.request({
+        host: '127.0.0.1', port: MJPEG_PROXY_PORT,
+        path: '/mjpeg/' + name + qs, method: 'GET'
+    }, function (pres) {
+        if (pres.statusCode !== 200) {
+            res.writeHead(pres.statusCode || 502).end('no stream');
+            pres.resume();
+            return;
+        }
+        res.writeHead(200, {
+            'Content-Type': pres.headers['content-type'] || 'multipart/x-mixed-replace; boundary=ffmpeg',
+            'Cache-Control': 'no-store', 'Pragma': 'no-cache'
+        });
+        pres.pipe(res);
+    });
+    preq.on('error', function () {
+        try { if (!res.headersSent) { res.writeHead(502); } res.end('mjpeg proxy unavailable'); } catch (e) { }
+    });
+    req.on('close', function () { try { preq.destroy(); } catch (e) { } });
+    preq.end();
+});
+
+// 自检回传：测试页把每个视频窗的加载结果上报到这里，便于在无浏览器工具时远程判定。
+app.get(BASE_PATH + '/liverep', function (req, res) {
+    try {
+        fs.appendFileSync(path.join(settings.logDir, 'livetest.log'),
+            new Date().toISOString() + ' ' + JSON.stringify(req.query) + '\n');
+    } catch (e) { }
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.end('ok');
+});
 app.use(BASE_PATH + '/_widgets', express.static(settings.widgetsFileDir));
+// Unified analysis popup is intentionally same-origin so the existing auth interceptor
+// and browser session remain in force; it never receives a token in the URL.
+app.get(BASE_PATH + '/ai-analysis', function (req, res) {
+    const userFile = path.join(rootDir, 'ai-analysis.html');
+    const installFile = path.join(__dirname, 'ai-analysis.html');
+    res.sendFile(fs.existsSync(userFile) ? userFile : installFile);
+});
 // 90-AF: demo project documents for the in-app demo switcher (header component).
 app.use(BASE_PATH + '/_demos', express.static(path.join(rootDir, '_demos')));
 // 90-AH: the user manual (same content as the shipped CHM) served as web pages, so the

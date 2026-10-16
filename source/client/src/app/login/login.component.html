@@ -1,4 +1,4 @@
-<form>
+<form (ngSubmit)="onOkClick()">
 	<div style="width: 320px;position: relative;padding-bottom: 40px">
 		<h1 mat-dialog-title style="display:inline-block;margin-bottom: 14px !important;">{{'dlg.login-title' | translate}}</h1>
 		<div mat-dialog-content>
@@ -33,8 +33,8 @@
 			<mat-spinner style="margin: auto" diameter="20"></mat-spinner>
 		</div>
 		<div mat-dialog-actions class="dialog-action">
-			<button mat-raised-button [disabled]="disableCancel" [mat-dialog-close]="">{{'dlg.cancel' | translate}}</button>
-			<button mat-raised-button color="primary" (click)="onOkClick()" [disabled]="!isValidate()" cdkFocusInitial>{{'dlg.ok' | translate}}</button>
+			<button type="button" mat-raised-button [disabled]="disableCancel || submitLoading" [mat-dialog-close]="">{{'dlg.cancel' | translate}}</button>
+			<button type="submit" mat-raised-button color="primary" [disabled]="!isValidate() || submitLoading" cdkFocusInitial>{{'dlg.ok' | translate}}</button>
 		</div>
 	</div>
 </form>

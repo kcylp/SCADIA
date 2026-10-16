@@ -260,6 +260,12 @@ export class ResClientService implements ResourceStorageService {
         });
     }
 
+    getReportStatus(reportId: string): Observable<{ state: string; at?: number; error?: string }> {
+        return new Observable(observer => {
+            observer.error('Not supported!');
+        });
+    }
+
     removeReportFile(fileName: string): Observable<void> {
         return new Observable(observer => {
             observer.error('Not supported!');

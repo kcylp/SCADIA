@@ -19,7 +19,7 @@ const http = require('http');
 const { spawn } = require('child_process');
 
 const CFG = process.argv[2] || path.join(__dirname, '..', '..', 'project', '_appdata', 'video-events.json');
-const COUNTERS = path.join(path.dirname(CFG), 'video-events-count.json');
+const counters = require('../server/runtime/cameras/event-counters');
 // 相机的事件名来自 /ISAPI/Event/triggers 的 <eventType>。这里必须**逐字**对上，
 // 否则事件会被当成本地未知类型静默记进另一个桶 —— 实测踩过：相机的遮挡事件名是
 // 'tamperdetection'，而本表原先只有 'tamper'，于是"遮挡报警永远为 0"，看着像功能没做。
@@ -42,6 +42,16 @@ const BUCKET = {
   fielddetection: 'fielddetection', linedetection: 'linedetection',
   videoloss: 'videoloss', badvideo: 'videoloss'
 };
+// 分类报警标签：把事件按类型写进平台派生标签（项目 devices['AI视频分析'] 下的 tag），
+// 让「报警名」与窗口/卡片的类型一一对应。值经 /api/fusion/event 写入。
+const TAGTAG = {
+  shelteralarm: '遮挡报警', tamperdetection: '遮挡报警', tamper: '遮挡报警',
+  motiondetection: '移动侦测报警', VMD: '移动侦测报警',
+  fielddetection: '区域入侵报警', linedetection: '区域入侵报警',
+  videoloss: '视频丢失报警', badvideo: '视频丢失报警'
+};
+const TAG_HOLD_MS = 8000;
+const tagTimers = {};
 const KNOWN = new Set(Object.keys(LABELS));
 const warned = {};
 
@@ -49,20 +59,8 @@ function log(m) { console.log(new Date().toISOString().slice(11, 19) + ' [bridge
 function cfg() { try { return JSON.parse(fs.readFileSync(CFG, 'utf8')); } catch (e) { return null; } }
 
 function bump(kind) {
-  let all = {};
-  try { all = JSON.parse(fs.readFileSync(COUNTERS, 'utf8')); } catch (e) { }
-  const day = new Date().toISOString().slice(0, 10);
-  all[day] = all[day] || {};
-  all[day][kind] = (all[day][kind] || 0) + 1;
-  try { fs.writeFileSync(COUNTERS, JSON.stringify(all, null, 1), 'utf8'); } catch (e) { }
-  // 同一份计数另外写进 _images（平台静态目录，画面脚本无需鉴权即可读）
-  try {
-    const pub = path.join(path.dirname(CFG), '..', '_images', 'ai-counts.json');
-    const kinds = {};
-    for (const d of Object.keys(all)) { for (const k of Object.keys(all[d])) { kinds[k] = (kinds[k] || 0) + all[d][k]; } }
-    const today = new Date().toISOString().slice(0, 10);
-    fs.writeFileSync(pub, JSON.stringify({ today: today, byKind: (all[today] || {}), total: kinds, updatedAt: Date.now() }, null, 1), 'utf8');
-  } catch (e) { }
+  return counters.bump(path.dirname(CFG), path.join(path.dirname(CFG), '..', '_images'), kind)
+    .catch(e => log('计数写入失败: ' + e.message));
 }
 
 // ---------------------------------------------------------------- 报警抓拍
@@ -178,6 +176,30 @@ function send(c, payload) {
   req.write(body); req.end();
 }
 
+// 写分类报警标签（1=报警中，0=复位）。失败只记一次日志，不打断事件流。
+function writeTag(c, tagId, value) {
+  if (!tagId) { return; }
+  const body = JSON.stringify({ tagId: tagId, value: value });
+  const opt = { host: '127.0.0.1', port: 1881, path: '/api/fusion/event', method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } };
+  if (token) { opt.headers['x-access-token'] = token; }
+  const req = http.request(opt, res => {
+    let d = ''; res.on('data', x => d += x); res.on('end', () => {
+      if (res.statusCode === 401) { signin(c, () => writeTag(c, tagId, value)); return; }
+      if (res.statusCode !== 200) { log('写报警标签失败 ' + tagId + '=' + value + ' -> ' + res.statusCode + ' ' + d.slice(0, 120)); }
+    });
+  });
+  req.on('error', e => log('写报警标签错误 ' + tagId + ': ' + e.message));
+  req.write(body); req.end();
+}
+// 触发时置 1，HOLD 后置 0（相机不保证发 inactive，故用定时器兜底）
+function pulseTag(c, kind) {
+  const tagId = TAGTAG[kind];
+  if (!tagId) { return; }
+  if (tagTimers[kind]) { clearTimeout(tagTimers[kind]); }
+  writeTag(c, tagId, 1);
+  tagTimers[kind] = setTimeout(() => { tagTimers[kind] = null; writeTag(c, tagId, 0); }, Number((cfg() || c).holdMs || TAG_HOLD_MS));
+}
+
 const last = {};
 const active = {};
 function onEvent(c, kind, state) {
@@ -197,6 +219,8 @@ function onEvent(c, kind, state) {
     // active 的那种事件才需要发清除，否则就是白白的空转流量。
     if (!active[kind]) { return; }
     active[kind] = false;
+    if (tagTimers[kind]) { clearTimeout(tagTimers[kind]); tagTimers[kind] = null; }
+    if (TAGTAG[kind]) { writeTag(c, TAGTAG[kind], 0); }
     setTimeout(() => send(c, { camera: c.cameraId, type: 'end' }), 300);
     log('事件结束: ' + label + '（' + kind + '）');
     return;
@@ -209,6 +233,7 @@ function onEvent(c, kind, state) {
   log('事件触发: ' + label + '（' + kind + ' -> 桶 ' + bucket + '，今日累计已记）');
   captureShot(c, kind, label);
   publishFence(c, bucket);
+  pulseTag(c, kind);
   send(c, {
     camera: c.cameraId,
     imageWidth: 1920, imageHeight: 1080,
@@ -216,16 +241,21 @@ function onEvent(c, kind, state) {
   });
 }
 
+let xmlBuffer = '';
 function parseChunk(chunk) {
+  // stdout is a byte stream: one XML alert can be split across arbitrary data events.
+  // Retain only an incomplete tail and cap it so a broken camera cannot grow memory.
+  xmlBuffer += String(chunk || '');
+  if (xmlBuffer.length > 1024 * 1024) { xmlBuffer = xmlBuffer.slice(-256 * 1024); }
   const events = [];
   let p = 0;
   while (true) {
-    const a = chunk.indexOf('<EventNotificationAlert', p);
-    if (a < 0) break;
-    const b = chunk.indexOf('</EventNotificationAlert>', a);
-    if (b < 0) break;
-    const xml = chunk.slice(a, b);
-    p = b + 1;
+    const a = xmlBuffer.indexOf('<EventNotificationAlert', p);
+    if (a < 0) { xmlBuffer = xmlBuffer.slice(Math.max(0, xmlBuffer.length - 128)); break; }
+    const b = xmlBuffer.indexOf('</EventNotificationAlert>', a);
+    if (b < 0) { xmlBuffer = xmlBuffer.slice(a); break; }
+    const xml = xmlBuffer.slice(a, b);
+    p = b + '</EventNotificationAlert>'.length;
     const grab = (tag) => { const s = xml.indexOf('<' + tag + '>'); if (s < 0) return null; const e = xml.indexOf('</' + tag + '>', s); return e < 0 ? null : xml.slice(s + tag.length + 2, e).trim(); };
     events.push({ kind: grab('eventType'), state: grab('eventState') || 'active' });
   }

@@ -54,14 +54,14 @@
                     hideToggle="true" [expanded]="panelsState.panelView">
                     <mat-expansion-panel-header class="svg-workarea-leftbar-h">
                         <mat-panel-title>
-                            <mat-icon aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="panelsState.panelView">expand_less</mat-icon>
-                            <mat-icon aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="!panelsState.panelView">expand_more</mat-icon>
+                            <mat-icon attr.aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="panelsState.panelView">expand_less</mat-icon>
+                            <mat-icon attr.aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="!panelsState.panelView">expand_more</mat-icon>
                             <span>{{'editor.views' | translate}}</span> <!-- PROJECT VIEWS -->
                         </mat-panel-title>
-                        <mat-icon aria-label="{{'editor.view-add' | translate}}" matTooltip="{{'editor.view-add' | translate}}" *ngIf="panelsState.panelView" class="leftbar-edit-btn"
+                        <mat-icon attr.aria-label="{{'editor.view-add' | translate}}" matTooltip="{{'editor.view-add' | translate}}" *ngIf="panelsState.panelView" class="leftbar-edit-btn"
                             (click)="onAddDoc();$event.stopPropagation()">add
                         </mat-icon>
-                        <mat-icon aria-label="{{'editor.view-import' | translate}}" matTooltip="{{'editor.view-import' | translate}}" *ngIf="panelsState.panelView" class="leftbar-edit-btn"
+                        <mat-icon attr.aria-label="{{'editor.view-import' | translate}}" matTooltip="{{'editor.view-import' | translate}}" *ngIf="panelsState.panelView" class="leftbar-edit-btn"
                             (click)="onImportView();$event.stopPropagation()">system_update_alt</mat-icon>
                         <input type="file" #viewFileImportInput style="display: none" id="viewFileUpload" (click)="$event.stopPropagation()"
                             (change)="onViewFileChangeListener($event)" accept=".json" />
@@ -81,8 +81,8 @@
                         (closed)="panelsState.panelGeneral=false;savePanelState()" hideToggle="true" [expanded]="panelsState.panelGeneral">
                         <mat-expansion-panel-header class="svg-workarea-leftbar-h">
                             <mat-panel-title>
-                                <mat-icon aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="panelsState.panelGeneral">expand_less</mat-icon>
-                                <mat-icon aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="!panelsState.panelGeneral">expand_more</mat-icon>
+                                <mat-icon attr.aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="panelsState.panelGeneral">expand_less</mat-icon>
+                                <mat-icon attr.aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="!panelsState.panelGeneral">expand_more</mat-icon>
                                 <span>{{'editor.general' | translate}}</span> <!-- GENERAL -->
                             </mat-panel-title>
                         </mat-expansion-panel-header>
@@ -127,8 +127,8 @@
                         hideToggle="true" [expanded]="panelsState.panelD">
                         <mat-expansion-panel-header class="svg-workarea-leftbar-h">
                             <mat-panel-title>
-                                <mat-icon aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="panelsState.panelD">expand_less</mat-icon>
-                                <mat-icon aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="!panelsState.panelD">expand_more</mat-icon>
+                                <mat-icon attr.aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="panelsState.panelD">expand_less</mat-icon>
+                                <mat-icon attr.aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="!panelsState.panelD">expand_more</mat-icon>
                                 <span>{{'editor.controls' | translate}}</span>
                             </mat-panel-title>
                         </mat-expansion-panel-header>
@@ -221,8 +221,8 @@
                         (closed)="panelsState[shGrp.name]=false;savePanelState()" hideToggle="true" [expanded]="panelsState[shGrp.name]">
                         <mat-expansion-panel-header class="svg-workarea-leftbar-h">
                             <mat-panel-title>
-                                <mat-icon aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="panelsState[shGrp.name]">expand_less</mat-icon>
-                                <mat-icon aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="!panelsState[shGrp.name]">expand_more</mat-icon>
+                                <mat-icon attr.aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="panelsState[shGrp.name]">expand_less</mat-icon>
+                                <mat-icon attr.aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="!panelsState[shGrp.name]">expand_more</mat-icon>
                                 <span>{{shGrp.name | translate}}</span>
                             </mat-panel-title>
                         </mat-expansion-panel-header>
@@ -238,8 +238,8 @@
                         hideToggle="true" [expanded]="panelsState.panelWidgets">
                         <mat-expansion-panel-header class="svg-workarea-leftbar-h">
                             <mat-panel-title>
-                                <mat-icon aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="panelsState.panelWidgets">expand_less</mat-icon>
-                                <mat-icon aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="!panelsState.panelWidgets">expand_more</mat-icon>
+                                <mat-icon attr.aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="panelsState.panelWidgets">expand_less</mat-icon>
+                                <mat-icon attr.aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="!panelsState.panelWidgets">expand_more</mat-icon>
                                 <span>{{ 'resources.lib-widgets' | translate }}</span>
                             </mat-panel-title>
                             <mat-icon class="leftbar-edit-btn" (click)="onWidgetKiosk();$event.stopPropagation()">widgets</mat-icon>
@@ -253,10 +253,10 @@
                     <mat-expansion-panel class="svg-workarea-leftbar-p" hideToggle="true">
                         <mat-expansion-panel-header class="svg-workarea-leftbar-h" style="max-height: 32px;height: 32px">
                             <mat-panel-title>
-                                <mat-icon aria-label="{{'a11y-panel-toggle' | translate}}" style="color: rgba(255,255, 255,0.4)">expand_more</mat-icon>
+                                <mat-icon attr.aria-label="{{'a11y-panel-toggle' | translate}}" style="color: rgba(255,255, 255,0.4)">expand_more</mat-icon>
                                 <span>{{'editor.resources' | translate}}</span>
                             </mat-panel-title>
-                            <mat-icon aria-label="{{'editor.image-add' | translate}}" matTooltip="{{'editor.image-add' | translate}}" class="leftbar-edit-btn" (click)="onAddResource();$event.stopPropagation()">add
+                            <mat-icon attr.aria-label="{{'editor.image-add' | translate}}" matTooltip="{{'editor.image-add' | translate}}" class="leftbar-edit-btn" (click)="onAddResource();$event.stopPropagation()">add
                             </mat-icon>
                         </mat-expansion-panel-header>
                     </mat-expansion-panel>
@@ -274,8 +274,8 @@
                         expanded="true" style="display:none">
                         <mat-expansion-panel-header class="svg-workarea-flybar-h">
                             <mat-panel-title>
-                                <mat-icon aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="panelPropertyIdOpenState">expand_less</mat-icon>
-                                <mat-icon aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="!panelPropertyIdOpenState">expand_more</mat-icon>
+                                <mat-icon attr.aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="panelPropertyIdOpenState">expand_less</mat-icon>
+                                <mat-icon attr.aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="!panelPropertyIdOpenState">expand_more</mat-icon>
                                 <span>{{'editor.interactivity' | translate}}</span> <!-- INTERACTIVITY -->
                             </mat-panel-title>
                         </mat-expansion-panel-header>
@@ -296,8 +296,8 @@
                         (closed)="panelPropertyTransformOpenState = false" hideToggle="true" expanded="true">
                         <mat-expansion-panel-header class="svg-workarea-leftbar-h">
                             <mat-panel-title>
-                                <mat-icon aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="panelPropertyTransformOpenState">expand_less</mat-icon>
-                                <mat-icon aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="!panelPropertyTransformOpenState">expand_more</mat-icon>
+                                <mat-icon attr.aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="panelPropertyTransformOpenState">expand_less</mat-icon>
+                                <mat-icon attr.aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="!panelPropertyTransformOpenState">expand_more</mat-icon>
                                 <span>{{'editor.transform' | translate}}</span> <!-- TRANSFORM SIZE/POSITION-->
                             </mat-panel-title>
                         </mat-expansion-panel-header>
@@ -504,8 +504,8 @@
                     <mat-expansion-panel id="align_panel" class="svg-workarea-fly-p" (opened)="panelAlignOpenState = true" (closed)="panelAlignOpenState = false" hideToggle="true" expanded="true">
                         <mat-expansion-panel-header class="svg-workarea-leftbar-h">
                             <mat-panel-title>
-                                <mat-icon aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="panelAlignOpenState">expand_less</mat-icon>
-                                <mat-icon aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="!panelAlignOpenState">expand_more</mat-icon>
+                                <mat-icon attr.aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="panelAlignOpenState">expand_less</mat-icon>
+                                <mat-icon attr.aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="!panelAlignOpenState">expand_more</mat-icon>
                                 <span>{{'editor.align' | translate}}</span> <!-- ALIGN-->
                             </mat-panel-title>
                         </mat-expansion-panel-header>
@@ -533,8 +533,8 @@
                     <mat-expansion-panel id="tool_stroke" class="svg-workarea-fly-p" (opened)="panelFillOpenState = true" (closed)="panelFillOpenState = false" hideToggle="true" expanded="true">
                         <mat-expansion-panel-header class="svg-workarea-leftbar-h">
                             <mat-panel-title>
-                                <mat-icon aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="panelFillOpenState">expand_less</mat-icon>
-                                <mat-icon aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="!panelFillOpenState">expand_more</mat-icon>
+                                <mat-icon attr.aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="panelFillOpenState">expand_less</mat-icon>
+                                <mat-icon attr.aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="!panelFillOpenState">expand_more</mat-icon>
                                 <span>{{'editor.stroke' | translate}}</span> <!-- STROKE-->
                             </mat-panel-title>
                         </mat-expansion-panel-header>
@@ -601,8 +601,8 @@
                         expanded="true">
                         <mat-expansion-panel-header class="svg-workarea-leftbar-h">
                             <mat-panel-title>
-                                <mat-icon aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="panelMarkerOpenState">expand_less</mat-icon>
-                                <mat-icon aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="!panelMarkerOpenState">expand_more</mat-icon>
+                                <mat-icon attr.aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="panelMarkerOpenState">expand_less</mat-icon>
+                                <mat-icon attr.aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="!panelMarkerOpenState">expand_more</mat-icon>
                                 <span>{{'editor.marker' | translate}}</span> <!-- MARKER-->
                             </mat-panel-title>
                         </mat-expansion-panel-header>
@@ -633,8 +633,8 @@
                         expanded="true">
                         <mat-expansion-panel-header class="svg-workarea-leftbar-h">
                             <mat-panel-title>
-                                <mat-icon aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="panelHyperlinkOpenState">expand_less</mat-icon>
-                                <mat-icon aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="!panelHyperlinkOpenState">expand_more</mat-icon>
+                                <mat-icon attr.aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="panelHyperlinkOpenState">expand_less</mat-icon>
+                                <mat-icon attr.aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="!panelHyperlinkOpenState">expand_more</mat-icon>
                                 <span>{{'editor.hyperlink' | translate}}</span> <!-- HYPELINK -->
                             </mat-panel-title>
                         </mat-expansion-panel-header>
@@ -649,8 +649,8 @@
                         (closed)="panelEventOpenState = false" hideToggle="true" expanded="true">
                         <mat-expansion-panel-header class="svg-workarea-leftbar-h">
                             <mat-panel-title>
-                                <mat-icon aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="panelEventOpenState">expand_less</mat-icon>
-                                <mat-icon aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="!panelEventOpenState">expand_more</mat-icon>
+                                <mat-icon attr.aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="panelEventOpenState">expand_less</mat-icon>
+                                <mat-icon attr.aria-label="{{'a11y-panel-toggle' | translate}}" *ngIf="!panelEventOpenState">expand_more</mat-icon>
                                 <span>{{'editor.interactivity' | translate}}</span> <!-- INTERACTIVITY -->
                             </mat-panel-title>
                         </mat-expansion-panel-header>
@@ -689,15 +689,15 @@
                         <div id="editor_panel">
                             <div class="main-btn-sep"></div>
                             <button mat-button matTooltip="{{'editor.tools-launch-title' | translate}}" class="main-btn" (click)="onStartCurrent()">
-                                <mat-icon aria-label="{{'editor.tools-launch-title' | translate}}">play_arrow</mat-icon>
+                                <mat-icon attr.aria-label="{{'editor.tools-launch-title' | translate}}">play_arrow</mat-icon>
                             </button>
                             <div class="main-btn-sep"></div>
                             <button mat-button matTooltip="{{'editor.tools-zoom-title' | translate}}" class="main-btn" (click)="onZoomSelect()">
-                                <mat-icon aria-label="{{'editor.tools-zoom-title' | translate}}">zoom_in</mat-icon>
+                                <mat-icon attr.aria-label="{{'editor.tools-zoom-title' | translate}}">zoom_in</mat-icon>
                             </button>
                             <button mat-button matTooltip="{{'editor.tools-grid-title' | translate}}" class="main-btn" (click)="onShowGrid()">
-                                <mat-icon aria-label="{{'editor.tools-grid-title' | translate}}" *ngIf="!gridOn">grid_on</mat-icon>
-                                <mat-icon aria-label="{{'editor.tools-grid-title' | translate}}" *ngIf="gridOn">grid_off</mat-icon>
+                                <mat-icon attr.aria-label="{{'editor.tools-grid-title' | translate}}" *ngIf="!gridOn">grid_on</mat-icon>
+                                <mat-icon attr.aria-label="{{'editor.tools-grid-title' | translate}}" *ngIf="gridOn">grid_off</mat-icon>
                             </button>
                             <button mat-button [matMenuTriggerFor]="moveStepMenu" #moveStepTrigger="matMenuTrigger"
                                 matTooltip="{{'editor.tools-movestep-title' | translate}}" class="move-step-btn">
@@ -719,20 +719,20 @@
                             </mat-menu>
                             <div id="history_panel">
                                 <button mat-button id="tool_undo" matTooltip="{{'editor.tools-undo-title' | translate}}" class="main-btn">
-                                    <mat-icon aria-label="{{'editor.tools-undo-title' | translate}}">undo</mat-icon>
+                                    <mat-icon attr.aria-label="{{'editor.tools-undo-title' | translate}}">undo</mat-icon>
                                 </button>
                                 <button mat-button id="tool_redo" matTooltip="{{'editor.tools-redo-title' | translate}}" class="main-btn">
-                                    <mat-icon aria-label="{{'editor.tools-redo-title' | translate}}">redo</mat-icon>
+                                    <mat-icon attr.aria-label="{{'editor.tools-redo-title' | translate}}">redo</mat-icon>
                                 </button>
                             </div>
                         </div>
                         <div id="selected_panel">
                             <div class="main-btn-sep"></div>
                             <button mat-button id="tool_clone" matTooltip="{{'editor.tools-clone-title' | translate}}" class="main-btn">
-                                <mat-icon aria-label="{{'editor.tools-clone-title' | translate}}">content_copy</mat-icon>
+                                <mat-icon attr.aria-label="{{'editor.tools-clone-title' | translate}}">content_copy</mat-icon>
                             </button>
                             <button mat-button id="tool_delete" matTooltip="{{'editor.tools-delete-title' | translate}}" class="main-btn">
-                                <mat-icon aria-label="{{'editor.tools-delete-title' | translate}}">content_cut</mat-icon>
+                                <mat-icon attr.aria-label="{{'editor.tools-delete-title' | translate}}">content_cut</mat-icon>
                             </button>
                             <button mat-button id="tool_move_bottom" matTooltip="{{'editor.tools-movebottom-title' | translate}}" class="main-btn">
                                 <mat-icon style="font-size: 28px;">move_down</mat-icon>
@@ -747,10 +747,10 @@
                         <div id="multiselected_panel">
                             <div class="main-btn-sep"></div>
                             <button mat-button id="tool_clone_multi" matTooltip="{{'editor.tools-clonemulti-title' | translate}}" class="main-btn">
-                                <mat-icon aria-label="{{'editor.tools-clonemulti-title' | translate}}">content_copy</mat-icon>
+                                <mat-icon attr.aria-label="{{'editor.tools-clonemulti-title' | translate}}">content_copy</mat-icon>
                             </button>
                             <button mat-button id="tool_delete_multi" matTooltip="{{'editor.tools-deletemulti-title' | translate}}" class="main-btn">
-                                <mat-icon aria-label="{{'editor.tools-deletemulti-title' | translate}}">content_cut</mat-icon>
+                                <mat-icon attr.aria-label="{{'editor.tools-deletemulti-title' | translate}}">content_cut</mat-icon>
                             </button>
                             <button mat-button id="tool_group_elements" matTooltip="{{'editor.tools-group-title' | translate}}" class="main-btn">
                                 <span class="group"></span>
@@ -871,7 +871,7 @@
                     <div class="tools_panel" style="display: inline-flex; width: 100%; height: 37px;">
                         <div class="main-btn-sep" style="display: inline-block;"></div>
                         <button mat-button class="main-btn" style="display: inline-block;" matTooltip="{{'editor.tools-launch-title' | translate}}" (click)="onStartCurrent()">
-                            <mat-icon aria-label="{{'editor.tools-launch-title' | translate}}">play_arrow</mat-icon>
+                            <mat-icon attr.aria-label="{{'editor.tools-launch-title' | translate}}">play_arrow</mat-icon>
                         </button>
                     </div>
                     <div style="position: absolute; top: 37px; left: 0px;right: 0px; bottom: 0px; background-color: rgba(247, 247, 247, 1);">

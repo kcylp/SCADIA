@@ -28,12 +28,20 @@ import { CalibrationListComponent } from './calibration/calibration-list/calibra
 import { CalibrationWorkbenchComponent } from './calibration/calibration-workbench/calibration-workbench.component';
 import { CameraListComponent } from './cameras/camera-list/camera-list.component';
 import { VideoWallComponent } from './cameras/video-wall/video-wall.component';
+import { SceneBoardComponent } from './cameras/scene-board/scene-board.component';
+import { AnalysisWorkspaceComponent } from './analysis-workspace.component';
 import { MesBoardComponent } from './mes/mes-board/mes-board.component';
 import { EmsBoardComponent } from './ems/ems-board/ems-board.component';
 
 const appRoutes: Routes = [
     { path: '', component: HomeComponent},//, canActivate: [AuthGuard] },
     { path: 'home', component: HomeComponent},//, canActivate: [AuthGuard] },
+    { path: 'home/v_zc_g1', redirectTo: 'scenes', pathMatch: 'full' },
+    { path: 'home/v_zc_home', redirectTo: 'monitor-home', pathMatch: 'full' },
+    { path: 'home/v_zc_g4', redirectTo: 'video', pathMatch: 'full' },
+    { path: 'home/v_zc_g7', redirectTo: 'analysis', pathMatch: 'full' },
+    { path: 'monitor-home', component: SceneBoardComponent, canActivate: [AuthGuard] },
+    { path: 'analysis', component: AnalysisWorkspaceComponent, canActivate: [AuthGuard] },
     { path: 'home/:viewName', component: HomeComponent},//, canActivate: [AuthGuard] },
     { path: 'editor', component: EditorComponent, canActivate: [AuthGuard]},
     { path: 'lab', component: LabComponent, canActivate: [AuthGuard] },
@@ -49,7 +57,11 @@ const appRoutes: Routes = [
     { path: 'calibrations', component: CalibrationListComponent, canActivate: [AuthGuard] },
     { path: 'calibrations/:id', component: CalibrationWorkbenchComponent, canActivate: [AuthGuard] },
     { path: 'cameras', component: CameraListComponent, canActivate: [AuthGuard] },
-    { path: 'video', component: VideoWallComponent, canActivate: [AuthGuard] },
+    { path: 'video', component: SceneBoardComponent, canActivate: [AuthGuard] },
+    { path: 'video-resources', component: VideoWallComponent, canActivate: [AuthGuard] },
+    { path: 'scenes', component: SceneBoardComponent, canActivate: [AuthGuard] },
+    { path: 'people', component: SceneBoardComponent, canActivate: [AuthGuard] },
+    { path: 'scene-records', component: SceneBoardComponent, canActivate: [AuthGuard] },
     { path: 'mes', component: MesBoardComponent, canActivate: [AuthGuard] },
     { path: 'ems', component: EmsBoardComponent, canActivate: [AuthGuard] },
     { path: 'reports', component: ReportListComponent, canActivate: [AuthGuard] },

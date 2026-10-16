@@ -27,14 +27,15 @@ function Report(_property, _runtime) {
                 if (!_isToExecute(time) && !force) {
                     resolve(true);
                 } else {
-                    await _createPdfBinary().then(filepath => {
+                    await _createPdfBinary().then(async filepath => {
                         if (property.receiver) {
                             let subject = `Report ${property.name}`;
                             let attachments = { path: filepath };
-                            runtime.notificatorMgr.sendMailMessage(null, property.receiver, subject, '', null, attachments).then(function () {
+                            await runtime.notificatorMgr.sendMailMessage(null, property.receiver, subject, '', null, attachments).then(function () {
                                 logger.info(`report.sended.successful: ${new Date()} ${property.receiver} ${property.name}`);
                             }).catch(function (senderr) {
                                 logger.error(`report.send.failed: ${senderr}`);
+                                throw senderr;
                             });
                         }
                         lastExecuted = currentTime;
@@ -84,6 +85,7 @@ function Report(_property, _runtime) {
             // The font has to match the report's language. Roboto covers Latin and Cyrillic
             // but has no CJK glyphs, so a Chinese report needs a CJK-capable font or its text
             // is drawn as nothing - silently, with no error and no log line.
+            try {
             const reportLanguage = (property && property.language) || 'zh-cn';
             const resolved = fontCoverage.resolveReportFont(reportLanguage, {
                 cjkFontPath: runtime.settings && runtime.settings.reportFonts && runtime.settings.reportFonts.cjk
@@ -110,6 +112,8 @@ function Report(_property, _runtime) {
                 // ReferenceError instead of leaking to global. Ported from the source tree (batch 31).
                 var pdfDoc = pdfmake.createPdfKitDocument(content, {});
                 const stream = fs.createWriteStream(docPath);
+                stream.on('error', reject);
+                pdfDoc.on('error', reject);
                 pdfDoc.pipe(stream);
                 pdfDoc.end();
                 stream.on("finish", function() {
@@ -118,6 +122,7 @@ function Report(_property, _runtime) {
             }).catch(function (err) {
                 reject(err);
             });
+            } catch (err) { reject(err); }
         });
     }
 
@@ -311,6 +316,9 @@ function Report(_property, _runtime) {
     }
 
     var _getAlarmsContent = function (item) {
+        if (item.sceneFilter) {
+            return require('../reporting/scenes').sceneContent(runtime.cameraScenes, item.sceneFilter, _getDateRange(item.range), item.size);
+        }
         return new Promise(async function (resolve, reject) {
             try {
                 let content = { layout: 'lightHorizontalLines', fontSize: item.size }; // optional

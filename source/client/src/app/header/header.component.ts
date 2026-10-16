@@ -87,6 +87,12 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
         document.addEventListener('fullscreenchange', this.onFullscreenChange);
     }
 
+    onOpenAiAnalysis() {
+        const popup = window.open('/ai-analysis', 'scadia-ai-analysis', 'popup,width=1180,height=820,resizable=yes,scrollbars=yes');
+        if (popup) { popup.focus(); }
+        else { window.location.assign('/ai-analysis'); }
+    }
+
     ngAfterViewInit() {
         this.subscriptionLoad = this.projectService.onLoadHmi.subscribe(load => {
             let theme = this.projectService.getLayoutTheme();
