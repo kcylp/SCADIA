@@ -33,7 +33,7 @@ const reportsApi = new reports.ReportsApiService();
 const verifyApiOrToken = require('./apikeys/verify-api-or-token');
 const utils = require('../runtime/utils');
 
-const version = '1.0.0';
+const version = require('../package.json').version;
 
 var apiApp;
 var server;

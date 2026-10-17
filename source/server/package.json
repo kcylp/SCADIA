@@ -1,6 +1,6 @@
 {
   "name": "@kcylp/scadia-server",
-  "version": "1.0.0",
+  "version": "3.0.0",
   "description": "开诚智枢 SCADIA - 工业智能中枢 (采集+视频+诊断+预测)",
   "main": "main.js",
   "scripts": {
