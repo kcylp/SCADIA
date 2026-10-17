@@ -19,5 +19,9 @@
   { "id": "17-model-config", "route": "/analysis?config=1", "note": "模型服务配置（管理员）" },
   { "id": "18-shots", "route": "/home/v_zc_g6", "note": "抓拍证据画面" },
   { "id": "19-stats", "route": "/home/v_zc_g2", "note": "数据统计画面" },
-  { "id": "20-events", "route": "/events", "note": "事件日志" }
+  { "id": "20-events", "route": "/events", "note": "事件日志" },
+  { "id": "21-editor", "route": "/editor", "note": "组态编辑器：视图/图形/动画/工艺工程/小部件/资源/交互" },
+  { "id": "22-scripts", "route": "/scripts", "note": "脚本设置：名称、参数、计划/间隔、模式" },
+  { "id": "23-alarms", "route": "/alarms", "note": "报警页：当前报警、历史证据、批量确认" },
+  { "id": "24-recipes", "route": "/recipes", "note": "配方页：名称、描述、条目" }
 ]
