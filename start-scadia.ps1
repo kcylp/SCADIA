@@ -44,6 +44,18 @@ $serverDir = Join-Path $repo 'source\server'
 $clientDir = Join-Path $repo 'source\client'
 $projectDir = Join-Path $repo 'project'
 
+# SYSTEM/非交互会话（如开机计划任务）的 PATH 往往缺少用户级工具（ffmpeg、Python）。
+# 把已知站点目录补进 PATH（存在才加），使自启在无人登录时也能找到工具。
+foreach ($toolDir in @(
+        'C:\Users\kc\bin',
+        'C:\Users\kc\AppData\Local\Programs\Python\Python312',
+        'C:\Users\kc\AppData\Local\Programs\Python\Python312\Scripts',
+        'C:\Users\kc\AppData\Local\Programs\Python\Python38',
+        'G:\anaconda\anaconda3',
+        'G:\anaconda\anaconda3\Scripts')) {
+    if (Test-Path $toolDir) { $env:PATH = $toolDir + ';' + $env:PATH }
+}
+
 function Write-Step($m) { Write-Host "==> $m" -ForegroundColor Cyan }
 function Write-Ok($m)   { Write-Host "    OK  $m" -ForegroundColor Green }
 function Write-Bad($m)  { Write-Host "    !!  $m" -ForegroundColor Red }
@@ -120,8 +132,10 @@ if (-not $Sandbox -and $ff -and (Test-Path $proxyScript)) {
     $proxyLog = Join-Path $projectDir '_logs\mjpeg-proxy.log'
     New-Item -ItemType Directory -Force -Path (Split-Path $proxyLog) | Out-Null
     $proxyArgs = @('"' + $proxyScript + '"', '"' + (Join-Path $runDir '_appdata\mjpeg-sources.json') + '"')
-    $proxyProc = Start-Process -FilePath $nodeExe -ArgumentList $proxyArgs -PassThru -WindowStyle Hidden -RedirectStandardOutput $proxyLog -RedirectStandardError ($proxyLog + '.err')
-    Write-Ok "实时视频代理已启动 :1886（MJPEG，供画面里的视频窗使用）"
+    try {
+        $proxyProc = Start-Process -FilePath $nodeExe -ArgumentList $proxyArgs -PassThru -WindowStyle Hidden -RedirectStandardOutput $proxyLog -RedirectStandardError ($proxyLog + '.err')
+        Write-Ok "实时视频代理已启动 :1886（MJPEG，供画面里的视频窗使用）"
+    } catch { Write-Host ('    !!  视频代理启动失败（不阻断服务端）: ' + $_.Exception.Message) -ForegroundColor Yellow }
 } else {
     Write-Host '    (未启动视频代理：沙箱不启动现场辅助服务；缺少 ffmpeg 时实时视频和检测不可用，页面会显示离线)' -ForegroundColor Yellow
 }
@@ -135,8 +149,10 @@ if (-not $Sandbox -and (Test-Path $bridgeScript) -and (Test-Path $bridgeCfg)) {
     # 与视频代理同样：路径含空格与中文，参数必须自己加引号。
     $bridgeLog = Join-Path $projectDir '_logs\event-bridge.log'
     $bridgeArgs = @('"' + $bridgeScript + '"', '"' + $bridgeCfg + '"')
-    $bridgeProc = Start-Process -FilePath $nodeExe -ArgumentList $bridgeArgs -PassThru -WindowStyle Hidden -RedirectStandardOutput $bridgeLog -RedirectStandardError ($bridgeLog + '.err')
-    Write-Ok '相机事件桥接器已启动（遮挡/入侵/移动 → 平台报警与计数）'
+    try {
+        $bridgeProc = Start-Process -FilePath $nodeExe -ArgumentList $bridgeArgs -PassThru -WindowStyle Hidden -RedirectStandardOutput $bridgeLog -RedirectStandardError ($bridgeLog + '.err')
+        Write-Ok '相机事件桥接器已启动（遮挡/入侵/移动 → 平台报警与计数）'
+    } catch { Write-Host ('    !!  事件桥接器启动失败（不阻断服务端）: ' + $_.Exception.Message) -ForegroundColor Yellow }
 } else {
     Write-Host '    (跳过事件桥接器：缺少 source\tools\scadia-event-bridge.cjs 或 project/_appdata/video-events.json)' -ForegroundColor Yellow
 }
@@ -148,21 +164,29 @@ $trackerProc = $null
 # 找可用的 Python：本机 'python' 可能是 WindowsApps 的商店占位符（能查到路径但一跑就报错），
 # 所以必须真的执行一次 --version 验证，而不是只看 Get-Command 有没有结果。
 $pyExe = $null; $pyArgs = @()
-foreach ($cand in @(@('py', '-3'), @('python', ''), @('python3', ''))) {
-    $exe = (Get-Command $cand[0] -ErrorAction SilentlyContinue).Source
-    if (-not $exe) { continue }
-    $extra = @(); if ($cand[1]) { $extra = @($cand[1]) }
-    $v = & $exe @extra --version 2>&1
-    if ($LASTEXITCODE -eq 0 -and ($v -join ' ') -match 'Python 3') { $pyExe = $exe; $pyArgs = $extra; break }
-}
+$savedEap = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+try {
+    foreach ($cand in @(@('py', '-3'), @('python', ''), @('python3', ''))) {
+        $exe = (Get-Command $cand[0] -ErrorAction SilentlyContinue).Source
+        if (-not $exe) { continue }
+        $extra = @(); if ($cand[1]) { $extra = @($cand[1]) }
+        # 原生工具可能向 stderr 写错误（如 py 无解释器时报 "No installed Python found!"）。
+        # 在 Stop 模式下该 stderr 会变成终止错误；这里必须用 Continue + try/catch，绝不能因探测失败而中止启动。
+        $v = $null
+        try { $v = & $exe @extra --version 2>&1 } catch { $v = $null }
+        if ($LASTEXITCODE -eq 0 -and ($v -join ' ') -match 'Python 3') { $pyExe = $exe; $pyArgs = $extra; break }
+    }
+} finally { $ErrorActionPreference = $savedEap }
 if (-not $Sandbox -and $pyExe -and (Test-Path $trackerScript) -and (Test-Path $trackerCfg)) {
     # 人体检测 + 轨迹追踪：相机原生给不了"人在哪、走过哪条线"，必须外接模型。
     # 依赖：pip install ultralytics opencv-python；有 N 卡的工作站装 CUDA 版 torch 即自动用卡。
     $trackerLog = Join-Path $projectDir '_logs\ai-tracker.log'
     New-Item -ItemType Directory -Force -Path (Split-Path $trackerLog) | Out-Null
     $trackerFull = $pyArgs + @('"' + $trackerScript + '"', '"' + $trackerCfg + '"')
-    $trackerProc = Start-Process -FilePath $pyExe -ArgumentList $trackerFull -PassThru -WindowStyle Hidden -RedirectStandardOutput $trackerLog -RedirectStandardError ($trackerLog + '.err')
-    Write-Ok ('人体检测与轨迹追踪服务已启动（YOLOv8 + ByteTrack，' + $pyExe + '）')
+    try {
+        $trackerProc = Start-Process -FilePath $pyExe -ArgumentList $trackerFull -PassThru -WindowStyle Hidden -RedirectStandardOutput $trackerLog -RedirectStandardError ($trackerLog + '.err')
+        Write-Ok ('人体检测与轨迹追踪服务已启动（YOLOv8 + ByteTrack，' + $pyExe + '）')
+    } catch { Write-Host ('    !!  追踪服务启动失败（不阻断服务端）: ' + $_.Exception.Message) -ForegroundColor Yellow }
 } else {
     Write-Host '    (跳过追踪服务：未找到可用 Python 3，或缺少 source\tools\scadia-ai-tracker.py / project/_appdata/ai-tracker.json)' -ForegroundColor Yellow
     Write-Host '    依赖安装：pip install ultralytics opencv-python   （有显卡的工作站装 CUDA 版 torch 即可自动用卡）' -ForegroundColor Yellow
@@ -173,8 +197,10 @@ $thermalTrackerCfg = Join-Path $runDir '_appdata\ai-tracker-thermal.json'
 if (-not $Sandbox -and $pyExe -and (Test-Path $trackerScript) -and (Test-Path $thermalTrackerCfg)) {
     $thermalLog = Join-Path $projectDir '_logs\ai-tracker-thermal.log'
     $thermalArgs = $pyArgs + @('"' + $trackerScript + '"', '"' + $thermalTrackerCfg + '"')
-    $thermalTrackerProc = Start-Process -FilePath $pyExe -ArgumentList $thermalArgs -PassThru -WindowStyle Hidden -RedirectStandardOutput $thermalLog -RedirectStandardError ($thermalLog + '.err')
-    Write-Ok '红外独立辅助检测已启动（独立通道、轨迹文件；不套用可见光围栏或安全帽检测）'
+    try {
+        $thermalTrackerProc = Start-Process -FilePath $pyExe -ArgumentList $thermalArgs -PassThru -WindowStyle Hidden -RedirectStandardOutput $thermalLog -RedirectStandardError ($thermalLog + '.err')
+        Write-Ok '红外独立辅助检测已启动（独立通道、轨迹文件；不套用可见光围栏或安全帽检测）'
+    } catch { Write-Host ('    !!  红外辅助检测启动失败（不阻断服务端）: ' + $_.Exception.Message) -ForegroundColor Yellow }
 }
 
 Write-Step '4.8/5 启动 VLM 视觉理解服务（可选）'
@@ -192,8 +218,10 @@ if (-not $Sandbox -and $pyExe -and (Test-Path $vlmScript) -and (Test-Path $vlmCf
     $vlmLog = Join-Path $projectDir '_logs\vlm.log'
     New-Item -ItemType Directory -Force -Path (Split-Path $vlmLog) | Out-Null
     $vlmFull = $pyArgs + @('"' + $vlmScript + '"', '"' + $vlmCfg + '"')
-    $vlmProc = Start-Process -FilePath $pyExe -ArgumentList $vlmFull -PassThru -WindowStyle Hidden -RedirectStandardOutput $vlmLog -RedirectStandardError ($vlmLog + '.err')
-    Write-Ok 'VLM 八场景复核主管已启动（单工作进程、事件优先与周期轮询、硬超时回收）'
+    try {
+        $vlmProc = Start-Process -FilePath $pyExe -ArgumentList $vlmFull -PassThru -WindowStyle Hidden -RedirectStandardOutput $vlmLog -RedirectStandardError ($vlmLog + '.err')
+        Write-Ok 'VLM 八场景复核主管已启动（单工作进程、事件优先与周期轮询、硬超时回收）'
+    } catch { Write-Host ('    !!  VLM 启动失败（不阻断服务端）: ' + $_.Exception.Message) -ForegroundColor Yellow }
 } else {
     Write-Host '    (跳过 VLM 服务：缺 Python 3 / source\tools\scadia-vlm.py / project/_appdata/vlm.json，或模型目录不存在)' -ForegroundColor Yellow
 }
