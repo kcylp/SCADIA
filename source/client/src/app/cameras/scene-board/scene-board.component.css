@@ -13,3 +13,16 @@ form{display:flex;align-items:end;flex-wrap:wrap;gap:12px;padding:16px 0}label{d
 .table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;min-width:620px}caption{text-align:left;padding:12px 0;color:#c1d5e9}th,td{text-align:left;padding:12px;border-bottom:1px solid #385877;vertical-align:middle;overflow-wrap:anywhere}th{color:#c1d5e9}td img{width:120px;height:86px;object-fit:contain;background:#050b14}.pagination{display:flex;gap:16px;align-items:center;justify-content:end;padding:16px 0}::selection{background:#316393;color:#fff}*{scrollbar-color:#6585a4 #10243a}
 @media(max-width:1024px){.scenes{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto;min-height:1100px}.picture{min-height:120px}}
 @media(max-width:600px){.scene-page{padding:10px}.scenes{grid-template-columns:1fr;min-height:2300px}.scenes.focused{min-height:500px}header{align-items:flex-start}h1{font-size:20px}.detail,.review,.scene-info{font-size:14px}.detail{max-height:40px}.review{max-height:70px}}
+
+/* 红外辐射测温面板：只显示设备直读数据；不可用状态不用高温色伪装 */
+.thermo { margin: 12px 0; padding: 12px; border: 1px solid rgba(0,0,0,.12); border-radius: 6px; }
+.thermo h2 { font-size: 1.05rem; margin: 0 0 8px; }
+.thermo h3 { font-size: .95rem; margin: 10px 0 4px; }
+.thermo-status { display: flex; flex-wrap: wrap; gap: 14px; align-items: baseline; }
+.thermo-status .bad { color: #b00020; font-weight: 600; }
+.thermo-cards { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.thermo-cards .card { min-width: 130px; padding: 8px 12px; border-radius: 6px; background: rgba(0,0,0,.05); display: flex; flex-direction: column; }
+.thermo-cards .card span { font-size: .8rem; opacity: .75; }
+.thermo-cards .card strong { font-size: 1.25rem; }
+.thermo ol { margin: 4px 0 0 20px; }
+.thermo .detail { font-size: .85rem; opacity: .8; margin: 6px 0 0; }

@@ -37,6 +37,42 @@
       </div>
     </article>
   </section>
+  <section *ngIf="!people" class="thermo" aria-label="红外辐射测温">
+    <h2>红外辐射测温（设备直读 · °C）</h2>
+    <ng-container *ngIf="thermo">
+      <div class="thermo-status">
+        <strong>设备 {{thermo.cameraId || '—'}}</strong>
+        <span [class.bad]="thermo.status !== 'ok'">状态 {{thermoLabel(thermo.status)}}</span>
+        <span *ngIf="thermo.capturedAt">采样 {{thermo.capturedAt | date:'HH:mm:ss'}} · 数据年龄 {{thermo.quality?.ageMs ?? '—'}} ms</span>
+        <span>模式 {{thermo.measurementMode === 'device-sensor' ? '设备测温模块直读' : (thermo.measurementMode === 'radiometric' ? '辐射测温' : (thermo.measurementMode || '—'))}} · 单位 {{thermo.unit || '°C'}}</span>
+      </div>
+      <p class="detail" *ngIf="thermo.reason">{{thermo.reason}}</p>
+      <div class="thermo-cards" *ngIf="thermo.deviceTemperature !== undefined && thermo.deviceTemperature !== null">
+        <div class="card"><span>设备测温（测温模块直读）</span><strong>{{thermo.deviceTemperature}} °C</strong></div>
+        <div class="card" *ngIf="thermo.range"><span>设备量程</span><strong>{{thermo.range}}</strong></div>
+        <div class="card" *ngIf="thermo.tempHumiChannel"><span>测温通道</span><strong>{{thermo.tempHumiChannel}}</strong></div>
+      </div>
+      <div *ngIf="thermo.hotspots?.length">
+        <h3>热点排名（设备测温单元，按峰值降序）</h3>
+        <ol>
+          <li *ngFor="let h of thermo.hotspots">{{h.id}} · {{h.type === 'point' ? '点测温' : h.type === 'region' ? '区域测温' : '全场'}}
+            · 峰值 {{h.peakC ?? '—'}} °C<ng-container *ngIf="h.meanC !== null && h.meanC !== undefined"> · 均值 {{h.meanC}} °C</ng-container>
+            <ng-container *ngIf="h.point"> · 位置 ({{h.point.x}}, {{h.point.y}})</ng-container>
+            <ng-container *ngIf="h.region"> · 区域 x={{h.region.x}} y={{h.region.y}} w={{h.region.w}} h={{h.region.h}}</ng-container>
+          </li>
+        </ol>
+      </div>
+      <div class="table-wrap" *ngIf="thermo.trend?.length > 1">
+        <h3>最近测温样本趋势（设备直读；缺失即断线，不插值）</h3>
+        <table><caption>测温样本</caption>
+          <tr><th>时间</th><th>温度 °C</th></tr>
+          <tr *ngFor="let p of thermo.trend"><td>{{p.capturedAt | date:'HH:mm:ss'}}</td><td>{{p.temperature ?? '—'}}</td></tr>
+        </table>
+      </div>
+      <p class="detail">{{thermo.roiNote || '相对热区候选（画面检测）与设备辐射测温值是两种信号；设备未提供或不可用时显示原因，不做颜色估算温度。'}}</p>
+    </ng-container>
+    <p *ngIf="!thermo">正在读取设备测温状态…</p>
+  </section>
   <section *ngIf="people" class="people">
     <label *ngIf="records">场景 <select [(ngModel)]="selectedScene" (ngModelChange)="selectScene()"><option value="all">全部八场景</option><option *ngFor="let scene of scenes" [value]="scene.id">{{scene.id}} · {{scene.name}}</option></select></label>
     <div class="summary"><h2>{{records ? selectedScene + ' · 事件次数' : '进入次数'}}</h2><p>今日 <strong>{{ledger.stats?.today ?? '—'}}</strong>　累计 <strong>{{ledger.stats?.total ?? '—'}}</strong>　筛选结果 {{ledger.count ?? '—'}} 条</p><p *ngIf="ledger.window">查询窗口 {{ledger.window.from | date:'yyyy-MM-dd HH:mm:ss'}} 至 {{ledger.window.to | date:'yyyy-MM-dd HH:mm:ss'}}（含结束毫秒）；日期留空时从历史起点查询。</p><p>{{ledger.stats?.timezone || '等待站点时区'}} · 清零保留历史记录和证据；无完整出入口覆盖，不推算室内总人数。</p><p *ngIf="!records">{{state(scenes[0])?.detail || '等待门口标定状态'}}</p></div>

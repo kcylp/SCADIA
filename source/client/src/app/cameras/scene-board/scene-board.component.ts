@@ -30,6 +30,28 @@ export class SceneBoardComponent implements OnInit, OnDestroy {
     deliveries: any[] = [];
     history: any[] = [];
     selectedAnalysis: any = null;
+    thermo: any = null;
+    loadThermo(): void {
+        // 红外辐射测温：只显示设备直读数据；不可用时如实展示原因，绝不估算温度。
+        if (this.stopped || this.people) { return; }
+        const identity = this.identityGeneration;
+        this.http.get<any>('/api/ai/scenes/thermometry').pipe(timeout(7000)).subscribe({
+            next: r => { if (identity === this.identityGeneration) { this.thermo = r; } },
+            error: () => {
+                if (identity === this.identityGeneration) {
+                    this.thermo = { status: 'unavailable', reason: '测温服务未响应', sceneTemperature: null, hotspots: [], trend: [], quality: { valid: false } };
+                }
+            }
+        });
+    }
+    thermoLabel(status: string): string {
+        const map: {[k: string]: string} = {
+            ok: '正常采样', stale: '样本过期', unavailable: '暂无有效数据', unauthorized: '设备认证被拒',
+            not_supported: '设备不支持该测温接口', no_credentials: '未配置热像机Web凭据',
+            no_valid_values: '设备响应无有效数值', timeout: '设备接口超时'
+        };
+        return map[status] || status;
+    }
     loadSummary():void {
         const identity=this.identityGeneration, seq=this.ledgerSeq, query=this.ledgerQuery();
         this.subs.add(this.http.get<any>('/api/ai/scene-events/summary?'+query).subscribe({next:r=>{if(identity===this.identityGeneration && seq===this.ledgerSeq){this.summary=r;}},error:()=>{if(identity===this.identityGeneration && seq===this.ledgerSeq){this.summary=null;this.message='统计读取失败';}}}));
@@ -137,6 +159,7 @@ export class SceneBoardComponent implements OnInit, OnDestroy {
             next: data => {
                 if(generation!==this.identityGeneration){return;}
                 this.data=data; this.error=''; this.pending=false;
+                this.loadThermo();
                 const session=data.visible?.sessionId||'';
                 if(session!==this.trailSession){this.trails={};this.trailSession=session;}
                 (data.visible?.detections||[]).forEach(d=>{

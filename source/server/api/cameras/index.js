@@ -494,6 +494,13 @@ module.exports = {
             return sceneCalibration;
         };
         const rules = new (require('../../runtime/cameras/scene-rules').SceneRules)(runtime.settings.workDir);
+        let sceneThermometry;
+        const thermometry = () => {
+            if (!sceneThermometry) {
+                sceneThermometry = require('../../runtime/cameras/thermometry').create(runtime);
+            }
+            return sceneThermometry;
+        };
         camApp.get('/api/ai/scenes/rules/:source', secureFnc, (req, res) => {
             if (!requireSceneView(req, res)) { return; }
             handle(Promise.resolve().then(() => rules.read(req.params.source)), res, r => res.json(r), 'scene-rules');
@@ -513,6 +520,12 @@ module.exports = {
         camApp.get('/api/ai/scenes', secureFnc, (req, res) => {
             if (!requireSceneView(req, res)) { return; }
             handle(Promise.resolve().then(() => scenes().status()), res, r => res.json(r), 'scenes');
+        });
+        camApp.get('/api/ai/scenes/thermometry', secureFnc, (req, res) => {
+            if (!requireSceneView(req, res)) { return; }
+            handle(Promise.resolve().then(() => thermometry().snapshot()), res, r => {
+                res.set('Cache-Control', 'private, no-store'); res.json(r);
+            }, 'scenes-thermometry');
         });
         camApp.get('/api/ai/scenes/frame/:source', secureFnc, (req, res) => {
             if (!requireSceneView(req, res)) { return; }

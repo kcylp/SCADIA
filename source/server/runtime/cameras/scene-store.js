@@ -112,6 +112,7 @@ class SceneStore {
             delivery: source.delivery, appliedCalibrationVersion: source.appliedCalibrationVersion,
             appliedRulesVersion: source.appliedRulesVersion, calibrationError: source.calibrationError,
             entryGate: source.entryGate,
+            temperature: source.temperature === undefined ? undefined : (source.temperature && typeof source.temperature === 'object' ? source.temperature : undefined),
             scenes: source.scenes, detections: source.detections });
         return { visible: sanitize(visible), thermal: sanitize(thermal), reviews, now: Date.now() };
     }
