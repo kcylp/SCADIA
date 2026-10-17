@@ -127,4 +127,210 @@ describe('Thermal radiometry adapter (device ISAPI contract)', function () {
         assert.equal(snap.quality.valid, false);
         await mgr.stop();
     });
+    it('R03: blank/whitespace temperature is refused, not turned into a valid 0°C', () => {
+        for (const blank of ['<TempHumi><temperature>  </temperature></TempHumi>',
+            '<TempHumi><temperature>\t\n</temperature></TempHumi>',
+            '<TempHumi><temperature></temperature></TempHumi>',
+            '<TempHumi></TempHumi>']) {
+            assert.equal(parseTempHumiXml(blank), null, 'blank must be refused: ' + JSON.stringify(blank));
+        }
+        assert.equal(parseTempHumiXml('<TempHumi><temperature>0</temperature></TempHumi>').temperature, 0, 'legal 0 preserved');
+        assert.equal(parseTempHumiXml('<TempHumi><temperature>-12.5</temperature></TempHumi>').temperature, -12.5, 'negative preserved');
+        assert.equal(parseTempHumiXml('<TempHumi><temperature>NaN</temperature></TempHumi>'), null);
+        assert.equal(parseTempHumiXml('<TempHumi><temperature>Infinity</temperature></TempHumi>'), null);
+        assert.equal(parseTempHumiXml('<TempHumi><temperature>0x10</temperature></TempHumi>'), null, 'non-decimal refused');
+    });
+    it('R03: sample layer does not accept a blank reading as a valid 0°C sample', async () => {
+        const t = new Thermometry({ host: '192.0.2.9' });
+        t.setFetcher(async (p) => p.indexOf('TempHumi') >= 0
+            ? { status: 200, body: '<TempHumi><id>2</id><currentTime>' + new Date().toISOString() + '</currentTime><temperature>   </temperature></TempHumi>' }
+            : { status: 200, body: basicParamXml });
+        assert.equal(await t.sample({ username: 'u', password: 'p' }), false);
+        const s = t.status();
+        assert.notEqual(s.status, 'ok');
+        assert.equal(s.deviceTemperature, undefined);
+        assert.equal(t.trend().length, 0);
+    });
+    it('R02: converts by device metadata unit (F) instead of hard-coding Celsius', async () => {
+        const fXml = basicParamXml.replace('degreeCentigrade', 'fahrenheit').replace('-20~150', '32~302');
+        const t = new Thermometry({ host: '192.0.2.9' });
+        t.setFetcher(async (p) => p.indexOf('TempHumi') >= 0
+            ? { status: 200, body: tempHumiXml.replace('33.00', '86').replace('2026-10-17T10:10:57+08:00', new Date().toISOString()) }
+            : { status: 200, body: fXml });
+        assert.equal(await t.sample({ username: 'u', password: 'p' }), true);
+        const s = t.status();
+        assert.equal(s.unit, '°C');
+        assert.equal(s.deviceTemperature, 30);        // 86°F -> 30°C
+        assert.equal(s.unitSource, 'fahrenheit');     // 与数值一致，不再自相矛盾
+        assert.equal(s.range, '32~302');
+    });
+    it('R02: missing unit yields an explicit state, never a silent Celsius reading', async () => {
+        const noUnit = basicParamXml.replace('<temperatureUnit>degreeCentigrade</temperatureUnit>', '');
+        const t = new Thermometry({ host: '192.0.2.9' });
+        t.setFetcher(async (p) => p.indexOf('TempHumi') >= 0
+            ? { status: 200, body: tempHumiXml.replace('2026-10-17T10:10:57+08:00', new Date().toISOString()) }
+            : { status: 200, body: noUnit });
+        assert.equal(await t.sample({ username: 'u', password: 'p' }), false);
+        const s = t.status();
+        assert.equal(s.status, 'unknown_unit');
+        assert.equal(s.unitSource, undefined);
+    });
+    it('R04: repeated device timestamp is not a new sample and freezes after tolerance', async () => {
+        const t = new Thermometry({ host: '192.0.2.9', deviceUpdateToleranceMs: 0 });
+        const frozen = tempHumiXml.replace('2026-10-17T10:10:57+08:00', '2000-01-01T00:00:00Z');
+        t.setFetcher(async (p) => p.indexOf('TempHumi') >= 0 ? { status: 200, body: frozen } : { status: 200, body: basicParamXml });
+        await t.sample({ username: 'u', password: 'p' });
+        await new Promise(r => setTimeout(r, 10));
+        await t.sample({ username: 'u', password: 'p' });
+        const s = t.status();
+        assert.equal(s.samples, 1, 'duplicate timestamp must not add a new sample');
+        assert.equal(s.status, 'stale', 'frozen timestamp must not look current-ok');
+        assert.equal(s.timeStatus, 'frozen');
+        assert.equal(s.quality.valid, false);
+    });
+    it('R04: advancing device time with constant temperature keeps sampling normally', async () => {
+        const t = new Thermometry({ host: '192.0.2.9' });
+        let n = 0;
+        t.setFetcher(async (p) => p.indexOf('TempHumi') >= 0
+            ? { status: 200, body: tempHumiXml.replace('2026-10-17T10:10:57+08:00', new Date(Date.now() + (n++ * 1000)).toISOString()) }
+            : { status: 200, body: basicParamXml });
+        await t.sample({ username: 'u', password: 'p' });
+        await t.sample({ username: 'u', password: 'p' });
+        const s = t.status();
+        assert.equal(s.status, 'ok');
+        assert.equal(s.timeStatus, 'ok');
+        assert.equal(s.samples, 2);
+    });
+    it('R04: invalid device time falls back to server receive, not labelled device', async () => {
+        const t = new Thermometry({ host: '192.0.2.9' });
+        t.setFetcher(async (p) => p.indexOf('TempHumi') >= 0
+            ? { status: 200, body: tempHumiXml.replace('2026-10-17T10:10:57+08:00', 'nonsense') }
+            : { status: 200, body: basicParamXml });
+        await t.sample({ username: 'u', password: 'p' });
+        const s = t.status();
+        assert.equal(s.clockSource, 'server-receive');
+        assert.equal(s.timeStatus, 'invalid');
+    });
+    it('R05: an auth failure after success surfaces as error while keeping the last known value', async () => {
+        const t = new Thermometry({ host: '192.0.2.9' });
+        let fail = false;
+        t.setFetcher(async (p) => {
+            if (p.indexOf('TempHumi') >= 0) {
+                return fail ? { status: 401, headers: { 'www-authenticate': 'Digest realm="t", nonce="n", qop="auth"' } }
+                            : { status: 200, body: tempHumiXml.replace('2026-10-17T10:10:57+08:00', new Date().toISOString()) };
+            }
+            return { status: 200, body: basicParamXml };
+        });
+        await t.sample({ username: 'u', password: 'p' });
+        assert.equal(t.status().status, 'ok');
+        fail = true;
+        await t.sample({ username: 'u', password: 'p' });
+        const s = t.status();
+        assert.equal(s.status, 'unauthorized', 'recent failure must override the last success');
+        assert.equal(s.deviceTemperature, 33, 'last known value kept for reference');
+        assert.equal(s.quality.valid, false);
+        fail = false;
+        await t.sample({ username: 'u', password: 'p' });
+        assert.equal(t.status().status, 'ok', 'recovery clears the error');
+    });
+    it('R02: a metadata response that lost the unit must not silently reuse the stale unit', async () => {
+        // 首次单位=F（有界有效期内），其后设备只回量程、不再回单位 → 单位过期后必须报 unknown_unit。
+        const fXml = basicParamXml.replace('degreeCentigrade', 'fahrenheit');
+        const noUnitXml = basicParamXml.replace('<temperatureUnit>degreeCentigrade</temperatureUnit>', '');
+        let withUnit = true;
+        const t = new Thermometry({ host: '192.0.2.9', metaUnitTtlMs: 50 });
+        t.setFetcher(async (p) => p.indexOf('TempHumi') >= 0
+            ? { status: 200, body: tempHumiXml.replace('33.00', '86').replace('2026-10-17T10:10:57+08:00', new Date().toISOString()) }
+            : { status: 200, body: withUnit ? fXml : noUnitXml });
+        await t.sample({ username: 'u', password: 'p' });
+        assert.equal(t.status().status, 'ok');
+        assert.equal(t.status().deviceTemperature, 30);        // 86°F -> 30°C
+        withUnit = false;
+        await new Promise(r => setTimeout(r, 90));             // 单位有效期已过
+        await t.sample({ username: 'u', password: 'p' });
+        const s = t.status();
+        assert.equal(s.status, 'unknown_unit', 'unit must not be silently reused after it disappeared');
+        // 不再刷新单位确认时间（不把缺单位响应当刚刚重新确认）。
+        assert.ok(t.unitConfirmedAt <= Date.now() - 60, 'unit confirmation time must not be refreshed');
+    });
+    it('R02: switching device must not inherit the previous camera unit/range', async () => {
+        const fXml = basicParamXml.replace('degreeCentigrade', 'fahrenheit').replace('-20~150', '32~302');
+        const noUnitXml = basicParamXml.replace('<temperatureUnit>degreeCentigrade</temperatureUnit>', '');
+        const t = new Thermometry({ host: '192.0.2.9', cameraId: 'camA', metaUnitTtlMs: 600000 });
+        t.setFetcher(async (p) => p.indexOf('TempHumi') >= 0
+            ? { status: 200, body: tempHumiXml.replace('33.00', '86').replace('2026-10-17T10:10:57+08:00', new Date().toISOString()) }
+            : { status: 200, body: t.options.cameraId === 'camA' ? fXml : noUnitXml });
+        await t.sample({ username: 'u', password: 'p' });
+        assert.equal(t.status().unitSource, 'fahrenheit');
+        t.options.cameraId = 'camB';    // 换设备：不得继承 camA 的 F 单位
+        await t.sample({ username: 'u', password: 'p' });
+        assert.equal(t.status().status, 'unknown_unit');
+    });
+    it('R04: two alternating old timestamps cannot revive ok or grow the trend', () => {
+        const t = new Thermometry({ host: '192.0.2.9', deviceUpdateToleranceMs: 20000 });
+        const newer = '2000-01-01T00:00:01Z', older = '2000-01-01T00:00:00Z';
+        let recv = 1000000;
+        const seq = [newer, older, newer, older, newer, older, newer, older];
+        const out = seq.map(v => { const r = t._assessDeviceTime(v, recv); recv += 5000; return r; });
+        assert.equal(out[0].appendSample, true, 'first sighting may be accepted');
+        for (let i = 1; i < out.length; i++) {
+            assert.notEqual(out[i].timeStatus, 'ok', 'must not revive ok after 20s: ' + JSON.stringify(out[i]));
+            assert.equal(out[i].appendSample, false, 'replayed old timestamp must not add a sample');
+        }
+    });
+    it('R04: a real device clock reset needs consecutive advancing confirmations', () => {
+        const t = new Thermometry({ host: '192.0.2.9', clockResetMinMs: 60000, clockResetConfirmSamples: 3 });
+        const base = Date.parse('2026-01-01T00:00:00Z');
+        let recv = 1000;
+        const at = ms => new Date(base + ms).toISOString();
+        assert.equal(t._assessDeviceTime(at(0), recv).timeStatus, 'ok');           // 建立高水位
+        recv += 5000;
+        assert.equal(t._assessDeviceTime(at(1_000_000), recv).timeStatus, 'ok');  // 正常推进
+        recv += 5000;
+        const down = t._assessDeviceTime(at(0), recv);
+        assert.equal(down.timeStatus, 'resync-pending', 'big backward is not immediately resynced');
+        recv += 5000; assert.equal(t._assessDeviceTime(at(5000), recv).timeStatus, 'resync-pending');
+        recv += 5000;
+        const done = t._assessDeviceTime(at(10000), recv);
+        assert.equal(done.timeStatus, 'resynced', 'after consecutive advances the baseline re-anchors');
+        assert.equal(done.appendSample, true);
+    });
+    it('R04: invalid device time does not become a current valid measurement', async () => {
+        const t = new Thermometry({ host: '192.0.2.9' });
+        t.setFetcher(async (p) => p.indexOf('TempHumi') >= 0
+            ? { status: 200, body: tempHumiXml.replace('2026-10-17T10:10:57+08:00', 'nonsense') }
+            : { status: 200, body: basicParamXml });
+        await t.sample({ username: 'u', password: 'p' });
+        const s = t.status();
+        assert.equal(s.timeStatus, 'invalid');
+        assert.equal(s.status, 'stale');
+        assert.equal(t.trend().length, 0, 'invalid time must not append a trend sample');
+    });
+    it('R05: 403 and timeout after success are surfaced, not shown as normal', async () => {
+        const t = new Thermometry({ host: '192.0.2.9' });
+        let mode = 'ok';
+        t.setFetcher(async (p) => {
+            if (p.indexOf('TempHumi') >= 0) {
+                if (mode === 'ok') { return { status: 200, body: tempHumiXml.replace('2026-10-17T10:10:57+08:00', new Date().toISOString()) }; }
+                if (mode === 'forbidden') { return { status: 403, body: '' }; }
+                if (mode === 'timeout') { return { status: 0, errorType: 'timeout' }; }
+                return { status: 200, body: '<html/>' };
+            }
+            return { status: 200, body: basicParamXml };
+        });
+        await t.sample({ username: 'u', password: 'p' });
+        assert.equal(t.status().status, 'ok');
+        mode = 'forbidden';
+        await t.sample({ username: 'u', password: 'p' });
+        assert.notEqual(t.status().status, 'ok', '403 must not read as normal');
+        mode = 'timeout';
+        await t.sample({ username: 'u', password: 'p' });
+        assert.notEqual(t.status().status, 'ok', 'timeout must not read as normal');
+        mode = 'bad';
+        await t.sample({ username: 'u', password: 'p' });
+        assert.notEqual(t.status().status, 'ok', 'bad payload must not read as normal');
+        mode = 'ok';
+        await t.sample({ username: 'u', password: 'p' });
+        assert.equal(t.status().status, 'ok', 'recovery clears the error');
+    });
 });

@@ -26,6 +26,17 @@ const DEFAULTS = {
     // 高频重试会永久续锁，因此连续失败后把重试间隔拉长到锁定窗口之外。
     backoffSteps: [5000, 15000, 60000, 300000, 1800000],
     staleAfterMs: 15000,
+    // R04：设备时间戳重复/停滞的容忍窗口。超过该墙钟时间仍未推进即判为冻结；
+    // 容忍窗口内的重复只表示“测量未推进”，不重复计为新样本。
+    deviceUpdateToleranceMs: 20000,
+    // R04：设备重启/合法重新校时的重同步边界。倒退幅度达到该阈值才进入候选，
+    // 且需连续 clockResetConfirmSamples 次“从新基点单调推进”才重定高水位；
+    // 小幅倒退（含旧时间往返重放）一律视为异常，不推进高水位。
+    clockResetMinMs: 60000,
+    clockResetConfirmSamples: 3,
+    // R02：设备元数据单位的有界有效期；只有响应确实携带单位时才续期，
+    // 超过该窗口未被再次确认的单位不得继续沿用。
+    metaUnitTtlMs: 600000,
     // 实测（DS-2TD2637T-10/Q, V5.5.308）：/ISAPI/Thermometry/* 与 PICT/jpeg 不可用（403/400），
     // 机器可读的真实温度来自 /ISAPI/Thermal/TempHumi（设备测温模块，带时间戳）；
     // basicParam 提供单位与量程元数据。逐像素/ROI 温度仅厂商插件通道提供（本固件不开放 HTTP）。
@@ -59,13 +70,22 @@ function authorizationValue(h, username) {
     return v;
 }
 
-/* 数值：元素式 <Tag>12.3</Tag> 或属性式 <Tag value="12.3" unit="C"/>；NaN/Inf 一律 null */
-function readNumber(xml, tag) {
-    let m = new RegExp(`<${tag}\\s+value="([^"]+)"`, 'i').exec(xml);
-    if (!m) { m = new RegExp(`<${tag}>([^<]+)</${tag}>`, 'i').exec(xml); }
-    if (!m) { return null; }
-    const v = Number(m[1]);
+/* 严格十进制解析：拒绝空白、缺失、非十进制（如 0x、NaN、Infinity）与非有限值；保留合法 0 与负值。 */
+function parseDecimal(raw) {
+    if (raw == null) { return null; }
+    const text = String(raw).trim();
+    if (text === '') { return null; }
+    if (!/^[+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(text)) { return null; }
+    const v = Number(text);
     return Number.isFinite(v) ? v : null;
+}
+
+/* 数值：元素式 <Tag>12.3</Tag> 或属性式 <Tag value="12.3" unit="C"/>；空白/NaN/Inf 一律 null */
+function readNumber(xml, tag) {
+    let m = new RegExp(`<${tag}\\s+value="([^"]*)"`, 'i').exec(xml);
+    if (!m) { m = new RegExp(`<${tag}>([^<]*)</${tag}>`, 'i').exec(xml); }
+    if (!m) { return null; }
+    return parseDecimal(m[1]);
 }
 function readUnit(xml) {
     let m = /<temperatureUnit\s+value="([^"]+)"/i.exec(xml) || /unit="([CFKcfk])"/i.exec(xml);
@@ -131,9 +151,10 @@ function parseTempHumiXml(xml) {
     const block = m[1];
     const id = (/<id>([^<]+)<\/id>/.exec(block) || [])[1] || null;
     const currentTime = (/<currentTime>([^<]+)<\/currentTime>/.exec(block) || [])[1] || null;
-    const raw = (/<temperature>([^<]+)<\/temperature>/.exec(block) || [])[1];
-    const value = raw == null ? null : Number(raw);
-    if (value == null || !Number.isFinite(value)) { return null; }
+    const raw = (/<temperature>([^<]*)<\/temperature>/.exec(block) || [])[1];
+    // R03：空白/缺失/非法文本必须拒绝，不能经 Number() 变成有效的 0；合法 0 与负值保留。
+    const value = parseDecimal(raw);
+    if (value == null) { return null; }
     return { id, currentTime, temperature: value };
 }
 
@@ -154,6 +175,14 @@ class Thermometry {
         this.working = false;
         this.samples = [];
         this.stopped = false;
+        this.knownUnit = null;        // 设备确认过的温度单位（只由携带单位的响应确认）
+        this.unitConfirmedAt = 0;     // 该单位最近一次被设备响应确认的墙钟时间（用于有界失效）
+        this.metaCamera = null;       // 该单位/量程所属设备；换设备一律丢弃，不继承
+        this.knownRange = null;       // 量程原始值
+        this.rangeUnit = null;        // 量程表达所用单位（可能与换算后温度单位不同）
+        this.maxDeviceTimeMs = null;  // 已接受测量的设备时间高水位（只增不减）
+        this.lastAdvanceAt = null;    // 高水位最近一次推进的墙钟时间（用于冻结判定）
+        this.resetCandidate = null;   // 可能的设备时钟重置候选 { value, count }
     }
 
     setFetcher(fetcher) { this.fetcher = fetcher; }   // 测试注入：(path, authHeader) => {status, headers, body}
@@ -193,34 +222,30 @@ class Thermometry {
                 const parsed = parseTempHumiXml(res.body);
                 if (!parsed) { this.lastError = { type: 'no_valid_values' }; continue; }
                 const receivedAt = Date.now();
-                // 设备时间戳可用则用它作为采集时刻（否则用接收时刻并标注）
-                const parsedAt = parsed.currentTime ? Date.parse(parsed.currentTime) : NaN;
-                const capturedAt = Number.isFinite(parsedAt) ? parsedAt : receivedAt;
-                const celsius = toCelsius(parsed.temperature, 'degreeCentigrade');
-                if (celsius == null) { this.lastError = { type: 'unknown_unit' }; continue; }
-                // 元数据（失败不阻塞温度显示）
-                let meta = this.metaCache || null;
-                if (!meta || receivedAt - (meta.at || 0) > 60000) {
-                    try {
-                        const bp = await this._fetchWithAuth(this.options.basicParamPath, credentials.username, credentials.password);
-                        if (bp.status === 200 && bp.body) {
-                            const m = parseBasicParamXml(bp.body);
-                            if (m && (m.unit || m.range)) { meta = this.metaCache = { unit: m.unit, range: m.range, at: receivedAt }; }
-                        }
-                    } catch (_) { /* 元数据不可用不影响温度 */ }
-                }
+                // R02：温度单位必须由设备元数据决定，主采样流程不得写死摄氏，否则与 unitSource 自相矛盾。
+                const meta = await this._readMeta(credentials, receivedAt);
+                const unitUsed = meta && meta.unit ? meta.unit : null;
+                const celsius = toCelsius(parsed.temperature, unitUsed);
+                if (unitUsed == null || celsius == null) { this.lastError = { type: 'unknown_unit' }; continue; }
+                // R04：区分接收年龄、测量推进状态与设备时钟质量。
+                const time = this._assessDeviceTime(parsed.currentTime, receivedAt);
                 this.latest = {
                     source: 'thermal', cameraId: this.options.cameraId || (this.options.host + ':thermal'),
-                    measurementMode: 'device-sensor', unit: '°C', unitSource: (meta && meta.unit) || 'degreeCentigrade',
-                    capturedAt, receivedAt, clockSource: parsed.currentTime ? 'device' : 'server-receive',
+                    measurementMode: 'device-sensor', unit: '°C', unitSource: unitUsed,
+                    unitAgeMs: this.unitConfirmedAt ? (receivedAt - this.unitConfirmedAt) : null,
+                    capturedAt: time.capturedAt, receivedAt, clockSource: time.clockSource,
+                    timeStatus: time.timeStatus, deviceTime: parsed.currentTime,
                     deviceTemperature: Math.round(celsius * 10) / 10,
-                    tempHumiChannel: parsed.id, deviceTime: parsed.currentTime,
-                    range: (meta && meta.range) || null,
+                    tempHumiChannel: parsed.id,
+                    range: (meta && meta.range) || null, rangeUnit: (meta && meta.rangeUnit) || null,
                     sceneTemperature: null, hotspots: [],
                     roiNote: 'ROI 级实时温度需厂商插件数据通道（本固件未开放 HTTP 接口）；已启用点测温规则由设备自身测量'
                 };
-                this.samples.push(this.latest);
-                if (this.samples.length > 240) { this.samples.shift(); }
+                // 只有测量确实推进（或无法判定设备时间）才计入趋势；重复/倒退时间戳不重复追加为新测量。
+                if (time.appendSample) {
+                    this.samples.push(this.latest);
+                    if (this.samples.length > 240) { this.samples.shift(); }
+                }
                 this.lastError = null; ok = true; break;
             }
             if (res.status === 401 || res.status === 403) { this.lastError = { type: 'unauthorized', code: res.status }; break; }
@@ -229,6 +254,91 @@ class Thermometry {
         }
         this.consecutiveFailures = ok ? 0 : this.consecutiveFailures + 1;
         return ok;
+    }
+
+    /* 元数据（单位/量程）：单位有界有效期，且只与当前设备绑定。
+    * 只有设备响应确实携带单位时才确认/续期；只带量程的响应不确认也不续期单位。
+    * 单位过期或换设备时返回 null，由 sample() 给出“未知单位”的明确状态。 */
+    async _readMeta(credentials, now) {
+        // 换设备（cameraId 变化）一律丢弃旧单位/量程，绝不继承。
+        const camera = this.options.cameraId || this.options.host || null;
+        if (this.metaCamera && camera && camera !== this.metaCamera) {
+            this.knownUnit = null; this.unitConfirmedAt = 0; this.knownRange = null; this.rangeUnit = null;
+        }
+        const view = () => ({ unit: this._currentUnit(now), range: this.knownRange, rangeUnit: this.rangeUnit, at: this.unitConfirmedAt });
+        // 单位仍在有效期内：复用（复用不等于“刚刚重新确认”，unitConfirmedAt 不刷新）。
+        if (this.knownUnit && this.unitConfirmedAt && now - this.unitConfirmedAt <= this.options.metaUnitTtlMs) { return view(); }
+        try {
+            const bp = await this._fetchWithAuth(this.options.basicParamPath, credentials.username, credentials.password);
+            if (bp.status === 200 && bp.body) {
+                const m = parseBasicParamXml(bp.body);
+                if (m && m.unit) {
+                    // 只有真实携带单位才确认并续期。
+                    this.knownUnit = m.unit;
+                    this.unitConfirmedAt = now;
+                    this.metaCamera = camera;
+                    if (m.range) { this.knownRange = m.range; this.rangeUnit = m.unit; }
+                }
+                // 只带量程、无单位：不确认也不续期单位；无单位可归属时量程同样不采用。
+            }
+        } catch (_) { /* 元数据不可用：仅沿用“未过期”的已确认单位，绝不擅自猜摄氏 */ }
+        return view();
+    }
+
+    /* 返回当前仍有效的单位；超过有效期的单位不再沿用（null）。 */
+    _currentUnit(now) {
+        if (!this.knownUnit) { return null; }
+        if (!this.unitConfirmedAt || now - this.unitConfirmedAt > this.options.metaUnitTtlMs) { return null; }
+        return this.knownUnit;
+    }
+
+    /* R04：设备时间评估。返回采集时刻、时钟来源、时间推进状态，以及是否应计入新样本。 */
+    _assessDeviceTime(rawTime, receivedAt) {
+        if (rawTime == null || String(rawTime).trim() === '') {
+            return { capturedAt: receivedAt, clockSource: 'server-receive', timeStatus: 'unknown', appendSample: true };
+        }
+        const parsedAt = Date.parse(rawTime);
+        if (!Number.isFinite(parsedAt)) {
+            // 有设备时间字段但无法解析：采集时刻回退服务器时间，来源如实标为服务器接收；
+            // 时间无效，不作为新的有效测量（不追加样本、不计为当前有效温度）。
+            return { capturedAt: receivedAt, clockSource: 'server-receive', timeStatus: 'invalid', appendSample: false };
+        }
+        const max = this.maxDeviceTimeMs;
+        if (max == null) {
+            // 首次采样：建立高水位。
+            this.maxDeviceTimeMs = parsedAt; this.lastAdvanceAt = receivedAt; this.resetCandidate = null;
+            return { capturedAt: parsedAt, clockSource: 'device', timeStatus: 'ok', appendSample: true };
+        }
+        if (parsedAt > max) {
+            // 真实推进：抬高高水位（只增不减），清空重置候选。
+            this.maxDeviceTimeMs = parsedAt; this.lastAdvanceAt = receivedAt; this.resetCandidate = null;
+            return { capturedAt: parsedAt, clockSource: 'device', timeStatus: 'ok', appendSample: true };
+        }
+        if (parsedAt === max) {
+            // 与高水位相同：未推进。绝不追加样本、绝不抬高高水位；按容忍窗口判 repeating/frozen。
+            const status = (receivedAt - (this.lastAdvanceAt || receivedAt) > this.options.deviceUpdateToleranceMs) ? 'frozen' : 'repeating';
+            this.resetCandidate = null;
+            return { capturedAt: parsedAt, clockSource: 'device', timeStatus: status, appendSample: false };
+        }
+        // 低于高水位。
+        const backwardMs = max - parsedAt;
+        if (backwardMs >= this.options.clockResetMinMs) {
+            // 可能的设备重启/合法重新校时：需连续“从新基点单调推进”若干次才重定高水位。
+            const cand = this.resetCandidate;
+            if (cand && parsedAt > cand.value) {
+                cand.value = parsedAt; cand.count += 1;
+                if (cand.count >= this.options.clockResetConfirmSamples) {
+                    this.maxDeviceTimeMs = parsedAt; this.lastAdvanceAt = receivedAt; this.resetCandidate = null;
+                    return { capturedAt: parsedAt, clockSource: 'device', timeStatus: 'resynced', appendSample: true };
+                }
+            } else {
+                this.resetCandidate = { value: parsedAt, count: 1 };
+            }
+            return { capturedAt: parsedAt, clockSource: 'device', timeStatus: 'resync-pending', appendSample: false };
+        }
+        // 小幅倒退（含旧时间往返重放）：异常，不推进高水位，不追加样本。
+        this.resetCandidate = null;
+        return { capturedAt: parsedAt, clockSource: 'device', timeStatus: 'backward', appendSample: false };
     }
 
     /* 对外状态：绝不含凭据/URL 明文。 */
@@ -243,14 +353,38 @@ class Thermometry {
         // 数据年龄用服务端接收时刻计算：设备时钟可能与服务器有偏差（实测偏差约 10 分钟），
         // 用设备时间算年龄会出现负值；设备时间仅用于展示采样时刻。
         const ageMs = Date.now() - this.latest.receivedAt;
-        const stale = ageMs > this.options.staleAfterMs;
+        const trend = this.trend();
+        const timeStatus = this.latest.timeStatus || 'ok';
+        // R05：最近一次读取失败必须压过“最后一次成功”，但仍保留最后有效温度及其年龄供参考。
+        if (this.lastError) {
+            return Object.assign({}, this.latest, {
+                status: this.lastError.type,
+                reason: this._reasonText(),
+                timeStatus,
+                quality: { ageMs, valid: false, lastValid: true },
+                samples: this.samples.length,
+                trend
+            });
+        }
+        const timeAnomaly = timeStatus === 'frozen' || timeStatus === 'backward'
+            || timeStatus === 'invalid' || timeStatus === 'resync-pending';
+        const stale = ageMs > this.options.staleAfterMs || timeAnomaly;
         return Object.assign({}, this.latest, {
             status: stale ? 'stale' : 'ok',
-            reason: stale ? `最近有效采样已过期（${Math.round(ageMs / 1000)} 秒前），不代表当前温度` : null,
-            quality: { ageMs, valid: !stale },
+            reason: stale ? this._staleReason(ageMs, timeStatus) : null,
+            timeStatus,
+            quality: { ageMs, valid: !stale, lastValid: !stale },
             samples: this.samples.length,
-            trend: this.trend()
+            trend
         });
+    }
+
+    _staleReason(ageMs, timeStatus) {
+        if (timeStatus === 'frozen') { return '设备时间戳长时间未推进（疑似采样冻结），不作为当前实测温度'; }
+        if (timeStatus === 'backward') { return '设备时间戳倒退或旧时间重放，测量推进异常，不作为当前实测温度'; }
+        if (timeStatus === 'resync-pending') { return '设备时间戳可疑下跳，正在确认是否为重启/校时，暂不作为当前实测温度'; }
+        if (timeStatus === 'invalid') { return '设备时间无法解析，不作为当前实测温度'; }
+        return `最近有效采样已过期（${Math.round(ageMs / 1000)} 秒前），不代表当前温度`;
     }
     _reasonText() {
         const map = {
@@ -258,7 +392,11 @@ class Thermometry {
             not_supported: '设备未提供该测温接口（404/405）：型号可能不支持 ISAPI 测温',
             no_credentials: '未配置热像机 Web 凭据',
             no_valid_values: '设备响应中没有有效温度数值',
+            unknown_unit: '设备未提供可识别的温度单位（元数据缺失/未知），不按摄氏显示',
             timeout: '设备测温接口超时',
+            network: '设备测温接口网络不可达',
+            http_error: '设备测温接口返回异常状态',
+            adapter_error: '测温适配器内部错误',
             unavailable: '设备辐射测温接口尚未返回有效数据'
         };
         const t = this.lastError && this.lastError.type;

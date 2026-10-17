@@ -31,24 +31,47 @@ export class SceneBoardComponent implements OnInit, OnDestroy {
     history: any[] = [];
     selectedAnalysis: any = null;
     thermo: any = null;
+    private thermoAt = 0;
+    private thermoBusy = false;
+    private thermoSeq = 0;
     loadThermo(): void {
         // 红外辐射测温：只显示设备直读数据；不可用时如实展示原因，绝不估算温度。
-        if (this.stopped || this.people) { return; }
+        // R06：busy 释放与 thermo 写入都绑定“身份 generation + 本次请求序号”，
+        // 旧身份的迟到响应既不得释放新身份的 busy，也不得覆盖更新的温度。
+        if (this.stopped || this.people || this.thermoBusy) { return; }
         const identity = this.identityGeneration;
-        this.http.get<any>('/api/ai/scenes/thermometry').pipe(timeout(7000)).subscribe({
-            next: r => { if (identity === this.identityGeneration) { this.thermo = r; } },
+        const seq = ++this.thermoSeq;
+        this.thermoBusy = true;
+        this.subs.add(this.http.get<any>('/api/ai/scenes/thermometry').pipe(timeout(7000)).subscribe({
+            next: r => {
+                if (identity !== this.identityGeneration || seq !== this.thermoSeq) { return; }   // 陈旧响应：不改 busy/thermo
+                this.thermoBusy = false;
+                this.thermoAt = Date.now();
+                this.thermo = r;
+            },
             error: () => {
-                if (identity === this.identityGeneration) {
-                    this.thermo = { status: 'unavailable', reason: '测温服务未响应', sceneTemperature: null, hotspots: [], trend: [], quality: { valid: false } };
-                }
+                if (identity !== this.identityGeneration || seq !== this.thermoSeq) { return; }   // 陈旧响应
+                this.thermoBusy = false;
+                this.thermoAt = Date.now();
+                this.thermo = { status: 'unavailable', reason: '测温服务未响应', sceneTemperature: null, hotspots: [], trend: [], quality: { valid: false } };
             }
-        });
+        }));
+    }
+    // R06：显示层过期。即使场景/测温轮询持续失败，旧“正常”状态也不会被一直当成当前有效。
+    private applyThermoExpiry(): void {
+        if (this.thermo && this.thermo.status === 'ok' && this.thermoAt && this.now - this.thermoAt > 15000) {
+            this.thermo = Object.assign({}, this.thermo, {
+                status: 'stale', reason: '测温数据长时间未刷新，不代表当前温度',
+                quality: Object.assign({}, this.thermo.quality, { valid: false })
+            });
+        }
     }
     thermoLabel(status: string): string {
         const map: {[k: string]: string} = {
             ok: '正常采样', stale: '样本过期', unavailable: '暂无有效数据', unauthorized: '设备认证被拒',
             not_supported: '设备不支持该测温接口', no_credentials: '未配置热像机Web凭据',
-            no_valid_values: '设备响应无有效数值', timeout: '设备接口超时'
+            no_valid_values: '设备响应无有效数值', timeout: '设备接口超时',
+            unknown_unit: '设备未提供可识别温度单位', network: '设备接口不可达', http_error: '设备接口异常'
         };
         return map[status] || status;
     }
@@ -123,10 +146,10 @@ export class SceneBoardComponent implements OnInit, OnDestroy {
             if(key===this.identityKey){return;}this.identityKey=key;this.identityGeneration++;
             this.data={};this.images={};this.frameAt={};this.ledgerSeq++;this.ledgerBusy=false;this.pending=false;
             this.ledger={rows:[],count:0,stats:{}};this.clearEvidence();
-            this.history=[];this.deliveries=[];this.selectedAnalysis=null;this.summary=null;this.ruleSets={};this.ruleBusy=false;
+            this.history=[];this.deliveries=[];this.selectedAnalysis=null;this.summary=null;this.ruleSets={};this.ruleBusy=false;this.thermo=null;this.thermoAt=0;this.thermoBusy=false;this.thermoSeq++;
             this.refresh();if(this.people){this.loadLedger();}
         }));
-        this.timer = setInterval(() => { this.now=Date.now(); if (!document.hidden) { this.refresh(); if(this.people){this.loadLedger();} } },2000);
+        this.timer = setInterval(() => { this.now=Date.now(); this.applyThermoExpiry(); if (!document.hidden) { this.loadThermo(); this.refresh(); if(this.people){this.loadLedger();} } },2000);
         if (!this.people) {
             this.zone.runOutsideAngular(() => {
                 this.draw(0);
@@ -159,7 +182,6 @@ export class SceneBoardComponent implements OnInit, OnDestroy {
             next: data => {
                 if(generation!==this.identityGeneration){return;}
                 this.data=data; this.error=''; this.pending=false;
-                this.loadThermo();
                 const session=data.visible?.sessionId||'';
                 if(session!==this.trailSession){this.trails={};this.trailSession=session;}
                 (data.visible?.detections||[]).forEach(d=>{
