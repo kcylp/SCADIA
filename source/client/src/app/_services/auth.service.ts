@@ -37,6 +37,7 @@ export class AuthService {
 					this.currentUser.token = null;
 					this.saveUserToken(this.currentUser);
 				} else {
+					this.reportSessionTimeout(this.currentUser.token);
 					this.currentUser = null;
 					sessionStorage.removeItem('currentUser');
 				}
@@ -238,10 +239,46 @@ export class AuthService {
 			},
 			error: () => {
 				if (!this.isGuestUser(this.currentUser)) {
+					this.reportSessionTimeout(this.currentUser?.token);
 					this.removeUser();
 				}
 			}
 		});
+	}
+
+	/**
+	 * 账号活动审计：令牌过期属于“会话超时”，与用户主动注销、关闭页面分开记。
+	 * 时间点是发现时刻；上报失败不影响登录状态处理。
+	 */
+	private reportSessionTimeout(token: string) {
+		if (!token || !environment.serverEnabled) {
+			return;
+		}
+		try {
+			const body = JSON.stringify({ token, reason: 'session_timeout', sessionId: this.sessionId() });
+			fetch(this.endPointConfig + '/api/session/exit', {
+				method: 'POST',
+				body,
+				headers: { 'Content-Type': 'application/json' },
+				credentials: 'same-origin',
+				keepalive: true
+			}).catch(() => { });
+		} catch (err) {
+			// 审计上报永远不阻断认证流程。
+		}
+	}
+
+	private sessionId(): string {
+		try {
+			let id = sessionStorage.getItem('scadiaSessionId');
+			if (!id) {
+				id = (Date.now().toString(36) + Math.random().toString(36).slice(2, 10)).slice(0, 32);
+				sessionStorage.setItem('scadiaSessionId', id);
+			}
+			return id;
+		} catch (err) {
+			return '';
+		}
 	}
 
 	private isTokenExpired(token: string): boolean {

@@ -2,7 +2,7 @@
 
 const express = require('express');
 const https = require('https');
-const { MODULES, collect } = require('./evidence');
+const { MODULES, collect, modulesFor, allows } = require('./evidence');
 const { ModelConfig } = require('./model-config');
 const jwt = require('jsonwebtoken');
 const authJwt = require('../jwt-helper');
@@ -103,14 +103,19 @@ function requestJson(url, body, timeoutMs, apiKey) {
         request.end(payload);
     });
 }
-async function buildEvidence(req, body) {
+async function buildEvidence(req, body, options = {}) {
     if (!isTargetBody(body)) {
         return { module: null, intent: null, evidenceIds: [], generatedAt: Date.now(), evidence: [], limitations: [], evidenceQuality: { sufficient: false, missing: [{ code: 'target_required', message: 'module and intent are required', remediation: 'Choose a module and intent from /api/analysis/modules' }] } };
     }
+    // 界面收敛：/api/analysis/modules 只下发八种算法，HTTP 入口同样拒绝其他 module/intent，
+    // 避免绕过前端直接请求未开放的模块。内部证据收集（_context）与“测试连接”不加限制。
+    if (options.enforceFocus && !allows(runtime, body.module, body.intent)) {
+        return { module: body.module, intent: body.intent, evidenceIds: [], generatedAt: Date.now(), evidence: [], limitations: [], evidenceQuality: { sufficient: false, missing: [{ code: 'target_not_allowed', message: '统一分析仅开放八场景算法（V1–V7、T1）', remediation: '从 /api/analysis/modules 选择场景目标' }] } };
+    }
     return collect(runtime, req, body, permission(req));
 }
-async function ask(req, body) {
-    const evidence = await buildEvidence(req, body);
+async function ask(req, body, options = {}) {
+    const evidence = await buildEvidence(req, body, options);
     const config = modelConfig.read();
     const configured = !!config.apiKey;
     if (!evidence.evidenceQuality.sufficient) return insufficient(evidence, configured);
@@ -148,7 +153,7 @@ async function ask(req, body) {
 }
 function app() {
     const analysisApp = express();
-    analysisApp.get('/api/analysis/modules', secure, (_req, res) => res.json({ modules: MODULES }));
+    analysisApp.get('/api/analysis/modules', secure, (_req, res) => res.json({ modules: modulesFor(runtime) }));
     analysisApp.get(['/api/analysis/history', '/api/analysis/history/:id'], secure, requireAdmin, async (req, res) => {
         try {
             if (!runtime.cameraScenes) return fail(res, 503, 'scene_unavailable', '场景账本未就绪');
@@ -170,12 +175,12 @@ function app() {
     });
     analysisApp.post('/api/analysis/context', secure, express.json({ limit: MAX_BODY_BYTES }), async (req, res) => {
         try {
-            const result = await buildEvidence(req, req.body || {});
+            const result = await buildEvidence(req, req.body || {}, { enforceFocus: true });
             res.json(result.evidenceQuality.sufficient ? result : insufficient(result, modelConfig.status().configured));
         } catch (_) { fail(res, 500, 'analysis_context_failed', 'Unable to collect analysis evidence'); }
     });
     analysisApp.post('/api/analysis/chat', secure, express.json({ limit: MAX_BODY_BYTES }), async (req, res) => {
-        try { res.json(await ask(req, req.body || {})); } catch (_) { fail(res, 500, 'analysis_failed', 'Unable to run analysis'); }
+        try { res.json(await ask(req, req.body || {}, { enforceFocus: true })); } catch (_) { fail(res, 500, 'analysis_failed', 'Unable to run analysis'); }
     });
     analysisApp.post('/api/analysis/test', secure, requireAdmin, async (req, res) => {
         try { res.json(await ask(req, { module: 'platform', intent: 'runtime_status', question: '请报告模型连接状态，并严格说明没有提供的事实。' })); } catch (_) { fail(res, 500, 'analysis_test_failed', 'Unable to test analysis model'); }

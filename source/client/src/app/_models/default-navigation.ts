@@ -47,8 +47,43 @@ function group(id: string, text: string, icon: string, children: NaviItem[]): Na
 /**
  * Every route this application serves, grouped. Keep in step with app.routing.ts: a route that
  * exists here and not there navigates nowhere, and the reverse is a page nobody can reach.
+ *
+ * 界面收敛（变更项 B）：本项目只交付八场景算法（V1–V7 + T1）与红外测温，
+ * 因此默认菜单只保留与它们直接相关的入口。配方/脚本/流程/通知/插件/API 密钥/
+ * AR 标记/编辑器/实验室/位置/MES/EMS 仍在 app.routing.ts 中（直接 URL 仍可访问），
+ * 只是不再出现在菜单里。
+ *
+ * 回滚：把 MENU_FOCUS 改为 'full' 并重建前端，即回到完整的七组菜单。
  */
-export const DEFAULT_NAVIGATION: NaviItem[] = [
+export const MENU_FOCUS: string = 'scenes';
+
+const SCENE_NAVIGATION: NaviItem[] = [
+    group('g-overview', 'nav.group-overview', 'dashboard', [
+        page('n-home', '首页', 'home', 'monitor-home'),
+        page('n-view', 'nav.view', 'image', 'home')
+    ]),
+    group('g-monitor', 'nav.group-monitor', 'visibility', [
+        page('n-scenes', '八场景检测', 'center_focus_strong', 'scenes'),
+        page('n-people', '人员统计', 'groups', 'people'),
+        page('n-resources', '相机资源墙', 'video_settings', 'video-resources'),
+        page('n-cameras', 'nav.cameras', 'videocam', 'cameras')
+    ]),
+    group('g-data', 'nav.group-data', 'analytics', [
+        page('n-records', '场景记录', 'history', 'scene-records'),
+        page('n-reports', 'nav.reports', 'assessment', 'reports')
+    ]),
+    group('g-asset', 'nav.group-asset', 'memory', [
+        page('n-device', 'nav.device', 'developer_board', 'device'),
+        page('n-calibrations', 'nav.calibrations', 'tune', 'calibrations')
+    ]),
+    group('g-system', 'nav.group-system', 'settings', [
+        page('n-users', 'nav.users', 'people', 'users'),
+        page('n-roles', 'nav.roles', 'admin_panel_settings', 'userRoles'),
+        page('n-logs', 'nav.logs', 'article', 'logs')
+    ])
+];
+
+const DEFAULT_FULL_NAVIGATION: NaviItem[] = [
     group('g-overview', 'nav.group-overview', 'dashboard', [
         page('n-home', 'nav.overview', 'home', 'home'),
         // /home, not /view: /view requires ?name=<screen> and would open blank without it.
@@ -93,7 +128,9 @@ export const DEFAULT_NAVIGATION: NaviItem[] = [
     ])
 ];
 
+export const DEFAULT_NAVIGATION: NaviItem[] = MENU_FOCUS === 'full' ? DEFAULT_FULL_NAVIGATION : SCENE_NAVIGATION;
+
 /** A fresh copy, so no two components ever share (and mutate) the same item objects. */
 export function defaultNavigation(): NaviItem[] {
-    return JSON.parse(JSON.stringify(DEFAULT_NAVIGATION));
+    return JSON.parse(JSON.stringify(MENU_FOCUS === 'full' ? DEFAULT_FULL_NAVIGATION : SCENE_NAVIGATION));
 }

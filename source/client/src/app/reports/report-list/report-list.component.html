@@ -1,8 +1,12 @@
 <div class="header-panel">
     <mat-icon>content_paste</mat-icon>
     {{'reports.list-title' | translate}}
+    <span class="header-views">
+        <button mat-button [class.view-active]="view==='reports'" (click)="showReports()">报表定义</button>
+        <button mat-button *ngIf="isAdmin" [class.view-active]="view==='activity'" (click)="showActivity()">账号活动</button>
+    </span>
 </div>
-<div class="work-panel">
+<div class="work-panel" *ngIf="view==='reports'">
     <div class="container">
         <table mat-table #table [dataSource]="dataSource" multiTemplateDataRows matSort>
             <!-- Checkbox Column -->
@@ -94,6 +98,68 @@
         </table>
     </div>
 </div>
-<button mat-fab color="primary" (click)="onAddReport()" class="fab-add">
+<button mat-fab color="primary" (click)="onAddReport()" class="fab-add" *ngIf="view==='reports'">
     <mat-icon class="">add</mat-icon>
 </button>
+
+<div class="work-panel activity-work" *ngIf="view==='activity'">
+    <div class="activity">
+        <div class="activity-filters">
+            <label>开始<input type="datetime-local" [(ngModel)]="filters.from"></label>
+            <label>结束<input type="datetime-local" [(ngModel)]="filters.to"></label>
+            <label>账号<input type="text" [(ngModel)]="filters.username" placeholder="全部账号"></label>
+            <label>动作
+                <select [(ngModel)]="filters.action">
+                    <option *ngFor="let option of actionOptions" [value]="option.id">{{option.label}}</option>
+                </select>
+            </label>
+            <button mat-raised-button color="primary" (click)="loadActivity(0)" [disabled]="activityLoading">查询</button>
+            <button mat-button (click)="exportActivity()" [disabled]="!activityRows.length">导出 CSV</button>
+        </div>
+
+        <div class="activity-note">
+            “退出”由浏览器离开页面时上报，属于尽力送达，可能缺失；缺失不等于仍在登录。“会话超时”在客户端发现令牌过期时补记。
+            台账不记录口令、令牌或 Cookie。
+        </div>
+
+        <div class="activity-error" *ngIf="activityError">{{activityError}}</div>
+        <div class="activity-loading" *ngIf="activityLoading">正在读取账号活动…</div>
+
+        <table mat-table [dataSource]="activityRows" class="activity-table" *ngIf="!activityError">
+            <ng-container matColumnDef="time">
+                <th mat-header-cell *matHeaderCellDef>时间</th>
+                <td mat-cell *matCellDef="let row">{{activityTime(row.at)}}</td>
+            </ng-container>
+            <ng-container matColumnDef="username">
+                <th mat-header-cell *matHeaderCellDef>账号</th>
+                <td mat-cell *matCellDef="let row">{{row.username || '—'}}</td>
+            </ng-container>
+            <ng-container matColumnDef="fullname">
+                <th mat-header-cell *matHeaderCellDef>姓名</th>
+                <td mat-cell *matCellDef="let row">{{row.fullname || '—'}}</td>
+            </ng-container>
+            <ng-container matColumnDef="action">
+                <th mat-header-cell *matHeaderCellDef>动作</th>
+                <td mat-cell *matCellDef="let row">{{activityAction(row.action)}}</td>
+            </ng-container>
+            <ng-container matColumnDef="result">
+                <th mat-header-cell *matHeaderCellDef>结果</th>
+                <td mat-cell *matCellDef="let row">{{activityResult(row.result)}}</td>
+            </ng-container>
+            <ng-container matColumnDef="clientIp">
+                <th mat-header-cell *matHeaderCellDef>来源 IP</th>
+                <td mat-cell *matCellDef="let row">{{row.clientIp || '—'}}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="activityColumns; sticky: true"></tr>
+            <tr mat-row *matRowDef="let row; columns: activityColumns"></tr>
+        </table>
+
+        <div class="activity-empty" *ngIf="!activityError && !activityLoading && !activityRows.length">该时间范围内没有账号活动记录。</div>
+
+        <div class="activity-pager">
+            <span>共 {{activityTotal}} 条 · 第 {{activityPage}} / {{activityPages}} 页</span>
+            <button mat-button (click)="prevActivityPage()" [disabled]="activityOffset<=0 || activityLoading">上一页</button>
+            <button mat-button (click)="nextActivityPage()" [disabled]="activityOffset + activityLimit >= activityTotal || activityLoading">下一页</button>
+        </div>
+    </div>
+</div>

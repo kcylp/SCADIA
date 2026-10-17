@@ -23,6 +23,25 @@ const MODULES = [
     { id: 'devices', name: '设备与协议', source: '可见设备状态与标签质量', intents: [intent('connection_status', '连接状态', 'devices'), intent('tag_quality', '标签质量', 'current')] },
     { id: 'platform', name: '平台', source: '本次进程运行状态', intents: [intent('runtime_status', '服务运行状态', 'runtime')] }
 ];
+// 界面收敛开关：默认只把本项目交付的八种算法（V1–V7 + T1）暴露给统一 AI 分析页。
+// settings.analysisFocus='full'（或环境变量 SCADIA_ANALYSIS_FOCUS=full）即恢复全部模块，便于回滚。
+const FOCUS_INTENTS = ['all_scenes', 'scene_event', ...SCENE_TARGETS.map(s => s.id)];
+function focusMode(runtime) {
+    const configured = runtime?.settings?.analysisFocus ?? process.env.SCADIA_ANALYSIS_FOCUS ?? 'scenes';
+    return String(configured).trim().toLowerCase() !== 'full';
+}
+function modulesFor(runtime) {
+    if (!focusMode(runtime)) return MODULES;
+    return MODULES.filter(m => m.id === 'video').map(m => ({
+        ...m,
+        name: '八场景与 AI',
+        intents: m.intents.filter(i => FOCUS_INTENTS.includes(i.id))
+    }));
+}
+function allows(runtime, moduleId, intentId) {
+    if (!focusMode(runtime)) return true;
+    return modulesFor(runtime).some(m => m.id === moduleId && m.intents.some(i => i.id === intentId));
+}
 const LIMITATIONS = ['模型仅分析，不写设备、不改报警、不执行脚本', '配置不代表生产事实或已执行；不得推算 OEE、产量、费用或节能收益', '陈旧、缺失、空事件与未知质量不能解释为现场正常；历史质量 unknown 不得改为 good'];
 function scalar(v) { return v === null || ['string', 'number', 'boolean'].includes(typeof v); }
 function text(v) { return typeof v === 'string' ? v.slice(0, 256) : ''; }
@@ -213,4 +232,4 @@ async function collect(runtime, req, body, permission) {
     }
     return finish();
 }
-module.exports = { MODULES, collect };
+module.exports = { MODULES, collect, modulesFor, allows, focusMode };

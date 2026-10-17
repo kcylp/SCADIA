@@ -14,6 +14,7 @@ import { HeartbeatService } from './_services/heartbeat.service';
 import { AuthService } from './_services/auth.service';
 import { HmiService } from './_services/hmi.service';
 import { Utils } from './_helpers/utils';
+import { EndPointApi } from './_helpers/endpointapi';
 
 @Component({
 	selector: 'app-root',
@@ -77,6 +78,10 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 			takeUntil(this.destroy$)
 		).subscribe(() => this.heartbeatService.setActivity(true));
 
+		// 账号活动审计：页面卸载时上报“退出”。浏览器关闭时服务端收不到任何请求，
+		// sendBeacon 是唯一能尽力送达的方式——但它不保证送达，手册与合作说明都如实标注。
+		window.addEventListener('pagehide', this.reportExit);
+
 
 		this.serverErrorBanner$ = combineLatest([
 			this.hmiService.onServerConnection$,
@@ -130,8 +135,46 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 		}
 	}
 
+	/** 每个浏览器标签页一个会话标识，仅用于去重与对账，不是安全凭据。 */
+	private sessionId(): string {
+		try {
+			let id = sessionStorage.getItem('scadiaSessionId');
+			if (!id) {
+				id = (Date.now().toString(36) + Math.random().toString(36).slice(2, 10)).slice(0, 32);
+				sessionStorage.setItem('scadiaSessionId', id);
+			}
+			return id;
+		} catch (err) {
+			return '';
+		}
+	}
+
+	private reportExit = () => {
+		try {
+			const token = (window as any).scadiaAccessToken;
+			if (!token) {
+				return;
+			}
+			const url = EndPointApi.getURL() + '/api/session/exit';
+			const body = new Blob([JSON.stringify({ token, reason: 'exit', sessionId: this.sessionId() })], { type: 'application/json' });
+			if (navigator.sendBeacon && navigator.sendBeacon(url, body)) {
+				return;
+			}
+			fetch(url, {
+				method: 'POST',
+				body,
+				headers: { 'Content-Type': 'application/json' },
+				credentials: 'same-origin',
+				keepalive: true
+			}).catch(() => { });
+		} catch (err) {
+			// 关闭页面时上报失败不应影响页面本身。
+		}
+	};
+
 	ngOnDestroy() {
 		try {
+			window.removeEventListener('pagehide', this.reportExit);
 			if (this.subscriptionLoad) {
 				this.subscriptionLoad.unsubscribe();
 			}

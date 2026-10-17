@@ -121,6 +121,7 @@ const ALLOWED_ORPHANS = {
  * baseline gets edited deliberately.
  */
 const CROSS_DOMAIN_BASELINE = [
+    '(root) -> accounts',
     '(root) -> alarms',
     '(root) -> apikeys',
     '(root) -> calibration',
@@ -138,6 +139,7 @@ const CROSS_DOMAIN_BASELINE = [
     '(root) -> users',
     'alarms -> (root)',
     'alarms -> storage',
+    'accounts -> storage',
     'apikeys -> storage',
     'calibration -> storage',
     'cameras -> devices',

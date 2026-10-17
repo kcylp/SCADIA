@@ -28,6 +28,7 @@ var opcuaServerApi = require('./opcua-server');
 var devicesApi = require('./devices');
 var reportingApi = require('./reporting');
 var analysisApi = require('./analysis');
+var accountsApi = require('./accounts');
 const reports = require('../dist/reports.service');
 const reportsApi = new reports.ReportsApiService();
 const verifyApiOrToken = require('./apikeys/verify-api-or-token');
@@ -115,6 +116,8 @@ function init(_server, _runtime) {
             apiApp.use(reportingApi.app());
             analysisApi.init(runtime, authMiddleware, verifyGroups);
             apiApp.use(analysisApi.app());
+            accountsApi.init(runtime, authMiddleware, verifyGroups);
+            apiApp.use(accountsApi.app());
 
             apiApp.use((err, req, res, next) => {
                 if (err?.type === 'entity.too.large') {

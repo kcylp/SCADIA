@@ -1,0 +1,23 @@
+[
+  { "id": "00-login-dialog", "route": "/monitor-home", "note": "登录 / 切换账号对话框" },
+  { "id": "01-scenes", "route": "/scenes", "note": "AI 检测：八场景卡片与门口标定" },
+  { "id": "02-people", "route": "/people", "note": "人员统计" },
+  { "id": "03-scene-records", "route": "/scene-records", "note": "场景记录" },
+  { "id": "04-video-resources", "route": "/video-resources", "note": "相机资源墙" },
+  { "id": "05-cameras", "route": "/cameras", "note": "摄像机" },
+  { "id": "06-reports", "route": "/reports", "note": "报表定义" },
+  { "id": "07-report-activity", "route": "/reports", "note": "账号活动台账（管理员）" },
+  { "id": "08-device", "route": "/device", "note": "设备与标签" },
+  { "id": "09-calibrations", "route": "/calibrations", "note": "标定" },
+  { "id": "10-users", "route": "/users", "note": "用户管理（管理员）" },
+  { "id": "11-user-roles", "route": "/userRoles", "note": "角色管理（管理员）" },
+  { "id": "12-logs", "route": "/logs", "note": "系统日志" },
+  { "id": "13-analysis", "route": "/analysis", "note": "AI 综合分析（仅八算法）" },
+  { "id": "14-home", "route": "/monitor-home", "note": "首页" },
+  { "id": "15-header-menu", "route": "/monitor-home", "note": "展开后的收敛菜单" },
+  { "id": "16-analysis-window", "route": "/ai-analysis", "note": "独立分析窗口" },
+  { "id": "17-model-config", "route": "/analysis?config=1", "note": "模型服务配置（管理员）" },
+  { "id": "18-shots", "route": "/home/v_zc_g6", "note": "抓拍证据画面" },
+  { "id": "19-stats", "route": "/home/v_zc_g2", "note": "数据统计画面" },
+  { "id": "20-events", "route": "/events", "note": "事件日志" }
+]

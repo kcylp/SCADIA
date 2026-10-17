@@ -37,22 +37,28 @@ export class WorkspaceShellComponent implements OnInit, OnDestroy {
     }
     private buildMenu(): void {
         const groups = defaultNavigation();
-        groups[0].children = [{id:'n-home',text:'首页',icon:'home',view:'',link:'monitor-home'}] as NaviItem[];
-        const monitor = groups.find(g => g.id === 'g-monitor');
-        monitor.text = '实时监控';
-        monitor.children.find(n => n.id === 'n-scenes').text = 'AI检测';
-        monitor.children.find(n => n.id === 'n-alarms').text = '报警中心';
         const extra = (id: string, text: string, icon: string, link: string) => ({id,text,icon,link} as NaviItem);
-        if (this.project.getViewFromId('v_zc_g6')) { monitor.children.push(extra('n-shots','抓拍证据','photo_library','home/v_zc_g6')); }
-        const data = groups.find(g => g.id === 'g-data');
-        if (this.project.getViewFromId('v_zc_g2')) { data.children.unshift(extra('n-stats','数据统计','bar_chart','home/v_zc_g2')); }
-        data.children.unshift(extra('n-analysis','AI综合分析','query_stats','analysis'));
-        data.children.push(extra('n-analysis-window','独立分析窗口','open_in_new','ai-analysis'));
-        groups.splice(3,0,{id:'g-production',text:'生产与能源',icon:'factory',children:[extra('n-mes','MES看板','precision_manufacturing','mes'),extra('n-ems','EMS看板','bolt','ems')]} as NaviItem);
-        const system = groups.find(g => g.id === 'g-system');
-        system.children.push(extra('n-models','模型服务配置','settings_suggest','analysis?config=1'));
-        system.children.push(extra('n-events','事件日志','event_note','events'));
-        monitor.children.push(extra('n-resources','相机资源墙','video_settings','video-resources'));
+        const find = (id: string) => groups.find(g => g.id === id);
+        const label = (group: string, id: string, text: string) => {
+            const node = find(group)?.children?.find(n => n.id === id);
+            if (node) { node.text = text; }
+        };
+        label('g-monitor', 'n-scenes', 'AI检测');
+        const monitor = find('g-monitor');
+        if (monitor && this.project.getViewFromId('v_zc_g6')) {
+            monitor.children.push(extra('n-shots','抓拍证据','photo_library','home/v_zc_g6'));
+        }
+        const data = find('g-data');
+        if (data) {
+            if (this.project.getViewFromId('v_zc_g2')) { data.children.unshift(extra('n-stats','数据统计','bar_chart','home/v_zc_g2')); }
+            data.children.unshift(extra('n-analysis','AI综合分析','query_stats','analysis'));
+            data.children.push(extra('n-analysis-window','独立分析窗口','open_in_new','ai-analysis'));
+        }
+        const system = find('g-system');
+        if (system) {
+            system.children.push(extra('n-models','模型服务配置','settings_suggest','analysis?config=1'));
+            system.children.push(extra('n-events','事件日志','event_note','events'));
+        }
         this.groups = groups;
         this.updateRoute();
     }

@@ -9,6 +9,7 @@ var events = Events.create();
 var devices = require('./devices');
 var project = require('./project');
 var users = require('./users');
+var accounts = require('./accounts');
 var apiKeys = require('./apikeys');
 var alarms = require('./alarms');
 var notificator = require('./notificator');
@@ -125,6 +126,14 @@ function init(_io, _api, _settings, _log, eventsMain) {
         events.emit('init-users-ok');
     }).catch(function (err) {
         logger.error('runtime.failed-to-init users');
+    });
+
+    // 账号活动审计（登录/失败/注销/退出）——独立库，失败不能阻断平台启动。
+    accounts.init(settings, logger).then(ok => {
+        if (ok) logger.info('runtime init accounts audit successful!', true);
+        else logger.warn('runtime init accounts audit failed: activity will not be recorded');
+    }).catch(err => {
+        logger.error('runtime.failed-to-init accounts audit: ' + (err.message || err));
     });
 
     project.init(settings, logger, runtime).then(result => {
@@ -819,6 +828,7 @@ var runtime = module.exports = {
     init: init,
     project: project,
     users: users,
+    accounts: accounts,
     plugins: plugins,
     start: start,
     stop: stop,

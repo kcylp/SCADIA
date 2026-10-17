@@ -94,6 +94,38 @@ function sendInvalidSignInResponse(res) {
     res.status(401).json({ status: 'error', message: 'Invalid email/password!!!', data: null });
 }
 
+/** The username the client attempted, for the failure row. The password is never read here. */
+function attemptedUsername(req) {
+    const value = req.body?.username;
+    return typeof value === 'string' ? value.slice(0, 128) : '';
+}
+
+/** Source address as the server saw it. x-forwarded-for is only a hint; it is never trusted for authorization. */
+function clientIp(req) {
+    const forwarded = req.headers['x-forwarded-for'];
+    const first = Array.isArray(forwarded) ? forwarded[0] : (forwarded || '');
+    return String(first).split(',')[0].trim().slice(0, 64) || String(req.socket?.remoteAddress || '').slice(0, 64);
+}
+
+/**
+ * 写一条账号活动台账。审计写入永远不能影响认证本身：
+ * 库不可用、磁盘满、权限错，都只记日志，然后继续登录/注销。
+ */
+function audit(req, entry) {
+    try {
+        const pending = runtime.accounts?.record?.(Object.assign({
+            at: Date.now(),
+            clientIp: clientIp(req),
+            userAgent: req.headers['user-agent'] || ''
+        }, entry));
+        if (pending && typeof pending.catch === 'function') {
+            pending.catch(err => runtime.logger?.warn?.('api audit record failed: ' + (err.message || err)));
+        }
+    } catch (err) {
+        runtime.logger?.warn?.('api audit record failed: ' + (err.message || err));
+    }
+}
+
 function getLogoutUser(req) {
     const accessToken = req.headers['x-access-token'];
     if (accessToken) {
@@ -168,13 +200,16 @@ module.exports = {
                         });
                         runtime.logger.info('api-signin: ' + userInfo[0].username + ' ' + userInfo[0].fullname + ' ' + userInfo[0].groups);
                         runtime.events.emit('access:login', { username: userInfo[0].username, fullname: userInfo[0].fullname });
+                        audit(req, { username: userInfo[0].username, fullname: userInfo[0].fullname, action: 'login', result: 'ok' });
                     } else {
                         sendInvalidSignInResponse(res);
                         runtime.logger.error('api post signin: Invalid email/password!!!');
+                        audit(req, { username: attemptedUsername(req), action: 'login_failed', result: 'denied' });
                     }
                 } else {
                     sendInvalidSignInResponse(res);
                     runtime.logger.error('api post signin: Invalid email/password!!!');
+                    audit(req, { username: attemptedUsername(req), action: 'login_failed', result: 'denied' });
                 }
             }).catch(function (err) {
                 if (err.code) {
@@ -253,6 +288,7 @@ module.exports = {
             const logoutUser = getLogoutUser(req);
             if (logoutUser.username) {
                 runtime.events.emit('access:logout', logoutUser);
+                audit(req, { username: logoutUser.username, action: 'logout', result: 'ok' });
             }
             res.status(204).end();
         });
