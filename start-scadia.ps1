@@ -31,7 +31,8 @@
 param(
     [switch]$Sandbox,
     [int]$Port = 1881,
-    [switch]$Rebuild
+    [switch]$Rebuild,
+    [string]$DataDir
 )
 
 $ErrorActionPreference = 'Stop'
@@ -89,6 +90,10 @@ if ($Sandbox) {
         Copy-Item (Join-Path $projectDir $d) (Join-Path $runDir $d) -Recurse -Force
     }
     Write-Ok "沙箱运行目录: $runDir（project/ 不会被写入）"
+} elseif ($DataDir) {
+    if (-not (Test-Path $DataDir)) { Write-Bad "指定的数据目录不存在: $DataDir"; exit 1 }
+    $runDir = (Resolve-Path $DataDir).Path
+    Write-Ok "使用外部数据目录: $runDir（代码在此仓，数据在指定目录）"
 } else {
     $runDir = $projectDir
     Write-Host '    !!  直接使用 project/：服务端会写入 _appdata 下的库（报警/相机/调度等）' -ForegroundColor Yellow
@@ -199,10 +204,21 @@ Write-Host '    登录: 使用工程配置的授权账号' -ForegroundColor Whit
 Write-Host '    停止: Ctrl+C' -ForegroundColor White
 Write-Host ''
 
+# The server logs warnings to stderr. Running it as a native foreground command with
+# $ErrorActionPreference='Stop' turns the first stderr write into a TERMINATING error and
+# kills the just-started server. Launch it as a child process with redirected output instead.
+$serverLog = Join-Path $projectDir '_logs\server.log'
+$serverErr = Join-Path $projectDir '_logs\server.err.log'
+New-Item -ItemType Directory -Force -Path (Split-Path $serverLog) | Out-Null
+$serverArgs = @('main.js', '--port', $Port, '--userDir', ('"' + $runDir + '"'))
+$serverProc = $null
 Push-Location $serverDir
 try {
-    & $nodeExe main.js --port $Port --userDir $runDir
+    $serverProc = Start-Process -FilePath $nodeExe -ArgumentList $serverArgs -WorkingDirectory $serverDir -PassThru -NoNewWindow -RedirectStandardOutput $serverLog -RedirectStandardError $serverErr
+    $serverProc.WaitForExit()
+    Write-Host "    服务端已退出（ExitCode=$($serverProc.ExitCode)）" -ForegroundColor Yellow
 } finally {
+    if ($serverProc -and -not $serverProc.HasExited) { Stop-Process -Id $serverProc.Id -Force -ErrorAction SilentlyContinue }
     if ($proxyProc -and -not $proxyProc.HasExited) { Stop-Process -Id $proxyProc.Id -Force -ErrorAction SilentlyContinue }
     if ($bridgeProc -and -not $bridgeProc.HasExited) { Stop-Process -Id $bridgeProc.Id -Force -ErrorAction SilentlyContinue }
     if ($trackerProc -and -not $trackerProc.HasExited) { Stop-Process -Id $trackerProc.Id -Force -ErrorAction SilentlyContinue }
